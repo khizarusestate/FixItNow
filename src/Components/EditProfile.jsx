@@ -6,6 +6,10 @@ import { servicesService } from '../services/api.js'
 import { setUserData } from '../utils/jwt.js'
 import LocationPicker from './LocationPicker.jsx'
 import { geoFromUser } from '../utils/location.js'
+import {
+  uploadUserProfilePicture,
+  isInlineImageValue,
+} from '../utils/profilePictureUpload.js'
 
 const FALLBACK_SERVICES = ['Cleaning', 'Home Repair', 'Electrical', 'Plumbing', 'Automotive', 'IT Support', 'Other'];
 
@@ -122,6 +126,14 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         longitude: geo.longitude,
         placeId: geo.placeId,
       };
+      let uploadedPicturePath = null
+      if (isInlineImageValue(form.profilePicture)) {
+        uploadedPicturePath = await uploadUserProfilePicture(
+          form.profilePicture,
+          userData?.type,
+        )
+      }
+
       const requestBody = isWorker ? {
         fullName: form.fullName,
         emailAddress: form.email,
@@ -129,13 +141,13 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         primaryServiceCategory: form.serviceCategory,
         ...locationPayload,
         availability: form.availability,
-        profilePicture: form.profilePicture,
+        ...(uploadedPicturePath ? { profilePicture: uploadedPicturePath } : {}),
       } : {
         fullName: form.fullName,
         email: form.email,
         phone: form.phone,
         ...locationPayload,
-        profilePicture: form.profilePicture
+        ...(uploadedPicturePath ? { profilePicture: uploadedPicturePath } : {}),
       }
 
       const response = await apiRequestWithAuth(endpoint, {
@@ -167,7 +179,12 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         ...locationPayload,
         address: geo.location,
         availability: form.availability,
-        profilePicture: form.profilePicture,
+        profilePicture:
+          uploadedPicturePath ||
+          (isInlineImageValue(form.profilePicture)
+            ? userData?.profilePicture
+            : form.profilePicture) ||
+          apiProfile.profilePicture,
         type: userData?.type,
       }
       if (userData?.type) {

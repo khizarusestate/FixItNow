@@ -12,6 +12,8 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequestWithAuth } from "../services/api.js";
 import LocationPicker from "./LocationPicker";
 import { geoFromUser } from "../utils/location.js";
+import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
+import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
 
 export default function CompleteProfile() {
   const { activeModal, closeModal } = useModal();
@@ -22,7 +24,7 @@ export default function CompleteProfile() {
     profilePicture: null,
   });
   const [previewImage, setPreviewImage] = useState(
-    user?.profilePicture || null,
+    user?.profilePicture ? resolveUploadMediaUrl(user.profilePicture) : null,
   );
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -45,11 +47,9 @@ export default function CompleteProfile() {
         return;
       }
       setForm((f) => ({ ...f, profilePicture: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setPreviewImage(URL.createObjectURL(file));
+      setIsError(false);
+      setMessage("");
     }
   };
 
@@ -57,14 +57,15 @@ export default function CompleteProfile() {
     e.preventDefault();
     setSubmitting(true);
     setMessage("");
+    setIsError(false);
 
     try {
       if (!geo.location?.trim()) {
         setMessage("Please select your location on the map.");
         setIsError(true);
-        setSubmitting(false);
         return;
       }
+
       const updateData = {
         location: geo.location.trim(),
         latitude: geo.latitude,
@@ -76,27 +77,14 @@ export default function CompleteProfile() {
         updateData.availability = form.availability;
       }
 
-      // Handle profile picture upload
-      if (form.profilePicture && form.profilePicture instanceof File) {
-        // Convert file to base64 for now (in production, you'd upload to a service)
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          updateData.profilePicture = reader.result;
-          await submitProfileUpdate(updateData);
-        };
-        reader.readAsDataURL(form.profilePicture);
-      } else {
-        await submitProfileUpdate(updateData);
+      let uploadedPicturePath = null;
+      if (form.profilePicture instanceof File) {
+        uploadedPicturePath = await uploadUserProfilePicture(
+          form.profilePicture,
+          user?.type,
+        );
       }
-    } catch (err) {
-      setMessage(err.message || "Profile update failed. Please try again.");
-      setIsError(true);
-      setSubmitting(false);
-    }
-  };
 
-  const submitProfileUpdate = async (updateData) => {
-    try {
       const endpoint =
         user?.type === "worker" ? "/worker/profile" : "/auth/customer/profile";
       const response = await apiRequestWithAuth(endpoint, {
@@ -105,7 +93,6 @@ export default function CompleteProfile() {
       });
 
       if (response.success) {
-        // Update user context with new data
         updateUser({
           ...user,
           ...(response.data || {}),
@@ -118,7 +105,7 @@ export default function CompleteProfile() {
             response.data?.availability ??
             user.availability,
           profilePicture:
-            updateData.profilePicture ||
+            uploadedPicturePath ||
             response.data?.profilePicture ||
             user.profilePicture,
         });
@@ -126,12 +113,15 @@ export default function CompleteProfile() {
         setDone(true);
         setMessage("Profile completed successfully!");
         setIsError(false);
-        setTimeout(() => {
-          closeModal();
-        }, 2000);
+        setTimeout(() => closeModal(), 2000);
       }
     } catch (err) {
-      setMessage(err.message || "Profile update failed. Please try again.");
+      const msg = err.message || "Profile update failed. Please try again.";
+      setMessage(
+        msg.includes("too large") || msg.includes("entity")
+          ? "Photo is too large. Try a smaller image or skip the photo for now."
+          : msg,
+      );
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -192,96 +182,86 @@ export default function CompleteProfile() {
                 onClick={handleClose}
                 className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-orange-600 transition-colors"
               >
-                OK
-                <ArrowRight size={16} />
+                Continue <ArrowRight size={16} />
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Profile Picture Upload */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Profile Picture{" "}
-                  <span className="text-slate-400">(Optional)</span>
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-200">
-                      {previewImage ? (
-                        <img
-                          src={previewImage}
-                          alt="Profile"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Camera size={24} className="text-slate-400" />
-                      )}
-                    </div>
-                    <label className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-orange-500 text-white flex items-center justify-center cursor-pointer hover:bg-orange-600 transition-colors">
-                      <Upload size={14} />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="flex flex-col items-center">
+                <label className="relative cursor-pointer group">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-orange-100 bg-slate-100 flex items-center justify-center">
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
                       />
-                    </label>
+                    ) : (
+                      <Camera size={32} className="text-slate-400" />
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-slate-600">
-                      Upload a profile picture to personalize your account
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      JPG, PNG up to 5MB
-                    </p>
+                  <div className="absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full shadow-lg group-hover:bg-orange-600 transition-colors">
+                    <Upload size={14} />
                   </div>
-                </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="mt-2 text-xs text-slate-500">
+                  Optional — JPG/PNG/WebP, max 5MB
+                </p>
               </div>
 
-              <LocationPicker
-                label="Location"
-                required
-                value={geo}
-                onChange={setGeo}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <MapPin size={14} className="inline mr-1" />
+                  Your Location *
+                </label>
+                <LocationPicker value={geo} onChange={setGeo} />
+              </div>
 
               {user?.type === "worker" && (
-                <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={form.availability}
-                    onChange={(e) => update("availability", e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-orange-500"
-                  />
-                  Available for work
-                </label>
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm font-medium text-slate-700">
+                    Available for work
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      update("availability", !form.availability)
+                    }
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      form.availability ? "bg-orange-500" : "bg-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        form.availability ? "translate-x-6" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
               )}
 
               {message && (
                 <p
-                  className={`rounded-lg px-3 py-2.5 text-sm font-medium ${isError ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
+                  className={`text-sm ${isError ? "text-red-600" : "text-emerald-600"}`}
                 >
                   {message}
                 </p>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium"
-                >
-                  Skip for Now
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors disabled:opacity-60"
-                >
-                  {submitting ? "Saving..." : "Complete Profile"}
-                  <ArrowRight size={15} />
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors"
+              >
+                {submitting ? "Saving..." : "Complete Profile"}
+                {!submitting && <ArrowRight size={16} />}
+              </button>
             </form>
           )}
         </div>
