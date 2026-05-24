@@ -475,6 +475,12 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                             <h4 className="font-semibold text-slate-900">
                               {job.serviceTitle}
                             </h4>
+                            <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
+                            {job._demoted && (
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                                Lower match
+                              </span>
+                            )}
                             {formatDistance(job._distanceKm) ? (
                               <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
                                 {formatDistance(job._distanceKm)}
@@ -484,6 +490,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                 Approx. area
                               </span>
                             ) : null}
+                            </div>
                           </div>
                           <div className="mt-3 space-y-2 text-sm text-slate-600">
                             <div className="flex items-start gap-2">

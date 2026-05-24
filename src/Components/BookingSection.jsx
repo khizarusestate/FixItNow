@@ -24,6 +24,8 @@ import {
   Banknote,
   Smartphone,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Upload,
   Clock,
 } from "lucide-react";
@@ -671,59 +673,58 @@ export default function BookingSection() {
     );
   }, []);
 
+  const browsingServices = Boolean(selectedCategory || search.trim());
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    categories.forEach((cat) => {
+      counts[cat] = (services?.[cat] || []).length;
+    });
+    return counts;
+  }, [categories, services]);
+
   const filteredServices = useMemo(() => {
     const q = search.trim().toLowerCase();
+    if (!browsingServices) return [];
 
-    const collectAllServices = () => {
-      const allServices = [];
-      categories.forEach((cat) => {
-        const catServices = services?.[cat] || [];
-        catServices.forEach((s) => allServices.push(s));
-      });
-      return sortServicesByName(allServices);
-    };
+    const matchesQuery = (s) =>
+      !q ||
+      s?.name?.toLowerCase()?.includes(q) ||
+      s?.description?.toLowerCase()?.includes(q);
 
-    // ALL SERVICES (no category selected)
-    if (!q && !selectedCategory) {
-      return collectAllServices();
-    }
-
-    // CATEGORY ONLY (no search)
-    if (!q && selectedCategory) {
-      return sortServicesByName(services?.[selectedCategory] || []);
-    }
-
-    // SEARCH INSIDE CATEGORY
     if (selectedCategory) {
-      const categoryServices = services?.[selectedCategory] || [];
-
       return sortServicesByName(
-        categoryServices.filter(
-          (s) =>
-            s?.name?.toLowerCase()?.includes(q) ||
-            s?.description?.toLowerCase()?.includes(q),
-        ),
+        (services?.[selectedCategory] || []).filter(matchesQuery),
       );
     }
 
-    // SEARCH ALL CATEGORIES
     const allServices = [];
-
     categories.forEach((cat) => {
-      const catServices = services?.[cat] || [];
-
-      catServices.forEach((s) => {
-        if (
-          s?.name?.toLowerCase()?.includes(q) ||
-          s?.description?.toLowerCase()?.includes(q)
-        ) {
-          allServices.push(s);
-        }
+      (services?.[cat] || []).forEach((s) => {
+        if (matchesQuery(s)) allServices.push(s);
       });
     });
-
     return sortServicesByName(allServices);
-  }, [categories, search, selectedCategory, services, sortServicesByName]);
+  }, [
+    browsingServices,
+    categories,
+    search,
+    selectedCategory,
+    services,
+    sortServicesByName,
+  ]);
+
+  const openCategory = useCallback((category) => {
+    setSelectedCategory(category);
+    setSearch("");
+    setPage(1);
+  }, []);
+
+  const backToCategories = useCallback(() => {
+    setSelectedCategory(null);
+    setSearch("");
+    setPage(1);
+  }, []);
 
   // Reset paging when filters change
   useEffect(() => {
@@ -901,9 +902,16 @@ export default function BookingSection() {
 
             <input
               type="text"
-              placeholder="Search services..."
+              placeholder={
+                selectedCategory
+                  ? `Search in ${selectedCategory}...`
+                  : "Search all services..."
+              }
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className="w-full rounded-full border-2 border-slate-200 pl-14 pr-6 py-4 text-base outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition-all hover:border-slate-300"
             />
           </div>
@@ -929,66 +937,92 @@ export default function BookingSection() {
           </div>
         )}
 
-        {/* CONTENT — restaurant-style menu */}
+        {/* CONTENT — category menu, then services list */}
         {!loading && !error && (
           <div className="rounded-2xl border-2 border-orange-100 bg-white shadow-xl overflow-hidden animate-slideUp">
-            <div className="flex min-h-[420px] max-h-[min(78vh,760px)]">
-              {/* Categories sidebar (left on mobile & desktop) */}
-              <nav
-                aria-label="Service categories"
-                className="w-[5.5rem] sm:w-36 lg:w-44 shrink-0 border-r border-orange-100 bg-gradient-to-b from-amber-50 via-orange-50/80 to-white overflow-y-auto"
-              >
-                <p className="px-2 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-900/70 text-center sm:text-left sm:px-3 border-b border-orange-100/80">
-                  Menu
-                </p>
-                <div className="p-1.5 sm:p-2 space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSearch("");
-                    }}
-                    className={`category-btn w-full rounded-lg px-1.5 py-2.5 sm:px-3 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition-all text-center sm:text-left ${
-                      !selectedCategory
-                        ? "bg-orange-500 text-white shadow-md"
-                        : "text-slate-700 hover:bg-orange-100/60"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {categories.map((category) => {
+            {!browsingServices ? (
+              <div className="p-5 sm:p-8">
+                <div className="mb-6 text-center sm:text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-600">
+                    Our Menu
+                  </p>
+                  <h3 className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">
+                    Choose a category
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Tap a section to see available services — like a restaurant menu.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {categories.map((category, idx) => {
                     const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                    const isActive = selectedCategory === category;
+                    const catColor =
+                      CATEGORY_COLORS[category] || "from-slate-400 to-slate-600";
+                    const count = categoryCounts[category] || 0;
                     return (
                       <button
                         key={category}
                         type="button"
-                        onClick={() => setSelectedCategory(category)}
-                        className={`category-btn w-full rounded-lg px-1.5 py-2.5 sm:px-3 sm:py-2.5 transition-all flex flex-col sm:flex-row items-center sm:gap-2 gap-0.5 ${
-                          isActive
-                            ? "bg-orange-500 text-white shadow-md"
-                            : "text-slate-700 hover:bg-orange-100/60"
-                        }`}
+                        onClick={() => openCategory(category)}
+                        className="category-btn group text-left rounded-2xl border border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-4 sm:p-5 hover:border-orange-300 hover:shadow-lg hover:-translate-y-0.5 transition-all animate-scaleIn"
+                        style={{ animationDelay: `${idx * 40}ms` }}
                       >
-                        <CategoryIcon size={14} className="shrink-0" />
-                        <span className="text-[9px] sm:text-xs font-semibold leading-tight text-center sm:text-left line-clamp-2">
+                        <div
+                          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-3`}
+                        >
+                          <CategoryIcon size={24} />
+                        </div>
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug pr-1">
                           {category}
-                        </span>
+                        </h4>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-xs text-slate-500">
+                            {count} service{count !== 1 ? "s" : ""}
+                          </span>
+                          <ChevronRight
+                            size={16}
+                            className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform"
+                          />
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-              </nav>
-
-              {/* Menu items */}
-              <div className="flex-1 flex flex-col min-w-0 bg-[#fffdf9]">
-                <div className="sticky top-0 z-10 border-b border-orange-100/80 bg-white/95 backdrop-blur px-4 py-3 sm:px-6">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
-                    Services
+                {categories.length === 0 && (
+                  <p className="text-center text-slate-500 py-12">
+                    No categories available yet.
                   </p>
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">
-                    {selectedCategory || "All Services"}
-                  </h3>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col min-h-[420px] max-h-[min(78vh,760px)] bg-[#fffdf9]">
+                <div className="sticky top-0 z-10 border-b border-orange-100/80 bg-white/95 backdrop-blur px-4 py-3 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={backToCategories}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                    >
+                      <ChevronLeft size={16} />
+                      Menu
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
+                        {search.trim() && !selectedCategory
+                          ? "Search results"
+                          : "Services"}
+                      </p>
+                      <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">
+                        {selectedCategory ||
+                          (search.trim() ? `“${search.trim()}”` : "All services")}
+                      </h3>
+                    </div>
+                    {filteredServices.length > 0 && (
+                      <span className="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-800">
+                        {filteredServices.length}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
@@ -1027,8 +1061,8 @@ export default function BookingSection() {
                                     {service.description}
                                   </p>
                                 )}
-                                {service?.category && (
-                                  <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                                {!selectedCategory && service?.category && (
+                                  <p className="mt-1 text-[10px] uppercase tracking-wider text-orange-600/80 font-semibold">
                                     {service.category}
                                   </p>
                                 )}
@@ -1055,12 +1089,19 @@ export default function BookingSection() {
                         <Search className="text-slate-400" size={28} />
                       </div>
                       <p className="text-slate-600 font-medium">
-                        {search
+                        {search.trim()
                           ? "No services match your search"
-                          : selectedCategory
-                            ? "No services found in this category"
-                            : "No services available"}
+                          : "No services in this category yet"}
                       </p>
+                      {search.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => setSearch("")}
+                          className="mt-4 text-sm font-semibold text-orange-600 hover:text-orange-700"
+                        >
+                          Clear search
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1089,7 +1130,7 @@ export default function BookingSection() {
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
