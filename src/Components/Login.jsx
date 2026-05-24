@@ -198,7 +198,7 @@ export default function Login({ onLoginSuccess }) {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
               />
-              Remember me (stay signed in until you clear browser data)
+              Remember me
             </label>
             <button
               type="button"

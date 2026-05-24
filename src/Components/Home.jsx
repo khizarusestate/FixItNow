@@ -2,7 +2,6 @@ import { ArrowDown, Wrench, LayoutDashboard, ClipboardList, Bell, X } from 'luci
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
-import WorkerRatingBadge from './WorkerRatingBadge';
 
 export default function Home() {
   const { openModal } = useModal();
@@ -83,14 +82,6 @@ export default function Home() {
               ? 'Manage your jobs, update your profile, and connect with customers.' 
               : 'Verified workers, fast requests — one platform for all your home services.'}
           </p>
-          {isWorker && (
-            <div className="mt-4 flex justify-center">
-              <div className="rounded-full bg-white/10 px-4 py-2 backdrop-blur border border-white/20">
-                <WorkerRatingBadge rating={user?.rating} size="md" light />
-              </div>
-            </div>
-          )}
-
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             {!isWorker && !isCustomer && (
               <>

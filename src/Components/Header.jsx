@@ -8,7 +8,6 @@ import MyBookings from './MyBookings';
 import WorkerDashboard from './WorkerDashboard';
 import ProfileModal from './ProfileModal';
 import NotificationBell from './NotificationBell';
-import WorkerRatingBadge from './WorkerRatingBadge';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -114,9 +113,6 @@ export default function Header() {
                     </div>
                   )}
                   <span className="text-[10px] text-slate-600 font-medium truncate max-w-[60px]">{user?.fullName?.split(' ')[0] || 'Profile'}</span>
-                  {user?.type === 'worker' && (
-                    <WorkerRatingBadge rating={user?.rating} showLabel={false} className="scale-90" />
-                  )}
                 </button>
               </>
             ) : (
@@ -131,9 +127,12 @@ export default function Header() {
             )}
           </nav>
 
-          <button onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden p-2 rounded-lg text-slate-700" aria-label="Toggle menu">
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex lg:hidden items-center gap-1">
+            {isAuthenticated && <NotificationBell />}
+            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-lg text-slate-700" aria-label="Toggle menu">
+              {menuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {menuOpen && (
@@ -173,11 +172,7 @@ export default function Header() {
                   )}
                   <div className="text-left">
                     <p className="font-semibold">{user?.fullName || 'Profile'}</p>
-                    {user?.type === 'worker' ? (
-                      <WorkerRatingBadge rating={user?.rating} showLabel={false} />
-                    ) : (
-                      <p className="text-xs text-slate-500">View Profile</p>
-                    )}
+                    <p className="text-xs text-slate-500">View Profile</p>
                   </div>
                 </button>
               </>

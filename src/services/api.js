@@ -463,19 +463,17 @@ export const authService = {
 // Booking endpoints
 export const bookingService = {
   createBooking: (data) => {
-    // If data is FormData (for file upload), don't stringify
-    if (data instanceof FormData) {
-      return apiRequestWithAuth("/bookings", {
-        method: "POST",
-        body: data,
-        headers: {}, // Let browser set Content-Type for FormData
-      });
-    }
-    // Otherwise, use JSON
-    return apiRequestWithAuth("/bookings", {
+    const role = getActiveSessionRole();
+    const request = role === "customer" ? apiRequestWithAuth : apiRequest;
+    const opts = {
       method: "POST",
-      body: JSON.stringify(data),
-    });
+      body: data,
+      headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
+    };
+    if (!(data instanceof FormData)) {
+      opts.body = JSON.stringify(data);
+    }
+    return request("/bookings", opts);
   },
 
   getMyBookings: () => apiRequestWithAuth("/bookings/my"),
@@ -498,12 +496,15 @@ export const servicesService = {
 export const advertisementService = {
   getMyAds: () => apiRequestWithAuth("/advertisements/my"),
   getActiveAds: () => apiRequest("/advertisements/active"),
-  submit: (formData) =>
-    apiRequestWithAuth("/advertisements", {
+  submit: (formData) => {
+    const role = getActiveSessionRole();
+    const request = role === "customer" || role === "worker" ? apiRequestWithAuth : apiRequest;
+    return request("/advertisements", {
       method: "POST",
       body: formData,
       headers: {},
-    }),
+    });
+  },
 };
 
 // App review endpoints

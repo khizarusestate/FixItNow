@@ -640,12 +640,7 @@ export default function BookingSection() {
 
   const handleSelectService = useCallback(
     (service) => {
-      if (!isAuthenticated) {
-        openModal("login");
-        return;
-      }
-
-      if (!hasLocation(user)) {
+      if (isAuthenticated && user?.type === "customer" && !hasLocation(user)) {
         openModal("completeProfile");
         return;
       }
@@ -661,7 +656,7 @@ export default function BookingSection() {
 
       setSelectedService(normalizedService);
     },
-    [isAuthenticated, openModal, user],
+    [isAuthenticated, openModal, user?.type],
   );
 
   // =======================
@@ -934,160 +929,166 @@ export default function BookingSection() {
           </div>
         )}
 
-        {/* CONTENT */}
+        {/* CONTENT — restaurant-style menu */}
         {!loading && !error && (
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* SIDEBAR */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-20 space-y-3">
-                <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-4">
-                  Categories
-                </h3>
-
-                <button
-                  onClick={() => {
-                    setSelectedCategory(null);
-                    setSearch("");
-                  }}
-                  className={`category-btn w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all ${
-                    !selectedCategory
-                      ? "bg-orange-500 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  All Services
-                </button>
-
-                {categories.map((category) => {
-                  const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-
-                  const isActive = selectedCategory === category;
-
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`category-btn w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all flex items-center gap-3 ${
-                        isActive
-                          ? "bg-orange-500 text-white shadow-md"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
-                    >
-                      <CategoryIcon size={16} />
-
-                      {category}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* SERVICES */}
-            <div className="lg:col-span-3">
-              <h3 className="font-bold text-slate-900 text-lg mb-6 animate-slideUp">
-                {selectedCategory || "All Services"}
-              </h3>
-
-              {filteredServices.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {pagedServices.map((service, idx) => {
-                    const ServiceIcon = getIconComponent(service?.icon);
-
-                    const catColor =
-                      CATEGORY_COLORS[service?.category] ||
-                      "from-slate-400 to-slate-600";
-
+          <div className="rounded-2xl border-2 border-orange-100 bg-white shadow-xl overflow-hidden animate-slideUp">
+            <div className="flex min-h-[420px] max-h-[min(78vh,760px)]">
+              {/* Categories sidebar (left on mobile & desktop) */}
+              <nav
+                aria-label="Service categories"
+                className="w-[5.5rem] sm:w-36 lg:w-44 shrink-0 border-r border-orange-100 bg-gradient-to-b from-amber-50 via-orange-50/80 to-white overflow-y-auto"
+              >
+                <p className="px-2 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-900/70 text-center sm:text-left sm:px-3 border-b border-orange-100/80">
+                  Menu
+                </p>
+                <div className="p-1.5 sm:p-2 space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setSearch("");
+                    }}
+                    className={`category-btn w-full rounded-lg px-1.5 py-2.5 sm:px-3 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition-all text-center sm:text-left ${
+                      !selectedCategory
+                        ? "bg-orange-500 text-white shadow-md"
+                        : "text-slate-700 hover:bg-orange-100/60"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {categories.map((category) => {
+                    const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                    const isActive = selectedCategory === category;
                     return (
-                      <div
-                        key={service?._id || service?.id}
-                        className="service-card animate-scaleIn"
-                        style={{
-                          animationDelay: `${idx * 30}ms`,
-                        }}
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setSelectedCategory(category)}
+                        className={`category-btn w-full rounded-lg px-1.5 py-2.5 sm:px-3 sm:py-2.5 transition-all flex flex-col sm:flex-row items-center sm:gap-2 gap-0.5 ${
+                          isActive
+                            ? "bg-orange-500 text-white shadow-md"
+                            : "text-slate-700 hover:bg-orange-100/60"
+                        }`}
                       >
-                        <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-xl hover:border-orange-200 flex flex-col overflow-hidden">
-                          {/* ICON */}
-                          <div
-                            className={`w-14 h-14 rounded-xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white mb-4 flex-shrink-0`}
-                          >
-                            <ServiceIcon size={24} />
-                          </div>
-
-                          {/* CONTENT */}
-                          <h4 className="font-bold text-slate-900 mb-2 text-sm leading-snug line-clamp-2">
-                            {service?.name}
-                          </h4>
-
-                          {service?.description && (
-                            <p className="text-xs text-slate-600 mb-4 line-clamp-2">
-                              {service?.description}
-                            </p>
-                          )}
-
-                          {/* FOOTER */}
-                          <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                            {service?.price > 0 && (
-                              <span className="font-bold text-orange-600 text-sm">
-                                PKR {service.price}
-                              </span>
-                            )}
-
-                            <button
-                              onClick={() => handleSelectService(service)}
-                              className="ml-auto flex items-center gap-2 px-3.5 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all text-xs font-bold group"
-                            >
-                              Book
-                              <ArrowRight
-                                size={14}
-                                className="group-hover:translate-x-0.5 transition-transform"
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                        <CategoryIcon size={14} className="shrink-0" />
+                        <span className="text-[9px] sm:text-xs font-semibold leading-tight text-center sm:text-left line-clamp-2">
+                          {category}
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                    <Search className="text-slate-400" size={28} />
-                  </div>
+              </nav>
 
-                  <p className="text-slate-600 font-medium">
-                    {search
-                      ? "No services match your search"
-                      : selectedCategory
-                        ? "No services found in this category"
-                        : "No services available"}
+              {/* Menu items */}
+              <div className="flex-1 flex flex-col min-w-0 bg-[#fffdf9]">
+                <div className="sticky top-0 z-10 border-b border-orange-100/80 bg-white/95 backdrop-blur px-4 py-3 sm:px-6">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
+                    Services
                   </p>
+                  <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">
+                    {selectedCategory || "All Services"}
+                  </h3>
                 </div>
-              )}
 
-              {/* PAGINATION */}
-              {filteredServices.length > 0 && totalPages > 1 && (
-                <div className="mt-10 flex items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <div className="text-sm font-semibold text-slate-600">
-                    Page {page} / {totalPages}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredServices.length > 0 ? (
+                    <ul className="divide-y divide-orange-100/60">
+                      {pagedServices.map((service, idx) => {
+                        const ServiceIcon = getIconComponent(service?.icon);
+                        const catColor =
+                          CATEGORY_COLORS[service?.category] ||
+                          "from-slate-400 to-slate-600";
+                        return (
+                          <li
+                            key={service?._id || service?.id}
+                            className="animate-scaleIn"
+                            style={{ animationDelay: `${idx * 20}ms` }}
+                          >
+                            <div className="flex items-start gap-3 sm:gap-4 px-3 py-4 sm:px-6 sm:py-5 hover:bg-orange-50/40 transition-colors">
+                              <div
+                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br ${catColor} flex items-center justify-center text-white shrink-0`}
+                              >
+                                <ServiceIcon size={20} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                  <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                                    {service?.name}
+                                  </h4>
+                                  {service?.price > 0 && (
+                                    <span className="font-bold text-orange-600 text-sm whitespace-nowrap">
+                                      PKR {service.price}
+                                    </span>
+                                  )}
+                                </div>
+                                {service?.description && (
+                                  <p className="mt-1 text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                                    {service.description}
+                                  </p>
+                                )}
+                                {service?.category && (
+                                  <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400 font-medium">
+                                    {service.category}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectService(service)}
+                                className="shrink-0 flex items-center gap-1 px-3 py-2 sm:px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all text-xs font-bold group mt-0.5"
+                              >
+                                Book
+                                <ArrowRight
+                                  size={14}
+                                  className="group-hover:translate-x-0.5 transition-transform hidden sm:block"
+                                />
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <div className="text-center py-16 px-4">
+                      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                        <Search className="text-slate-400" size={28} />
+                      </div>
+                      <p className="text-slate-600 font-medium">
+                        {search
+                          ? "No services match your search"
+                          : selectedCategory
+                            ? "No services found in this category"
+                            : "No services available"}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {filteredServices.length > 0 && totalPages > 1 && (
+                  <div className="border-t border-orange-100 px-4 py-3 flex items-center justify-center gap-3 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs font-semibold text-slate-600">
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page >= totalPages}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -14,7 +14,6 @@ import { apiRequestWithAuth } from "../services/api.js";
 import { shouldRefreshBookings } from "../utils/apiError";
 import { useAuth } from "../context/AuthContext";
 import { getUserData } from "../utils/jwt.js";
-import WorkerRatingBadge from "./WorkerRatingBadge";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -298,12 +297,6 @@ export default function WorkerDashboard({ isOpen, onClose }) {
               Welcome back{" "}
               {profile?.fullName || workerUser?.fullName || "Worker"}
             </p>
-            <div className="mt-1">
-              <WorkerRatingBadge
-                rating={profile?.rating ?? workerUser?.rating}
-                size="md"
-              />
-            </div>
           </div>
 
           <button
@@ -375,7 +368,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
             <>
               {/* OVERVIEW */}
               {activeTab === "overview" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     onClick={() => setActiveTab("my-jobs")}
                     className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-orange-300 hover:bg-orange-50 text-left"
@@ -399,18 +392,6 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                       {completedMyJobs.length}
                     </p>
                   </button>
-
-                  <div className="border rounded-xl p-5 bg-amber-50/50 border-amber-100">
-                    <p className="text-sm text-slate-500 mb-2">Your rating</p>
-                    <WorkerRatingBadge
-                      rating={profile?.rating ?? workerUser?.rating}
-                      showLabel={false}
-                      size="md"
-                    />
-                    <p className="text-xs text-slate-500 mt-2">
-                      Based on customer reviews after completed jobs
-                    </p>
-                  </div>
                 </div>
               )}
 
