@@ -5,7 +5,6 @@ import {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 import { useModal } from "./ModalContext";
@@ -16,32 +15,27 @@ import {
   writeOnboardingState,
 } from "../onboarding/storage";
 import {
-  CUSTOMER_BOOKING_STEPS,
-  CUSTOMER_TRACK_STEPS,
+  CUSTOMER_STEPS,
   WORKER_SIGNUP_STEPS,
   WORKER_DASHBOARD_STEPS,
 } from "../onboarding/steps";
 import WelcomeIntentModal from "../Components/onboarding/WelcomeIntentModal";
 import TourSpotlight from "../Components/onboarding/TourSpotlight";
 import TourCoachCard from "../Components/onboarding/TourCoachCard";
-import TourPracticeBookingModal from "../Components/onboarding/TourPracticeBookingModal";
 
 const OnboardingContext = createContext(null);
 
 const PHASE = {
   IDLE: "idle",
-  CUSTOMER_BOOKING: "customer-booking",
-  CUSTOMER_TRACK: "customer-track",
+  CUSTOMER: "customer",
   WORKER_SIGNUP: "worker-signup",
   WORKER_DASHBOARD: "worker-dashboard",
 };
 
 function getStepsForPhase(phase) {
   switch (phase) {
-    case PHASE.CUSTOMER_BOOKING:
-      return CUSTOMER_BOOKING_STEPS;
-    case PHASE.CUSTOMER_TRACK:
-      return CUSTOMER_TRACK_STEPS;
+    case PHASE.CUSTOMER:
+      return CUSTOMER_STEPS;
     case PHASE.WORKER_SIGNUP:
       return WORKER_SIGNUP_STEPS;
     case PHASE.WORKER_DASHBOARD:
@@ -52,17 +46,14 @@ function getStepsForPhase(phase) {
 }
 
 export function OnboardingProvider({ children }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { openModal, closeModal } = useModal();
   const [showWelcome, setShowWelcome] = useState(false);
   const [phase, setPhase] = useState(PHASE.IDLE);
   const [stepIndex, setStepIndex] = useState(0);
-  const [practiceModalOpen, setPracticeModalOpen] = useState(false);
-  const [practiceService, setPracticeService] = useState(null);
   const [tourMyBookingsOnly, setTourMyBookingsOnly] = useState(false);
   const [workerTourMode, setWorkerTourMode] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
-  const clickListenerRef = useRef(null);
 
   const steps = useMemo(() => getStepsForPhase(phase), [phase]);
   const currentStep = steps[stepIndex] || null;
@@ -80,15 +71,7 @@ export function OnboardingProvider({ children }) {
 
   useEffect(() => {
     if (!catalogReady) return;
-    if (user?.type === "worker") {
-      setShowWelcome(shouldShowWelcome(user));
-      return;
-    }
-    if (user?.type === "customer") {
-      setShowWelcome(shouldShowWelcome(user));
-      return;
-    }
-    setShowWelcome(shouldShowWelcome(null));
+    setShowWelcome(shouldShowWelcome(user));
   }, [catalogReady, user?.type]);
 
   const endTour = useCallback((path) => {
@@ -96,14 +79,12 @@ export function OnboardingProvider({ children }) {
     if (path === "worker") markPathComplete("worker");
     setPhase(PHASE.IDLE);
     setStepIndex(0);
-    setPracticeModalOpen(false);
     setTourMyBookingsOnly(false);
     setWorkerTourMode(false);
-    setPracticeService(null);
   }, []);
 
   const skipTour = useCallback(() => {
-    if (phase.startsWith("customer")) endTour("customer");
+    if (phase === PHASE.CUSTOMER) endTour("customer");
     else if (phase.startsWith("worker")) endTour("worker");
     else {
       setPhase(PHASE.IDLE);
@@ -114,15 +95,17 @@ export function OnboardingProvider({ children }) {
 
   const goNext = useCallback(() => {
     const step = steps[stepIndex];
-    if (step?.id === "booking-section") {
-      document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (step?.id === "booking-overview") {
+      document
+        .getElementById("booking")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    if (step?.id === "dashboard-open") {
-      window.dispatchEvent(new CustomEvent("open-worker-dashboard"));
-    }
-    if (step?.id === "track-intro") {
+
+    if (step?.id === "my-bookings-header") {
       setTourMyBookingsOnly(true);
     }
+
     if (step?.id === "worker-approval") {
       closeModal();
       setPhase(PHASE.WORKER_DASHBOARD);
@@ -133,27 +116,26 @@ export function OnboardingProvider({ children }) {
       }, 300);
       return;
     }
-    if (step?.id === "booking-done") {
-      setPhase(PHASE.CUSTOMER_TRACK);
-      setStepIndex(0);
-      setTourMyBookingsOnly(true);
-      return;
-    }
+
     if (stepIndex >= steps.length - 1) {
-      if (phase.startsWith("customer")) endTour("customer");
+      if (phase === PHASE.CUSTOMER) endTour("customer");
       else if (phase.startsWith("worker")) endTour("worker");
       return;
     }
+
     setStepIndex((i) => i + 1);
-  }, [stepIndex, steps, phase, endTour]);
+  }, [stepIndex, steps, phase, endTour, closeModal]);
 
   const startCustomerTour = useCallback(() => {
     setShowWelcome(false);
-    setPhase(PHASE.CUSTOMER_BOOKING);
+    setPhase(PHASE.CUSTOMER);
     setStepIndex(0);
+    setTourMyBookingsOnly(false);
     writeOnboardingState({ lastPath: "customer" });
     window.setTimeout(() => {
-      document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("booking")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 400);
   }, []);
 
@@ -176,76 +158,7 @@ export function OnboardingProvider({ children }) {
     [startCustomerTour, startWorkerTour],
   );
 
-  const openPracticeBooking = useCallback((service) => {
-    setPracticeService(service);
-    setPracticeModalOpen(true);
-  }, []);
-
-  const completePracticeBooking = useCallback(() => {
-    setPracticeModalOpen(false);
-    setPracticeService(null);
-    const idx = CUSTOMER_BOOKING_STEPS.findIndex((s) => s.id === "booking-done");
-    if (idx >= 0) setStepIndex(idx);
-    else goNext();
-  }, [goNext]);
-
-  const notifyStepAction = useCallback(
-    (stepId) => {
-      if (!currentStep || currentStep.id !== stepId) return;
-      if (currentStep.advance === "click") goNext();
-    },
-    [currentStep, goNext],
-  );
-
-  /** Called from BookingSection when user picks service during tour */
-  const interceptServiceBook = useCallback(
-    (service) => {
-      if (phase !== PHASE.CUSTOMER_BOOKING) return false;
-      if (currentStep?.id !== "service-pick") return false;
-      openPracticeBooking(service);
-      const idx = CUSTOMER_BOOKING_STEPS.findIndex((s) => s.id === "practice-form");
-      if (idx >= 0) setStepIndex(idx);
-      return true;
-    },
-    [phase, currentStep, openPracticeBooking],
-  );
-
-  useEffect(() => {
-    if (!tourActive || !currentStep?.target || currentStep.advance !== "click") {
-      if (clickListenerRef.current) {
-        const { el, handler } = clickListenerRef.current;
-        el?.removeEventListener("click", handler, true);
-        clickListenerRef.current = null;
-      }
-      return;
-    }
-
-    const attach = () => {
-      const el = document.querySelector(currentStep.target);
-      if (!el) return;
-      const handler = () => {
-        window.setTimeout(() => notifyStepAction(currentStep.id), 80);
-      };
-      el.addEventListener("click", handler, true);
-      clickListenerRef.current = { el, handler };
-    };
-
-    const t = window.setTimeout(attach, 200);
-    return () => {
-      window.clearTimeout(t);
-      if (clickListenerRef.current) {
-        const { el, handler } = clickListenerRef.current;
-        el?.removeEventListener("click", handler, true);
-        clickListenerRef.current = null;
-      }
-    };
-  }, [tourActive, currentStep, notifyStepAction]);
-
-  useEffect(() => {
-    if (currentStep?.id === "my-bookings-btn") {
-      setTourMyBookingsOnly(true);
-    }
-  }, [currentStep?.id]);
+  const interceptServiceBook = useCallback(() => false, []);
 
   useEffect(() => {
     if (phase === PHASE.WORKER_DASHBOARD) {
@@ -255,28 +168,51 @@ export function OnboardingProvider({ children }) {
 
   useEffect(() => {
     if (!currentStep) return;
-    if (currentStep.id === "track-intro" && !isAuthenticated) {
-      openModal("login");
+
+    if (currentStep.id === "bookings-list") {
+      setTourMyBookingsOnly(true);
+      window.dispatchEvent(new CustomEvent("open-my-bookings"));
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("fixitnow-tour-expand-sample"));
+      }, 350);
     }
+
     if (currentStep.id === "worker-signup-tab") {
       openModal("signup");
       window.setTimeout(() => {
         document.querySelector("[data-tour='signup-worker-tab']")?.click();
       }, 350);
     }
+
+    if (currentStep.id === "dashboard-open") {
+      window.dispatchEvent(new CustomEvent("open-worker-dashboard"));
+    }
+
     if (currentStep.id === "jobs-tab") {
       window.dispatchEvent(
-        new CustomEvent("fixitnow-tour-set-worker-tab", { detail: { tab: "jobs" } }),
+        new CustomEvent("fixitnow-tour-set-worker-tab", {
+          detail: { tab: "jobs" },
+        }),
       );
     }
-    if (currentStep.id === "my-bookings-btn") {
-      window.dispatchEvent(new CustomEvent("open-my-bookings"));
+
+    if (currentStep.id === "claim-job") {
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-tour-set-worker-tab", {
+          detail: { tab: "jobs" },
+        }),
+      );
+      window.dispatchEvent(new CustomEvent("fixitnow-tour-worker-claim-sample"));
     }
-    if (currentStep.id === "sample-card") {
-      window.dispatchEvent(new CustomEvent("open-my-bookings"));
-      window.dispatchEvent(new CustomEvent("fixitnow-tour-expand-sample"));
+
+    if (currentStep.id === "mark-done") {
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-tour-set-worker-tab", {
+          detail: { tab: "my-jobs" },
+        }),
+      );
     }
-  }, [currentStep?.id, isAuthenticated, openModal]);
+  }, [currentStep?.id, openModal]);
 
   const value = useMemo(
     () => ({
@@ -286,7 +222,6 @@ export function OnboardingProvider({ children }) {
       tourMyBookingsOnly,
       workerTourMode,
       interceptServiceBook,
-      notifyStepAction,
       replayTour,
       skipTour,
       startCustomerTour,
@@ -299,7 +234,6 @@ export function OnboardingProvider({ children }) {
       tourMyBookingsOnly,
       workerTourMode,
       interceptServiceBook,
-      notifyStepAction,
       replayTour,
       skipTour,
       startCustomerTour,
@@ -307,15 +241,18 @@ export function OnboardingProvider({ children }) {
     ],
   );
 
-  const waitingForClick = currentStep?.advance === "click";
-  const showSpotlight =
-    tourActive &&
+  const effectiveTarget =
     currentStep?.target &&
-    !practiceModalOpen &&
-    currentStep.id !== "practice-form";
+    (currentStep.id !== "my-bookings-header" ||
+      document.querySelector(currentStep.target))
+      ? currentStep.target
+      : currentStep?.id === "my-bookings-header"
+        ? null
+        : currentStep?.target;
 
-  const showCoach =
-    tourActive && !practiceModalOpen && currentStep && currentStep.id !== "practice-form";
+  const showSpotlight = tourActive && effectiveTarget;
+
+  const showCoach = tourActive && currentStep;
 
   return (
     <OnboardingContext.Provider value={value}>
@@ -332,7 +269,7 @@ export function OnboardingProvider({ children }) {
         />
       )}
       {showSpotlight && (
-        <TourSpotlight targetSelector={currentStep.target} zIndex={215} />
+        <TourSpotlight targetSelector={effectiveTarget} zIndex={215} />
       )}
       {showCoach && (
         <TourCoachCard
@@ -342,21 +279,7 @@ export function OnboardingProvider({ children }) {
           body={currentStep.body}
           onNext={goNext}
           onSkip={skipTour}
-          showNext={currentStep.advance === "next" || currentStep.advance === "modal"}
-          waitingForClick={waitingForClick}
-          nextLabel={
-            stepIndex >= steps.length - 1 ? "Finish" : "Next"
-          }
-        />
-      )}
-      {practiceModalOpen && (
-        <TourPracticeBookingModal
-          service={practiceService}
-          onClose={() => {
-            setPracticeModalOpen(false);
-            skipTour();
-          }}
-          onComplete={completePracticeBooking}
+          nextLabel={stepIndex >= steps.length - 1 ? "Finish" : "Next"}
         />
       )}
     </OnboardingContext.Provider>
@@ -371,7 +294,6 @@ export function useOnboarding() {
       tourMyBookingsOnly: false,
       workerTourMode: false,
       interceptServiceBook: () => false,
-      notifyStepAction: () => {},
       replayTour: () => {},
       skipTour: () => {},
     };

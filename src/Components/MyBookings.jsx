@@ -106,6 +106,7 @@ export default function MyBookings({ isOpen, onClose, tourMode = false }) {
     if (!isOpen || !tourMode) return;
     const expand = () => setExpandedId(TOUR_SAMPLE_BOOKING.id);
     window.addEventListener("fixitnow-tour-expand-sample", expand);
+    setExpandedId(TOUR_SAMPLE_BOOKING.id);
     return () =>
       window.removeEventListener("fixitnow-tour-expand-sample", expand);
   }, [isOpen, tourMode]);
@@ -277,7 +278,10 @@ export default function MyBookings({ isOpen, onClose, tourMode = false }) {
         onClick={onClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-[fadeScale_0.2s_ease-out]">
+      <div
+        data-tour={tourMode ? "tour-my-bookings-panel" : undefined}
+        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-[fadeScale_0.2s_ease-out]"
+      >
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div>

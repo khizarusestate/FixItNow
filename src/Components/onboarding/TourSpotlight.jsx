@@ -57,7 +57,7 @@ export default function TourSpotlight({ targetSelector, padding = 8, zIndex = 20
         style={{ clipPath: hole, WebkitClipPath: hole }}
       />
       <div
-        className="absolute rounded-xl ring-2 ring-orange-400 ring-offset-2 ring-offset-transparent shadow-[0_0_0_9999px_rgba(15,23,42,0.65)] pointer-events-none animate-pulse"
+        className="absolute rounded-xl ring-2 ring-orange-400 ring-offset-2 ring-offset-transparent pointer-events-none"
         style={{
           top,
           left,

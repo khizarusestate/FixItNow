@@ -32,7 +32,7 @@ export default function WelcomeIntentModal({
           What brings you to Fix It Now?
         </h2>
         <p className="mt-2 text-sm text-slate-600">
-          A quick guided tour takes under 2 minutes. You can skip anytime.
+          A short guided tour — tap Next to learn the basics. No booking required.
         </p>
         <div className="mt-6 space-y-3">
           <button
@@ -48,7 +48,7 @@ export default function WelcomeIntentModal({
                 I want to book a service
               </span>
               <span className="block text-sm text-slate-600 mt-0.5">
-                Learn how to book, track status, and mark jobs done.
+                Quick overview: where to book, how to use My Bookings, and how to rate when done.
               </span>
             </span>
           </button>

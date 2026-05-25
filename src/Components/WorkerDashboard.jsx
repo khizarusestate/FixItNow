@@ -136,8 +136,18 @@ export default function WorkerDashboard({ isOpen, onClose, tourMode = false }) {
       const tab = e.detail?.tab;
       if (tab) setActiveTab(tab);
     };
+    const onClaimSample = () => {
+      setAvailableJobs([]);
+      setAllAvailableJobs([]);
+      setMyJobs([TOUR_SAMPLE_CLAIMED_JOB]);
+      setActiveTab("my-jobs");
+    };
     window.addEventListener("fixitnow-tour-set-worker-tab", onTab);
-    return () => window.removeEventListener("fixitnow-tour-set-worker-tab", onTab);
+    window.addEventListener("fixitnow-tour-worker-claim-sample", onClaimSample);
+    return () => {
+      window.removeEventListener("fixitnow-tour-set-worker-tab", onTab);
+      window.removeEventListener("fixitnow-tour-worker-claim-sample", onClaimSample);
+    };
   }, [tourMode, isOpen]);
 
   const fetchData = useCallback(async (silent = false) => {

@@ -7,75 +7,43 @@
  * @property {string} title
  * @property {string} body
  * @property {TourAdvance} [advance]
- * @property {() => void} [beforeEnter]
- * @property {() => void} [afterEnter]
  */
 
-export const CUSTOMER_BOOKING_STEPS = [
+/** Short overview only — no forced booking during the tour */
+export const CUSTOMER_STEPS = [
   {
-    id: "booking-section",
+    id: "booking-overview",
     target: "#booking",
-    title: "Book a service",
-    body: "Scroll here to browse categories and pick a professional service.",
+    title: "Where you book services",
+    body: "When you are ready, pick a category, choose a service, and submit your details here. You do not need to book anything during this tour.",
     advance: "next",
   },
   {
-    id: "category-pick",
-    target: "[data-tour='tour-category-first']",
-    title: "Choose a category",
-    body: "Tap a category — like choosing a section from a menu.",
-    advance: "click",
-  },
-  {
-    id: "service-pick",
-    target: "[data-tour='tour-service-book']",
-    title: "Select a service",
-    body: "Tap Book on any service to continue. We will use a practice form next.",
-    advance: "click",
-  },
-  {
-    id: "practice-form",
-    target: null,
-    title: "Practice booking form",
-    body: "Fill in the sample fields, then submit. Nothing is sent to the server.",
-    advance: "modal",
-  },
-  {
-    id: "booking-done",
-    target: null,
-    title: "Booking submitted",
-    body: "In real use, admin approves your request, then a worker is assigned.",
-    advance: "next",
-  },
-];
-
-export const CUSTOMER_TRACK_STEPS = [
-  {
-    id: "track-intro",
-    target: null,
-    title: "Track your bookings",
-    body: "Open My Bookings anytime to see status updates.",
-    advance: "next",
-  },
-  {
-    id: "my-bookings-btn",
-    target: null,
+    id: "my-bookings-header",
+    target: "[data-tour='my-bookings-btn']",
     title: "My Bookings",
-    body: "Your booking list opens here. Sign in to save real bookings — this tour uses a practice example.",
+    body: "After you book, use My Bookings in the header to see every request and its status. Sign in to save and track real bookings.",
     advance: "next",
   },
   {
-    id: "sample-card",
+    id: "bookings-list",
+    target: "[data-tour='tour-my-bookings-panel']",
+    title: "Your booking list",
+    body: "Each card shows the service, worker (when assigned), and status — for example Pending, Approved, Assigned, or Done.",
+    advance: "next",
+  },
+  {
+    id: "sample-status",
     target: "[data-tour='tour-sample-booking']",
-    title: "Practice booking",
-    body: "This sample shows a worker assigned to your job. Tap the card to expand it.",
-    advance: "click",
+    title: "Track status",
+    body: "Open a booking to see details. Orange and blue ticks show when you and the worker have both confirmed the job is finished.",
+    advance: "next",
   },
   {
     id: "rate-done",
     target: "[data-tour='tour-rate-done']",
     title: "Rate & mark done",
-    body: "When work is finished, rate the service and tap Mark as Done. Orange tick = you, blue tick = worker.",
+    body: "When work is complete, choose a star rating and tap Mark as Done. Rating is required — it helps other customers and improves worker quality.",
     advance: "next",
   },
 ];
@@ -85,21 +53,21 @@ export const WORKER_SIGNUP_STEPS = [
     id: "join-worker",
     target: "[data-tour='join-worker-btn']",
     title: "Join as a worker",
-    body: "Tap here to register and offer your services on Fix It Now.",
-    advance: "click",
+    body: "Register here when you want to offer services. You do not need to sign up during this tour — tap Next to continue.",
+    advance: "next",
   },
   {
     id: "worker-signup-tab",
     target: "[data-tour='signup-worker-tab']",
     title: "Worker account",
-    body: "Switch to the Worker tab and review the required fields.",
+    body: "The Worker tab asks for your trade, location, and CNIC. Fields are shown for reference only in this tour.",
     advance: "next",
   },
   {
     id: "worker-approval",
     target: null,
     title: "Admin approval",
-    body: "After signup, an admin reviews your profile. You will get a notification when approved.",
+    body: "After signup, an admin reviews your profile. You will get a notification when you are approved.",
     advance: "next",
   },
 ];
@@ -109,28 +77,28 @@ export const WORKER_DASHBOARD_STEPS = [
     id: "dashboard-open",
     target: null,
     title: "Worker dashboard",
-    body: "Your dashboard shows available jobs, active work, and completed jobs.",
+    body: "Your dashboard lists available jobs, active work, and completed jobs. We will open a practice view next.",
     advance: "next",
   },
   {
     id: "jobs-tab",
     target: "[data-tour='tour-worker-jobs-tab']",
     title: "Available jobs",
-    body: "Browse jobs that match your skills and location.",
-    advance: "click",
+    body: "Browse jobs that match your skills. In real use, tap Claim Job to accept work.",
+    advance: "next",
   },
   {
     id: "claim-job",
     target: "[data-tour='tour-claim-job']",
     title: "Claim a job",
-    body: "Tap Claim Job to accept work. This practice job is for learning only.",
-    advance: "click",
+    body: "Claiming assigns the job to you. This sample is for learning only.",
+    advance: "next",
   },
   {
     id: "mark-done",
     target: "[data-tour='tour-worker-mark-done']",
     title: "Mark as done",
-    body: "When you finish on site, mark the job done. The customer then rates and confirms.",
-    advance: "click",
+    body: "When you finish on site, mark the job done. The customer then rates and confirms completion.",
+    advance: "next",
   },
 ];
