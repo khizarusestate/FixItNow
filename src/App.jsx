@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { ModalProvider } from "./context/ModalContext";
+import { OnboardingProvider } from "./context/OnboardingContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
@@ -32,6 +33,7 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <ModalProvider>
+          <OnboardingProvider>
           <div className="relative">
             <Header />
             <main className="bg-slate-50 text-slate-900">
@@ -55,6 +57,7 @@ export default function App() {
               <CompleteProfile />
             </Suspense>
           </div>
+          </OnboardingProvider>
         </ModalProvider>
       </AuthProvider>
     </ErrorBoundary>

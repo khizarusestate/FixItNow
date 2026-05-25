@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
+import { useOnboarding } from '../context/OnboardingContext';
 import { setUserData } from '../utils/jwt.js';
 import { resolveUploadMediaUrl } from '../utils/mediaUrl.js';
 import MyBookings from './MyBookings';
@@ -17,6 +18,7 @@ export default function Header() {
   const { openModal } = useModal();
   const auth = useAuth();
   const { isAuthenticated, user, logout, setUser, badgeCount, markUpdatesSeen } = auth || {};
+  const { tourMyBookingsOnly, workerTourMode } = useOnboarding();
   const displayBadge = badgeCount > 0 ? (badgeCount > 9 ? '9+' : badgeCount) : null;
 
   // Listen for custom events from Home.jsx CTA buttons
@@ -72,6 +74,7 @@ export default function Header() {
                 <NotificationBell />
                 {user?.type === 'worker' ? (
                   <button
+                    data-tour="worker-dashboard-btn"
                     onClick={() => {
                       markUpdatesSeen?.();
                       setWorkerDashOpen(true);
@@ -87,6 +90,7 @@ export default function Header() {
                   </button>
                 ) : (
                   <button
+                    data-tour="my-bookings-btn"
                     onClick={() => {
                       markUpdatesSeen?.();
                       setBookingsOpen(true);
@@ -120,7 +124,7 @@ export default function Header() {
                 <button onClick={() => openModal('signup')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
                   <UserPlus size={14} /> <span className="truncate">Sign Up</span>
                 </button>
-                <button onClick={() => openModal('login')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
+                <button data-tour="header-login" onClick={() => openModal('login')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
                   <LogIn size={14} /> <span className="truncate">Login</span>
                 </button>
               </>
@@ -190,8 +194,8 @@ export default function Header() {
         )}
       </div>
     </header>
-    <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} />
-    <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} />
+    <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} tourMode={tourMyBookingsOnly} />
+    <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} tourMode={workerTourMode} />
     <ProfileModal 
       isOpen={profileOpen} 
       onClose={() => setProfileOpen(false)} 

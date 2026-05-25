@@ -15,6 +15,10 @@ import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
 import { useAuth } from "../context/AuthContext";
 import { getUserData } from "../utils/jwt.js";
+import {
+  TOUR_SAMPLE_AVAILABLE_JOB,
+  TOUR_SAMPLE_CLAIMED_JOB,
+} from "../onboarding/tourSampleData";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -71,7 +75,7 @@ function isNetworkError(message = "") {
   );
 }
 
-export default function WorkerDashboard({ isOpen, onClose }) {
+export default function WorkerDashboard({ isOpen, onClose, tourMode = false }) {
   const { user, newJobNotification, updateJobCount, updateUser } = useAuth();
   const storedWorker = getUserData("worker");
   const workerUser =
@@ -116,7 +120,28 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     );
   }, [searchTerm, allAvailableJobs]);
 
+  useEffect(() => {
+    if (!tourMode) return;
+    setAvailableJobs([TOUR_SAMPLE_AVAILABLE_JOB]);
+    setAllAvailableJobs([TOUR_SAMPLE_AVAILABLE_JOB]);
+    setMyJobs([]);
+    setActiveTab("jobs");
+    setLoading(false);
+    setError("");
+  }, [tourMode, isOpen]);
+
+  useEffect(() => {
+    if (!tourMode || !isOpen) return;
+    const onTab = (e) => {
+      const tab = e.detail?.tab;
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener("fixitnow-tour-set-worker-tab", onTab);
+    return () => window.removeEventListener("fixitnow-tour-set-worker-tab", onTab);
+  }, [tourMode, isOpen]);
+
   const fetchData = useCallback(async (silent = false) => {
+    if (tourMode) return;
     if (fetchInFlightRef.current && silent) return;
     fetchInFlightRef.current = true;
     if (!silent) {
@@ -202,10 +227,10 @@ export default function WorkerDashboard({ isOpen, onClose }) {
       fetchInFlightRef.current = false;
       return;
     }
-    // First open: full load with spinner; later opens: silent refresh
+    if (tourMode) return;
     fetchData(hasLoadedRef.current);
     hasLoadedRef.current = true;
-  }, [isOpen, fetchData]);
+  }, [isOpen, fetchData, tourMode]);
 
   useEffect(() => {
     if (!newJobNotification || !isOpen) return;
@@ -234,6 +259,15 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   }, [isOpen, fetchData]);
 
   const handleMarkJobDone = async (jobId) => {
+    if (tourMode && jobId === TOUR_SAMPLE_CLAIMED_JOB.id) {
+      setMyJobs([
+        {
+          ...TOUR_SAMPLE_CLAIMED_JOB,
+          workerMarkedDone: true,
+        },
+      ]);
+      return;
+    }
     setCompleting(jobId);
     setError("");
     try {
@@ -258,6 +292,14 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     const jobToClaim = availableJobs.find((j) => j.id === jobId);
     if (!jobToClaim) {
       setError("Job not found.");
+      return;
+    }
+
+    if (tourMode && jobId === TOUR_SAMPLE_AVAILABLE_JOB.id) {
+      setAvailableJobs([]);
+      setAllAvailableJobs([]);
+      setMyJobs([TOUR_SAMPLE_CLAIMED_JOB]);
+      setActiveTab("my-jobs");
       return;
     }
 
@@ -304,7 +346,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   const completedMyJobs = myJobs.filter((job) => job.status === "completed");
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+    <div className={`fixed inset-0 flex items-center justify-center px-4 ${tourMode ? "z-[205]" : "z-[70]"}`}>
       <button
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -343,6 +385,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
             {
               key: "jobs",
               label: "Jobs",
+              tourId: "tour-worker-jobs-tab",
             },
 
             {
@@ -352,6 +395,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           ].map((tab) => (
             <button
               key={tab.key}
+              data-tour={tab.tourId}
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 min-w-fit ${
                 activeTab === tab.key
@@ -366,6 +410,11 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
         {/* BODY */}
         <div className="flex-1 min-h-0 overflow-y-auto p-6">
+          {tourMode && (
+            <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <strong>Practice mode.</strong> Jobs here are samples only — nothing is sent to the server.
+            </div>
+          )}
           {loading ? (
             <div className="flex flex-col items-center py-20">
               <Loader2
@@ -537,6 +586,11 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                           </div>
                           <div className="mt-4 flex gap-2">
                             <button
+                              data-tour={
+                                tourMode && job.id === TOUR_SAMPLE_AVAILABLE_JOB.id
+                                  ? "tour-claim-job"
+                                  : undefined
+                              }
                               onClick={() => handleClaimJob(job.id)}
                               disabled={claiming === job.id}
                               className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -632,6 +686,11 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                               {canMarkDone && (
                                 <button
                                   type="button"
+                                  data-tour={
+                                    tourMode && job.id === TOUR_SAMPLE_CLAIMED_JOB.id
+                                      ? "tour-worker-mark-done"
+                                      : undefined
+                                  }
                                   onClick={() => handleMarkJobDone(job.id)}
                                   disabled={completing === job.id}
                                   className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors"

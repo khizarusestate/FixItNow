@@ -237,6 +237,7 @@ export default function Signup() {
                 <button
                   type="button"
                   data-signup-type="worker"
+                  data-tour="signup-worker-tab"
                   onClick={() => setSignupType("worker")}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     signupType === "worker"

@@ -18,6 +18,8 @@ import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { getTokenCreationDate } from "../utils/jwt";
 import EditProfile from "./EditProfile";
 import WorkerRatingBadge from "./WorkerRatingBadge";
+import { useOnboarding } from "../context/OnboardingContext";
+import { Compass } from "lucide-react";
 
 export default function ProfileModal({
   isOpen,
@@ -32,6 +34,7 @@ export default function ProfileModal({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { replayTour } = useOnboarding();
 
   if (!isOpen) return null;
 
@@ -258,6 +261,17 @@ export default function ProfileModal({
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  replayTour(userData?.type === "worker" ? "worker" : "customer");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors font-medium"
+              >
+                <Compass size={18} />
+                Replay app tour
+              </button>
               <button
                 onClick={() => setShowEdit(true)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
