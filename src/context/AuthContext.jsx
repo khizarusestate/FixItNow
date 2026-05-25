@@ -28,6 +28,67 @@ import {
 } from "../services/api.js";
 import { SOCKET_URL } from "../config/env.js";
 import { USE_HTTPONLY_COOKIES } from "../config/auth.js";
+import { AppDataProvider } from "./AppDataContext.jsx";
+import { servicesService, bookingService } from "../services/api.js";
+import { shapeServiceCatalog } from "../utils/catalogShape.js";
+
+const BOOTSTRAP_TIMEOUT_MS = 10000;
+
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
+async function runAppBootstrap(role, isAuthenticated, onStep) {
+  const result = { catalog: null, customerBookings: null, pendingCount: 0 };
+
+  const withTimeout = (promise) =>
+    Promise.race([
+      promise,
+      new Promise((resolve) => setTimeout(() => resolve(null), BOOTSTRAP_TIMEOUT_MS)),
+    ]);
+
+  onStep?.("Loading services…");
+  const tasks = [preloadImage("/Assets/Logo.png")];
+
+  if (role !== "worker") {
+    tasks.push(
+      withTimeout(
+        servicesService
+          .getAll()
+          .then((res) => {
+            result.catalog = shapeServiceCatalog(res);
+          })
+          .catch(() => {}),
+      ),
+    );
+  }
+
+  if (isAuthenticated && role === "customer") {
+    onStep?.("Loading your bookings…");
+    tasks.push(
+      withTimeout(
+        bookingService
+          .getMyBookings()
+          .then((res) => {
+            const list = res?.data || [];
+            result.customerBookings = list;
+            result.pendingCount = list.filter((b) => b.status === "pending")
+              .length;
+          })
+          .catch(() => {}),
+      ),
+    );
+  }
+
+  await Promise.allSettled(tasks);
+  onStep?.("");
+  return result;
+}
 
 const LAST_SEEN_KEY = "fixitnow_last_seen";
 
@@ -103,24 +164,37 @@ export function AuthProvider({ children }) {
   const [sessionExpiring, setSessionExpiring] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [bootstrapStep, setBootstrapStep] = useState("Checking session…");
+  const [bootstrapCatalog, setBootstrapCatalog] = useState(null);
+  const [bootstrapBookings, setBootstrapBookings] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     let intervalId = null;
+
+    const finishBootstrap = async (role, authenticated) => {
+      setBootstrapStep("Getting things ready…");
+      const boot = await runAppBootstrap(role, authenticated, setBootstrapStep);
+      if (cancelled) return;
+      setBootstrapCatalog(boot.catalog);
+      setBootstrapBookings(boot.customerBookings);
+      if (boot.pendingCount > 0) setBadgeCount(boot.pendingCount);
+      setIsInitializing(false);
+    };
 
     const restoreSession = async () => {
       const activeRole = getActiveSessionRole();
       const activeUserData = activeRole ? getUserData(activeRole) : null;
 
       if (!activeRole || !activeUserData) {
-        setIsInitializing(false);
+        await finishBootstrap(null, false);
         return;
       }
 
       if (activeRole !== "admin" && !isClientSessionValid(activeRole)) {
         removeToken(activeRole);
         removeUserData(activeRole);
-        setIsInitializing(false);
+        await finishBootstrap(null, false);
         return;
       }
 
@@ -132,14 +206,14 @@ export function AuthProvider({ children }) {
           if (!t || isTokenExpired(t)) {
             removeToken(activeRole);
             removeUserData(activeRole);
-            setIsInitializing(false);
+            await finishBootstrap(null, false);
             return;
           }
         }
       } catch {
         removeToken(activeRole);
         removeUserData(activeRole);
-        setIsInitializing(false);
+        await finishBootstrap(null, false);
         return;
       }
 
@@ -148,7 +222,7 @@ export function AuthProvider({ children }) {
       const hydratedUser = getUserData(activeRole);
       setUser({ ...hydratedUser, type: activeRole });
       setIsAuthenticated(true);
-      setIsInitializing(false);
+      await finishBootstrap(activeRole, true);
 
       const checkSession = async () => {
         const role = getActiveSessionRole();
@@ -426,6 +500,9 @@ export function AuthProvider({ children }) {
     }
     setUser(fullUser);
     setIsAuthenticated(true);
+    window.dispatchEvent(
+      new CustomEvent("fixitnow-user-logged-in", { detail: { type: userType } }),
+    );
   };
 
   const updateUser = (newUserData) => {
@@ -512,30 +589,25 @@ export function AuthProvider({ children }) {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen grid place-items-center bg-slate-50 text-slate-900">
-        <div className="rounded-3xl border border-slate-200 bg-white px-8 py-10 text-center shadow-xl">
-          <div className="mb-4 text-orange-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="mx-auto h-12 w-12"
-            >
-              <path
-                fill="currentColor"
-                d="M12 2a1 1 0 0 1 1 1v2.07a7 7 0 0 1 4.95 4.95H21a1 1 0 1 1 0 2h-2.05a7 7 0 0 1-4.95 4.95V21a1 1 0 1 1-2 0v-2.05a7 7 0 0 1-4.95-4.95H3a1 1 0 1 1 0-2h2.05A7 7 0 0 1 9 5.07V3a1 1 0 0 1 1-1Zm0 5a5 5 0 1 0 0 10A5 5 0 0 0 12 7Z"
-              />
-            </svg>
+      <div className="min-h-screen grid place-items-center bg-gradient-to-b from-slate-50 to-orange-50/30 text-slate-900">
+        <div className="rounded-3xl border border-slate-200 bg-white px-8 py-10 text-center shadow-xl max-w-sm w-full mx-4">
+          <img
+            src="/Assets/Logo.png"
+            alt=""
+            className="mx-auto h-14 w-auto mb-5 animate-pulse"
+          />
+          <h2 className="text-xl font-bold text-slate-900">Getting things ready</h2>
+          <p className="mt-2 text-sm text-slate-500">{bootstrapStep}</p>
+          <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
           </div>
-          <h2 className="text-xl font-semibold">Loading session…</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Resolving authentication state before rendering the app.
-          </p>
         </div>
       </div>
     );
   }
 
   return (
+    <AppDataProvider catalog={bootstrapCatalog} customerBookings={bootstrapBookings}>
     <AuthContext.Provider
       value={{
         user,
@@ -790,6 +862,7 @@ export function AuthProvider({ children }) {
         </div>
       )}
     </AuthContext.Provider>
+    </AppDataProvider>
   );
 }
 

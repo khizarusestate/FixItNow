@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import { useAppData } from "../context/AppDataContext";
+import { shapeServiceCatalog } from "../utils/catalogShape";
 import { useModal } from "../context/ModalContext";
 import { bookingService, servicesService } from "../services/api.js";
 import { getActiveSessionRole } from "../utils/jwt.js";
@@ -629,6 +631,7 @@ function BookingForm({ service, onClose, onSuccess }) {
 
 export default function BookingSection() {
   const { isAuthenticated, user } = useAuth();
+  const { catalog: bootstrapCatalog } = useAppData();
   const { openModal } = useModal();
 
   const [search, setSearch] = useState("");
@@ -655,28 +658,9 @@ export default function BookingSection() {
 
       // One request: categories + all active services (avoids N+1 and rate limits)
       const response = await servicesService.getAll();
-      const payload = response?.data || {};
-      const categoryList = Array.isArray(payload.categories)
-        ? payload.categories
-        : [];
-      const allServices = Array.isArray(payload.services)
-        ? payload.services
-        : [];
-
-      setCategories(categoryList);
-
-      const servicesData = {};
-      for (const cat of categoryList) {
-        servicesData[cat] = [];
-      }
-      for (const s of allServices) {
-        const cat = s?.category;
-        if (!cat) continue;
-        if (!servicesData[cat]) servicesData[cat] = [];
-        servicesData[cat].push(s);
-      }
-
-      setServices(servicesData);
+      const shaped = shapeServiceCatalog(response);
+      setCategories(shaped.categories);
+      setServices(shaped.services);
     } catch (err) {
       console.error("Fetch error:", err);
 
@@ -717,8 +701,15 @@ export default function BookingSection() {
       setLoading(false);
       return;
     }
+    if (bootstrapCatalog?.categories?.length) {
+      setCategories(bootstrapCatalog.categories);
+      setServices(bootstrapCatalog.services || {});
+      setLoading(false);
+      setError("");
+      return;
+    }
     fetchCatalog();
-  }, [fetchCatalog, user?.type]);
+  }, [fetchCatalog, user?.type, bootstrapCatalog]);
 
   // =======================
   // SELECT SERVICE
@@ -1228,6 +1219,10 @@ export default function BookingSection() {
             setSelectedService(null);
 
             setBookingDone(true);
+
+            window.dispatchEvent(
+              new CustomEvent("fixitnow-first-booking-submitted"),
+            );
 
             if (isAuthenticated && user?.type === "customer") {
               bookingService

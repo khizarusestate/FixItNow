@@ -21,6 +21,11 @@ import {
   getJazzcashMsisdn,
   requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
+import {
+  AD_DURATION_PRICING,
+  formatAdPrice,
+  getAdPrice,
+} from "../utils/adPricing.js";
 
 export default function AdvertiseSection() {
   const { user, isAuthenticated } = useAuth();
@@ -293,6 +298,26 @@ export default function AdvertiseSection() {
             hours.
           </p>
 
+          <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-orange-200 bg-white/90 p-4 text-left shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3">
+              Pricing (PKR)
+            </p>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 text-sm">
+              {Object.entries(AD_DURATION_PRICING).map(([key, { label, price }]) => (
+                <li
+                  key={key}
+                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                >
+                  <span className="font-semibold text-slate-800">{label}</span>
+                  <span className="block text-orange-600 font-bold">Rs {price}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-slate-500">
+              Pay via EasyPaisa, JazzCash, or hand-to-hand. Admin confirms payment before your ad goes live.
+            </p>
+          </div>
+
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <button
               onClick={openAdModal}
@@ -464,12 +489,16 @@ export default function AdvertiseSection() {
                       onChange={(e) => setDuration(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                     >
-                      <option value="24 hours">24 Hours</option>
-                      <option value="3 days">3 Days</option>
-                      <option value="1 week">1 Week</option>
-                      <option value="2 weeks">2 Weeks</option>
-                      <option value="1 month">1 Month</option>
+                      {Object.entries(AD_DURATION_PRICING).map(([value, { label }]) => (
+                        <option key={value} value={value}>
+                          {label} — Rs {AD_DURATION_PRICING[value].price}
+                        </option>
+                      ))}
                     </select>
+                    <p className="mt-1.5 text-sm font-semibold text-orange-700">
+                      Selected: {formatAdPrice(duration)}
+                      {getAdPrice(duration) != null ? " (pay when submitting)" : ""}
+                    </p>
                   </div>
 
                   {/* Ad Type */}
