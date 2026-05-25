@@ -145,28 +145,26 @@ textarea {
   }
 }
 
-@keyframes tourGlassPulse {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 32px rgba(249, 115, 22, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 0 0 0 rgba(249, 115, 22, 0.4);
-  }
-  50% {
-    box-shadow:
-      0 12px 40px rgba(249, 115, 22, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      0 0 0 6px rgba(249, 115, 22, 0.15);
-  }
-}
-
 .tour-arrow-bounce {
   animation: tourArrowBounce 1.2s ease-in-out infinite;
 }
 
-.tour-glass-pulse > div:first-child {
-  animation: tourGlassPulse 2s ease-in-out infinite;
+@keyframes tourTargetRing {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px rgba(249, 115, 22, 0.2),
+      0 0 16px rgba(249, 115, 22, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(249, 115, 22, 0.35),
+      0 0 24px rgba(249, 115, 22, 0.5);
+  }
+}
+
+.tour-target-ring > div:first-child {
+  animation: tourTargetRing 2s ease-in-out infinite;
 }
 
 @keyframes fadeSlideDown {

@@ -16,58 +16,68 @@ function TourArrow({ top, left, rotate }) {
       style={{ top, left, transform: `rotate(${rotate}deg)` }}
       aria-hidden
     >
-      <div className="tour-arrow-bounce flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-orange-500/90 text-white shadow-lg shadow-orange-500/40 backdrop-blur-md">
+      <div className="tour-arrow-bounce flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-orange-500 text-white shadow-lg shadow-orange-500/50">
         <ArrowDown size={22} strokeWidth={2.5} />
       </div>
     </div>
   );
 }
 
-function GlassTargetHighlight({ rect }) {
+/** Sharp ring around the target — no blur on top of the element */
+function TargetHighlight({ rect }) {
   if (!rect) return null;
   const { top, left, width, height } = rect;
   const radius = Math.min(16, width / 4, height / 4);
 
   return (
     <div
-      className="fixed z-[217] pointer-events-none tour-glass-pulse"
+      className="fixed z-[217] pointer-events-none tour-target-ring"
       style={{ top, left, width, height, borderRadius: radius }}
       aria-hidden
     >
       <div
-        className="absolute inset-0 rounded-[inherit] border-2 border-white/60 bg-white/15 backdrop-blur-md shadow-[0_8px_32px_rgba(249,115,22,0.35),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        className="absolute inset-0 rounded-[inherit] border-[3px] border-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.25),0_0_20px_rgba(249,115,22,0.45)]"
         style={{ borderRadius: radius }}
       />
-      <div
-        className="absolute inset-0 rounded-[inherit] ring-2 ring-orange-400/80 ring-offset-2 ring-offset-transparent"
-        style={{ borderRadius: radius }}
-      />
-      <span className="absolute -top-1 -left-1 h-4 w-4 border-l-2 border-t-2 border-orange-400 rounded-tl-sm" />
-      <span className="absolute -top-1 -right-1 h-4 w-4 border-r-2 border-t-2 border-orange-400 rounded-tr-sm" />
-      <span className="absolute -bottom-1 -left-1 h-4 w-4 border-l-2 border-b-2 border-orange-400 rounded-bl-sm" />
-      <span className="absolute -bottom-1 -right-1 h-4 w-4 border-r-2 border-b-2 border-orange-400 rounded-br-sm" />
+      <span className="absolute -top-0.5 -left-0.5 h-3 w-3 border-l-[3px] border-t-[3px] border-orange-500 rounded-tl-sm" />
+      <span className="absolute -top-0.5 -right-0.5 h-3 w-3 border-r-[3px] border-t-[3px] border-orange-500 rounded-tr-sm" />
+      <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 border-l-[3px] border-b-[3px] border-orange-500 rounded-bl-sm" />
+      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-r-[3px] border-b-[3px] border-orange-500 rounded-br-sm" />
     </div>
   );
 }
 
+/** Light tint only — no backdrop-blur so the page stays readable */
 function DimOverlay({ rect }) {
+  const tint = "rgba(15, 23, 42, 0.28)";
+
   if (!rect) {
     return (
       <div
-        className="fixed inset-0 z-[216] bg-slate-900/55 backdrop-blur-[1px] pointer-events-none transition-opacity duration-300"
+        className="fixed inset-0 z-[216] pointer-events-none transition-opacity duration-300"
+        style={{ backgroundColor: tint }}
         aria-hidden
       />
     );
   }
 
   const { top, left, width, height } = rect;
-  const hole = `polygon(0% 0%, 0% 100%, ${left}px 100%, ${left}px ${top}px, ${left + width}px ${top}px, ${left + width}px ${top + height}px, ${left}px ${top + height}px, ${left}px 100%, 100% 100%, 100% 0%)`;
+  const pad = 6;
+  const t = Math.max(0, top - pad);
+  const l = Math.max(0, left - pad);
+  const w = width + pad * 2;
+  const h = height + pad * 2;
+  const hole = `polygon(0% 0%, 0% 100%, ${l}px 100%, ${l}px ${t}px, ${l + w}px ${t}px, ${l + w}px ${t + h}px, ${l}px ${t + h}px, ${l}px 100%, 100% 100%, 100% 0%)`;
 
   return (
     <div className="fixed inset-0 z-[216] pointer-events-none" aria-hidden>
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] transition-all duration-300"
-        style={{ clipPath: hole, WebkitClipPath: hole }}
+        className="absolute inset-0 transition-all duration-300"
+        style={{
+          backgroundColor: tint,
+          clipPath: hole,
+          WebkitClipPath: hole,
+        }}
       />
     </div>
   );
@@ -124,7 +134,7 @@ export default function TourGuideLayer({
   return (
     <>
       <DimOverlay rect={targetRect} />
-      <GlassTargetHighlight rect={targetRect} />
+      <TargetHighlight rect={targetRect} />
       {arrowPos && targetRect && <TourArrow {...arrowPos} />}
       <div
         className="fixed z-[220] animate-slideUp pointer-events-auto"
@@ -137,7 +147,7 @@ export default function TourGuideLayer({
         role="dialog"
         aria-labelledby="tour-coach-title"
       >
-        <div className="rounded-2xl border border-white/40 bg-white/85 backdrop-blur-xl shadow-2xl shadow-slate-900/20 p-5 max-h-[min(70vh,280px)] overflow-y-auto">
+        <div className="rounded-2xl border border-orange-100 bg-white shadow-2xl p-5 max-h-[min(70vh,280px)] overflow-y-auto">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-1.5">
               {Array.from({ length: totalSteps }).map((_, i) => (
