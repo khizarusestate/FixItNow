@@ -687,7 +687,6 @@ export default function BookingSection() {
       );
     } finally {
       setLoading(false);
-      window.dispatchEvent(new CustomEvent("fixitnow-catalog-ready"));
     }
   }, []);
 
@@ -1048,7 +1047,6 @@ export default function BookingSection() {
                       <button
                         key={category}
                         type="button"
-                        data-tour={idx === 0 ? "tour-category-first" : undefined}
                         onClick={() => openCategory(category)}
                         className="category-btn group text-left rounded-2xl border border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-4 sm:p-5 hover:border-orange-300 hover:shadow-lg hover:-translate-y-0.5 transition-all animate-scaleIn"
                         style={{ animationDelay: `${idx * 40}ms` }}
@@ -1155,7 +1153,6 @@ export default function BookingSection() {
                               </div>
                               <button
                                 type="button"
-                                data-tour={idx === 0 ? "tour-service-book" : undefined}
                                 onClick={() => handleSelectService(service)}
                                 className="shrink-0 flex items-center gap-1 px-3 py-2 sm:px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all text-xs font-bold group mt-0.5"
                               >
@@ -1233,7 +1230,6 @@ export default function BookingSection() {
             setBookingDone(true);
 
             if (isAuthenticated && user?.type === "customer") {
-              window.dispatchEvent(new CustomEvent("fixitnow-first-booking"));
               bookingService
                 .getMyBookings()
                 .then((res) => {

@@ -93,7 +93,6 @@ export default function Home() {
                   <ArrowDown size={16} />
                 </button>
                 <button
-                  data-tour="join-worker-btn"
                   onClick={openWorkerSignup}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/60 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:text-slate-900"
                 >

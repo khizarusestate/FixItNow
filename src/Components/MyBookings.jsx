@@ -19,7 +19,6 @@ import {
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
-import { TOUR_SAMPLE_BOOKING } from "../onboarding/tourSampleData";
 
 const STATUS_CONFIG = {
   pending: {
@@ -80,7 +79,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ = "z-[70]" }) {
+export default function MyBookings({ isOpen, onClose }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -93,23 +92,8 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
 
   useEffect(() => {
     if (!isOpen) return;
-    if (tourMode) {
-      setBookings([TOUR_SAMPLE_BOOKING]);
-      setLoading(false);
-      setError("");
-      return;
-    }
     fetchBookings();
-  }, [isOpen, tourMode]);
-
-  useEffect(() => {
-    if (!isOpen || !tourMode) return;
-    const expand = () => setExpandedId(TOUR_SAMPLE_BOOKING.id);
-    window.addEventListener("fixitnow-tour-expand-sample", expand);
-    setExpandedId(TOUR_SAMPLE_BOOKING.id);
-    return () =>
-      window.removeEventListener("fixitnow-tour-expand-sample", expand);
-  }, [isOpen, tourMode]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -165,23 +149,6 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
     const rating = ratings[id];
     if (!rating) {
       setError("Please select a rating before marking as done.");
-      return;
-    }
-    if (tourMode && id === TOUR_SAMPLE_BOOKING.id) {
-      setBookings([
-        {
-          ...TOUR_SAMPLE_BOOKING,
-          customerMarkedDone: true,
-          customerRating: rating,
-          status: "completed",
-        },
-      ]);
-      setStatusNotice("Practice complete! In real bookings, both you and the worker must confirm.");
-      setRatings((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
       return;
     }
     setCompleting(id);
@@ -273,15 +240,12 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
   };
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center px-4 ${elevateZ}`}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <button
         onClick={onClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
       />
-      <div
-        data-tour={tourMode ? "tour-my-bookings-panel" : undefined}
-        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-[fadeScale_0.2s_ease-out]"
-      >
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-[fadeScale_0.2s_ease-out]">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div>
@@ -301,15 +265,7 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
         </div>
 
         {/* Body */}
-        <div
-          className="flex-1 overflow-y-auto p-6"
-          data-tour-scroll-allowed={tourMode ? true : undefined}
-        >
-          {tourMode && (
-            <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
-              <strong>Practice mode.</strong> This sample booking shows how to track status, rate a worker, and mark a job done.
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto p-6">
           {statusNotice && !error && (
             <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
               {statusNotice}
@@ -369,11 +325,6 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
                 return (
                   <div
                     key={b.id}
-                    data-tour={
-                      tourMode && b.id === TOUR_SAMPLE_BOOKING.id
-                        ? "tour-sample-booking"
-                        : undefined
-                    }
                     className={`rounded-xl border-2 transition-all ${cfg.border} ${cfg.bg} overflow-hidden`}
                   >
                     {/* Main Card Header */}
@@ -562,10 +513,7 @@ export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ
 
                         {/* Rating Section */}
                         {canMarkDone && (
-                          <div
-                            data-tour={tourMode ? "tour-rate-done" : undefined}
-                            className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 p-4 border-2 border-emerald-200"
-                          >
+                          <div className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 p-4 border-2 border-emerald-200">
                             <p className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3">
                               Rate this service
                             </p>
