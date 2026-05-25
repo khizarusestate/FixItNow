@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Mail, RefreshCcw, CheckCircle } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
@@ -6,16 +6,29 @@ import { authService } from "../services/api.js";
 const initialForm = { email: "", code: "" };
 
 export default function VerifyEmail() {
-  const { activeModal, closeModal, switchModal } = useModal();
+  const { activeModal, closeModal, switchModal, modalPayload } = useModal();
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
 
+  const emailLocked = Boolean(modalPayload?.emailLocked && modalPayload?.email);
+
+  useEffect(() => {
+    if (activeModal !== "verifyEmail") return;
+    if (modalPayload?.email) {
+      setForm((prev) => ({
+        ...prev,
+        email: String(modalPayload.email).trim().toLowerCase(),
+      }));
+    }
+  }, [activeModal, modalPayload?.email, modalPayload?.emailLocked]);
+
   if (activeModal !== "verifyEmail") return null;
 
   const update = (field, value) => {
+    if (field === "email" && emailLocked) return;
     setForm((prev) => ({ ...prev, [field]: value }));
     setMessage("");
     setIsError(false);
@@ -100,7 +113,9 @@ export default function VerifyEmail() {
               Confirm your account
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Enter the 6-digit code sent to your email.
+              {emailLocked
+                ? "Enter the 6-digit code sent to your email."
+                : "Enter your email and the 6-digit code we sent you."}
             </p>
           </div>
           <button
@@ -126,9 +141,9 @@ export default function VerifyEmail() {
               <button
                 type="button"
                 onClick={() => {
-                  switchModal("login");
+                  switchModal("login", { email: form.email });
                   setDone(false);
-                  setForm(initialForm);
+                  setForm((f) => ({ ...initialForm, email: f.email }));
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
               >
@@ -138,23 +153,38 @@ export default function VerifyEmail() {
           ) : (
             <>
               <div className="space-y-3">
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  value={form.email}
-                  onChange={(e) => update("email", e.target.value)}
-                  required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white"
-                />
+                {emailLocked ? (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <p className="text-xs font-medium text-slate-500">Email</p>
+                    <p className="text-sm font-semibold text-slate-900 break-all">
+                      {form.email}
+                    </p>
+                  </div>
+                ) : (
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                    value={form.email}
+                    onChange={(e) => update("email", e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white"
+                  />
+                )}
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Verification code"
+                    inputMode="numeric"
+                    placeholder="6-digit verification code"
                     value={form.code}
-                    onChange={(e) => update("code", e.target.value)}
+                    onChange={(e) =>
+                      update("code", e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
                     maxLength={6}
                     required
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white"
+                    autoFocus={emailLocked}
+                    autoComplete="one-time-code"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white tracking-widest"
                   />
                   <Mail
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -180,8 +210,10 @@ export default function VerifyEmail() {
                 <button
                   type="button"
                   onClick={handleResend}
-                  className="font-medium text-orange-500 hover:text-orange-600"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 font-medium text-orange-500 hover:text-orange-600 disabled:opacity-60"
                 >
+                  <RefreshCcw size={14} />
                   Resend code
                 </button>
                 <button

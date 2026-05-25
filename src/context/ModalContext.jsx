@@ -6,9 +6,11 @@ const HASH_MODALS = new Set(['login', 'signup', 'worker', 'about']);
 
 export function ModalProvider({ children }) {
   const [activeModal, setActiveModal] = useState(null);
+  const [modalPayload, setModalPayload] = useState(null);
 
-  const openModal = useCallback((name) => {
+  const openModal = useCallback((name, payload = null) => {
     setActiveModal(name);
+    setModalPayload(payload);
     if (HASH_MODALS.has(name)) {
       window.history.replaceState(null, '', `#${name}`);
     }
@@ -16,13 +18,15 @@ export function ModalProvider({ children }) {
 
   const closeModal = useCallback(() => {
     setActiveModal(null);
+    setModalPayload(null);
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
   }, []);
 
-  const switchModal = useCallback((name) => {
+  const switchModal = useCallback((name, payload = null) => {
     setActiveModal(name);
+    setModalPayload(payload);
     if (HASH_MODALS.has(name)) {
       window.history.replaceState(null, '', `#${name}`);
     }
@@ -33,6 +37,7 @@ export function ModalProvider({ children }) {
       const id = window.location.hash.replace(/^#/, '').toLowerCase();
       if (HASH_MODALS.has(id)) {
         setActiveModal(id);
+        setModalPayload(null);
       }
     };
 
@@ -52,7 +57,9 @@ export function ModalProvider({ children }) {
   }, [openModal]);
 
   return (
-    <ModalContext.Provider value={{ activeModal, openModal, closeModal, switchModal }}>
+    <ModalContext.Provider
+      value={{ activeModal, modalPayload, openModal, closeModal, switchModal }}
+    >
       {children}
     </ModalContext.Provider>
   );

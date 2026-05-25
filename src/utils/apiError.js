@@ -44,10 +44,15 @@ export function createApiClientError(data = {}, status = 0) {
     (code && FRIENDLY_BY_CODE[code]) ||
     "Something went wrong. Please try again.";
 
+  const details = { ...(data.details || {}) };
+  if (data.email) {
+    details.email = data.email;
+  }
+
   return new ApiClientError(message, {
     code,
     status,
-    details: data.details || {},
+    details,
   });
 }
 

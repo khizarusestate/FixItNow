@@ -203,7 +203,12 @@ export default function Signup() {
               {signupType === "customer" && (
                 <div className="space-y-3">
                   <button
-                    onClick={() => switchModal("verifyEmail")}
+                    onClick={() =>
+                      switchModal("verifyEmail", {
+                        email: customerForm.email.trim().toLowerCase(),
+                        emailLocked: true,
+                      })
+                    }
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
                   >
                     Verify Email <ArrowRight size={15} />

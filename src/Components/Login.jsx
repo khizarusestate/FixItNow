@@ -1,13 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, LogIn, User, Briefcase, Eye, EyeOff } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
+import { isApiClientError } from "../utils/apiError.js";
 
 const initialForm = { email: "", password: "" };
 
 export default function Login({ onLoginSuccess }) {
-  const { activeModal, closeModal, switchModal, openModal } = useModal();
+  const { activeModal, closeModal, switchModal, openModal, modalPayload } =
+    useModal();
+
+  useEffect(() => {
+    if (activeModal === "login" && modalPayload?.email) {
+      setForm((f) => ({
+        ...f,
+        email: String(modalPayload.email).trim().toLowerCase(),
+      }));
+    }
+  }, [activeModal, modalPayload?.email]);
+
+  const redirectToVerifyEmail = (email) => {
+    const normalized = String(email || form.email || "")
+      .trim()
+      .toLowerCase();
+    switchModal("verifyEmail", {
+      email: normalized,
+      emailLocked: true,
+    });
+    setMessage(
+      "Your email is not verified yet. Enter the 6-digit code we sent you.",
+    );
+    setIsError(false);
+  };
   const { login } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
@@ -52,6 +77,14 @@ export default function Login({ onLoginSuccess }) {
       }
 
       if (!response?.success) {
+        if (
+          loginType === "customer" &&
+          (response?.code === "EMAIL_NOT_VERIFIED" ||
+            /verify your email/i.test(response?.message || ""))
+        ) {
+          redirectToVerifyEmail(response?.email);
+          return;
+        }
         setMessage(
           response?.message || "Login failed. Please check your credentials.",
         );
@@ -96,6 +129,15 @@ export default function Login({ onLoginSuccess }) {
         }
       }, 800);
     } catch (err) {
+      if (
+        loginType === "customer" &&
+        isApiClientError(err) &&
+        (err.code === "EMAIL_NOT_VERIFIED" ||
+          (err.status === 403 && /verify your email/i.test(err.message)))
+      ) {
+        redirectToVerifyEmail(err.details?.email);
+        return;
+      }
       setMessage(err.message || "Login failed. Please check your credentials.");
       setIsError(true);
     } finally {
