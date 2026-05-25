@@ -20,8 +20,7 @@ import {
   WORKER_DASHBOARD_STEPS,
 } from "../onboarding/steps";
 import WelcomeIntentModal from "../Components/onboarding/WelcomeIntentModal";
-import TourSpotlight from "../Components/onboarding/TourSpotlight";
-import TourCoachCard from "../Components/onboarding/TourCoachCard";
+import TourGuideLayer from "../Components/onboarding/TourGuideLayer";
 
 const OnboardingContext = createContext(null);
 
@@ -250,8 +249,6 @@ export function OnboardingProvider({ children }) {
         ? null
         : currentStep?.target;
 
-  const showSpotlight = tourActive && effectiveTarget;
-
   const showCoach = tourActive && currentStep;
 
   return (
@@ -268,11 +265,9 @@ export function OnboardingProvider({ children }) {
           }}
         />
       )}
-      {showSpotlight && (
-        <TourSpotlight targetSelector={effectiveTarget} zIndex={215} />
-      )}
       {showCoach && (
-        <TourCoachCard
+        <TourGuideLayer
+          targetSelector={effectiveTarget || null}
           stepIndex={stepIndex}
           totalSteps={steps.length}
           title={currentStep.title}

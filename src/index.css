@@ -135,6 +135,40 @@ textarea {
   animation: scaleIn 0.3s ease-out;
 }
 
+@keyframes tourArrowBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+@keyframes tourGlassPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 32px rgba(249, 115, 22, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 0 0 0 rgba(249, 115, 22, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 12px 40px rgba(249, 115, 22, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 0 0 6px rgba(249, 115, 22, 0.15);
+  }
+}
+
+.tour-arrow-bounce {
+  animation: tourArrowBounce 1.2s ease-in-out infinite;
+}
+
+.tour-glass-pulse > div:first-child {
+  animation: tourGlassPulse 2s ease-in-out infinite;
+}
+
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
