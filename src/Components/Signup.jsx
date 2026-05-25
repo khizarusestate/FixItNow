@@ -13,6 +13,7 @@ import { authService, servicesService } from "../services/api.js";
 import LocationPicker from "./LocationPicker.jsx";
 import SearchableSelect from "./SearchableSelect.jsx";
 import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
+import { useOnboarding } from "../context/OnboardingContext";
 
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
 const initialWorker = {
@@ -26,6 +27,7 @@ const initialWorker = {
 const emptyGeo = { location: "", latitude: null, longitude: null, placeId: "" };
 export default function Signup() {
   const { activeModal, closeModal, switchModal } = useModal();
+  const { elevateModals } = useOnboarding();
   const [signupType, setSignupType] = useState("customer");
   const [customerForm, setCustomerForm] = useState(initialCustomer);
   const [workerForm, setWorkerForm] = useState(initialWorker);
@@ -147,7 +149,7 @@ export default function Signup() {
     "w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white";
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+    <div className={`fixed inset-0 flex items-center justify-center px-4 ${elevateModals ? "z-[230]" : "z-[70]"}`}>
       <button
         onClick={handleClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"

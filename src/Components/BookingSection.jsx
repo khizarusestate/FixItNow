@@ -1233,6 +1233,7 @@ export default function BookingSection() {
             setBookingDone(true);
 
             if (isAuthenticated && user?.type === "customer") {
+              window.dispatchEvent(new CustomEvent("fixitnow-first-booking"));
               bookingService
                 .getMyBookings()
                 .then((res) => {

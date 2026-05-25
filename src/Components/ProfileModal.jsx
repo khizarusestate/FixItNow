@@ -34,7 +34,7 @@ export default function ProfileModal({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const { replayTour } = useOnboarding();
+  const { openHowItWorks } = useOnboarding();
 
   if (!isOpen) return null;
 
@@ -265,12 +265,12 @@ export default function ProfileModal({
                 type="button"
                 onClick={() => {
                   onClose();
-                  replayTour(userData?.type === "worker" ? "worker" : "customer");
+                  openHowItWorks();
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors font-medium"
               >
                 <Compass size={18} />
-                Replay app tour
+                How it works
               </button>
               <button
                 onClick={() => setShowEdit(true)}

@@ -80,7 +80,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function MyBookings({ isOpen, onClose, tourMode = false }) {
+export default function MyBookings({ isOpen, onClose, tourMode = false, elevateZ = "z-[70]" }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -273,7 +273,7 @@ export default function MyBookings({ isOpen, onClose, tourMode = false }) {
   };
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center px-4 ${tourMode ? "z-[205]" : "z-[70]"}`}>
+    <div className={`fixed inset-0 flex items-center justify-center px-4 ${elevateZ}`}>
       <button
         onClick={onClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"

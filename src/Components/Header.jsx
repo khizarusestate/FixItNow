@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail } from 'lucide-react';
+import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, Compass } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { useOnboarding } from '../context/OnboardingContext';
@@ -18,7 +18,8 @@ export default function Header() {
   const { openModal } = useModal();
   const auth = useAuth();
   const { isAuthenticated, user, logout, setUser, badgeCount, markUpdatesSeen } = auth || {};
-  const { tourMyBookingsOnly, workerTourMode } = useOnboarding();
+  const { tourMyBookingsOnly, workerTourMode, elevateModals, openHowItWorks, tourActive } = useOnboarding();
+  const modalZ = elevateModals ? 'z-[230]' : 'z-[70]';
   const displayBadge = badgeCount > 0 ? (badgeCount > 9 ? '9+' : badgeCount) : null;
 
   // Listen for custom events from Home.jsx CTA buttons
@@ -66,6 +67,16 @@ export default function Header() {
             <button onClick={() => scrollToSection('contact')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 whitespace-nowrap">
               <Mail size={16} /> <span className="truncate">Contact</span>
             </button>
+            {user?.type !== 'worker' && (
+              <button
+                type="button"
+                onClick={openHowItWorks}
+                disabled={tourActive}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-300 whitespace-nowrap disabled:opacity-50"
+              >
+                <Compass size={16} /> <span className="truncate">How it works</span>
+              </button>
+            )}
           </nav>
 
           <nav className="hidden lg:flex items-center gap-2 w-56 justify-end">
@@ -73,6 +84,15 @@ export default function Header() {
               <>
                 <NotificationBell />
                 {user?.type === 'worker' ? (
+                  <>
+                  <button
+                    type="button"
+                    onClick={openHowItWorks}
+                    disabled={tourActive}
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all disabled:opacity-50 whitespace-nowrap"
+                  >
+                    <Compass size={14} /> <span className="truncate">How it works</span>
+                  </button>
                   <button
                     data-tour="worker-dashboard-btn"
                     onClick={() => {
@@ -88,6 +108,7 @@ export default function Header() {
                       </span>
                     )}
                   </button>
+                  </>
                 ) : (
                   <button
                     data-tour="my-bookings-btn"
@@ -150,9 +171,23 @@ export default function Header() {
             <button onClick={() => { scrollToSection('contact'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
               <Mail size={16} /> Contact
             </button>
+            {user?.type !== 'worker' && (
+              <button
+                type="button"
+                onClick={() => { openHowItWorks(); close(); }}
+                disabled={tourActive}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-orange-200 text-orange-800 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+              >
+                <Compass size={16} /> How it works
+              </button>
+            )}
             {isAuthenticated ? (
               <>
                 {user?.type === 'worker' ? (
+                  <>
+                  <button type="button" onClick={() => { openHowItWorks(); close(); }} disabled={tourActive} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-orange-200 text-orange-800 bg-orange-50 disabled:opacity-50">
+                    <Compass size={16} /> How it works
+                  </button>
                   <button onClick={() => { setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50 relative">
                     <ClipboardList size={16} /> Dashboard
                     {user?.jobCount > 0 && (
@@ -161,6 +196,7 @@ export default function Header() {
                       </span>
                     )}
                   </button>
+                  </>
                 ) : (
                   <button onClick={() => { setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
                     <ClipboardList size={16} /> My Bookings
@@ -194,8 +230,8 @@ export default function Header() {
         )}
       </div>
     </header>
-    <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} tourMode={tourMyBookingsOnly} />
-    <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} tourMode={workerTourMode} />
+    <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} tourMode={tourMyBookingsOnly} elevateZ={modalZ} />
+    <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} tourMode={workerTourMode} elevateZ={modalZ} />
     <ProfileModal 
       isOpen={profileOpen} 
       onClose={() => setProfileOpen(false)} 

@@ -13,14 +13,24 @@ import {
   markPathComplete,
   dismissOnboardingPermanent,
   writeOnboardingState,
+  recordTourSkipped,
+  shouldShowPostTourChecklist,
+  shouldShowFirstBookingTip,
+  markFirstBookingTipShown,
+  shouldElevateModals,
 } from "../onboarding/storage";
 import {
   CUSTOMER_STEPS,
   WORKER_SIGNUP_STEPS,
   WORKER_DASHBOARD_STEPS,
+  CUSTOMER_CHECKLIST,
+  WORKER_CHECKLIST,
 } from "../onboarding/steps";
 import WelcomeIntentModal from "../Components/onboarding/WelcomeIntentModal";
 import TourGuideLayer from "../Components/onboarding/TourGuideLayer";
+import TourPostChecklist from "../Components/onboarding/TourPostChecklist";
+import TourGuestPrompt from "../Components/onboarding/TourGuestPrompt";
+import FirstBookingTip from "../Components/onboarding/FirstBookingTip";
 
 const OnboardingContext = createContext(null);
 
@@ -44,8 +54,14 @@ function getStepsForPhase(phase) {
   }
 }
 
+function finishPathLabel(phase) {
+  if (phase === PHASE.CUSTOMER) return "customer";
+  if (phase.startsWith("worker")) return "worker";
+  return null;
+}
+
 export function OnboardingProvider({ children }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { openModal, closeModal } = useModal();
   const [showWelcome, setShowWelcome] = useState(false);
   const [phase, setPhase] = useState(PHASE.IDLE);
@@ -53,10 +69,18 @@ export function OnboardingProvider({ children }) {
   const [tourMyBookingsOnly, setTourMyBookingsOnly] = useState(false);
   const [workerTourMode, setWorkerTourMode] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
+  const [postChecklistPath, setPostChecklistPath] = useState(null);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const [showFirstBookingTip, setShowFirstBookingTip] = useState(false);
 
   const steps = useMemo(() => getStepsForPhase(phase), [phase]);
   const currentStep = steps[stepIndex] || null;
   const tourActive = phase !== PHASE.IDLE;
+
+  const elevateModals = useMemo(
+    () => shouldElevateModals(phase, currentStep?.id),
+    [phase, currentStep?.id],
+  );
 
   useEffect(() => {
     const onReady = () => setCatalogReady(true);
@@ -73,24 +97,57 @@ export function OnboardingProvider({ children }) {
     setShowWelcome(shouldShowWelcome(user));
   }, [catalogReady, user?.type]);
 
-  const endTour = useCallback((path) => {
-    if (path === "customer") markPathComplete("customer");
-    if (path === "worker") markPathComplete("worker");
-    setPhase(PHASE.IDLE);
-    setStepIndex(0);
-    setTourMyBookingsOnly(false);
-    setWorkerTourMode(false);
-  }, []);
+  useEffect(() => {
+    const onFirstBooking = () => {
+      if (!isAuthenticated || user?.type !== "customer") return;
+      if (!shouldShowFirstBookingTip()) return;
+      setShowFirstBookingTip(true);
+    };
+    window.addEventListener("fixitnow-first-booking", onFirstBooking);
+    return () =>
+      window.removeEventListener("fixitnow-first-booking", onFirstBooking);
+  }, [isAuthenticated, user?.type]);
+
+  const afterTourComplete = useCallback(
+    (path) => {
+      if (path === "customer") {
+        if (!isAuthenticated) {
+          setShowGuestPrompt(true);
+        } else if (shouldShowPostTourChecklist("customer")) {
+          setPostChecklistPath("customer");
+        }
+      } else if (path === "worker" && shouldShowPostTourChecklist("worker")) {
+        setPostChecklistPath("worker");
+      }
+    },
+    [isAuthenticated],
+  );
+
+  const endTour = useCallback(
+    (path, { skipped = false } = {}) => {
+      if (path) markPathComplete(path);
+      setPhase(PHASE.IDLE);
+      setStepIndex(0);
+      setTourMyBookingsOnly(false);
+      setWorkerTourMode(false);
+      closeModal();
+      if (!skipped && path) afterTourComplete(path);
+    },
+    [afterTourComplete, closeModal],
+  );
 
   const skipTour = useCallback(() => {
-    if (phase === PHASE.CUSTOMER) endTour("customer");
-    else if (phase.startsWith("worker")) endTour("worker");
+    const path = finishPathLabel(phase);
+    if (currentStep) {
+      recordTourSkipped(phase, currentStep.id, stepIndex);
+    }
+    if (path) endTour(path, { skipped: true });
     else {
       setPhase(PHASE.IDLE);
       setStepIndex(0);
       setShowWelcome(false);
     }
-  }, [phase, endTour]);
+  }, [phase, currentStep, stepIndex, endTour]);
 
   const goNext = useCallback(() => {
     const step = steps[stepIndex];
@@ -111,8 +168,8 @@ export function OnboardingProvider({ children }) {
     }
 
     if (stepIndex >= steps.length - 1) {
-      if (phase === PHASE.CUSTOMER) endTour("customer");
-      else if (phase.startsWith("worker")) endTour("worker");
+      const path = finishPathLabel(phase);
+      if (path) endTour(path);
       return;
     }
 
@@ -121,6 +178,8 @@ export function OnboardingProvider({ children }) {
 
   const startCustomerTour = useCallback(() => {
     setShowWelcome(false);
+    setPostChecklistPath(null);
+    setShowGuestPrompt(false);
     setPhase(PHASE.CUSTOMER);
     setStepIndex(0);
     setTourMyBookingsOnly(false);
@@ -129,10 +188,17 @@ export function OnboardingProvider({ children }) {
 
   const startWorkerTour = useCallback(() => {
     setShowWelcome(false);
+    setPostChecklistPath(null);
     setPhase(PHASE.WORKER_SIGNUP);
     setStepIndex(0);
     writeOnboardingState({ lastPath: "worker" });
   }, []);
+
+  const openHowItWorks = useCallback(() => {
+    if (tourActive) return;
+    if (user?.type === "worker") startWorkerTour();
+    else startCustomerTour();
+  }, [tourActive, user?.type, startCustomerTour, startWorkerTour]);
 
   const replayTour = useCallback(
     (path) => {
@@ -140,6 +206,8 @@ export function OnboardingProvider({ children }) {
       if (path === "customer") patch.customerDone = false;
       if (path === "worker") patch.workerDone = false;
       writeOnboardingState(patch);
+      setPostChecklistPath(null);
+      setShowGuestPrompt(false);
       if (path === "customer") startCustomerTour();
       else startWorkerTour();
     },
@@ -207,10 +275,12 @@ export function OnboardingProvider({ children }) {
       currentStep,
       tourMyBookingsOnly,
       workerTourMode,
+      elevateModals,
       replayTour,
       skipTour,
       startCustomerTour,
       startWorkerTour,
+      openHowItWorks,
     }),
     [
       tourActive,
@@ -218,10 +288,12 @@ export function OnboardingProvider({ children }) {
       currentStep,
       tourMyBookingsOnly,
       workerTourMode,
+      elevateModals,
       replayTour,
       skipTour,
       startCustomerTour,
       startWorkerTour,
+      openHowItWorks,
     ],
   );
 
@@ -262,6 +334,39 @@ export function OnboardingProvider({ children }) {
           nextLabel={stepIndex >= steps.length - 1 ? "Finish" : "Next"}
         />
       )}
+      {postChecklistPath && !tourActive && (
+        <TourPostChecklist
+          path={postChecklistPath}
+          items={
+            postChecklistPath === "worker"
+              ? WORKER_CHECKLIST
+              : CUSTOMER_CHECKLIST
+          }
+          onClose={() => setPostChecklistPath(null)}
+        />
+      )}
+      {showGuestPrompt && !tourActive && (
+        <TourGuestPrompt
+          onSignUp={() => {
+            setShowGuestPrompt(false);
+            openModal("signup");
+          }}
+          onDismiss={() => setShowGuestPrompt(false)}
+        />
+      )}
+      {showFirstBookingTip && !tourActive && (
+        <FirstBookingTip
+          onOpenBookings={() => {
+            markFirstBookingTipShown();
+            setShowFirstBookingTip(false);
+            window.dispatchEvent(new CustomEvent("open-my-bookings"));
+          }}
+          onDismiss={() => {
+            markFirstBookingTipShown();
+            setShowFirstBookingTip(false);
+          }}
+        />
+      )}
     </OnboardingContext.Provider>
   );
 }
@@ -273,8 +378,10 @@ export function useOnboarding() {
       tourActive: false,
       tourMyBookingsOnly: false,
       workerTourMode: false,
+      elevateModals: false,
       replayTour: () => {},
       skipTour: () => {},
+      openHowItWorks: () => {},
     };
   }
   return ctx;

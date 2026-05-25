@@ -26,10 +26,61 @@ export function shouldShowWelcome(user) {
 }
 
 export function markPathComplete(path) {
-  if (path === "customer") writeOnboardingState({ customerDone: true });
-  if (path === "worker") writeOnboardingState({ workerDone: true });
+  const patch = { completedAt: new Date().toISOString() };
+  if (path === "customer") {
+    writeOnboardingState({ customerDone: true, ...patch });
+  }
+  if (path === "worker") {
+    writeOnboardingState({ workerDone: true, ...patch });
+  }
 }
 
 export function dismissOnboardingPermanent() {
   writeOnboardingState({ dismissed: true });
 }
+
+export function recordTourSkipped(phase, stepId, stepIndex) {
+  const prev = readOnboardingState().skipEvents || [];
+  writeOnboardingState({
+    skipEvents: [
+      ...prev.slice(-19),
+      { phase, stepId, stepIndex, at: new Date().toISOString() },
+    ],
+  });
+}
+
+export function shouldShowPostTourChecklist(path) {
+  const s = readOnboardingState();
+  if (path === "customer" && s.checklistDismissed) return false;
+  if (path === "worker" && s.workerChecklistDismissed) return false;
+  return true;
+}
+
+export function dismissPostTourChecklist(path) {
+  if (path === "customer") writeOnboardingState({ checklistDismissed: true });
+  if (path === "worker") writeOnboardingState({ workerChecklistDismissed: true });
+}
+
+export function shouldShowFirstBookingTip() {
+  const s = readOnboardingState();
+  return !s.firstBookingTipShown;
+}
+
+export function markFirstBookingTipShown() {
+  writeOnboardingState({ firstBookingTipShown: true });
+}
+
+export function shouldElevateModals(phase, stepId) {
+  if (phase === "worker-signup" || phase === "worker-dashboard") return true;
+  if (
+    phase === "customer" &&
+    ["bookings-list", "sample-status", "rate-done", "my-bookings-header"].includes(
+      stepId,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export const TOUR_MODAL_Z = "z-[230]";

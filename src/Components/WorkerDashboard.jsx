@@ -75,7 +75,7 @@ function isNetworkError(message = "") {
   );
 }
 
-export default function WorkerDashboard({ isOpen, onClose, tourMode = false }) {
+export default function WorkerDashboard({ isOpen, onClose, tourMode = false, elevateZ = "z-[70]" }) {
   const { user, newJobNotification, updateJobCount, updateUser } = useAuth();
   const storedWorker = getUserData("worker");
   const workerUser =
@@ -356,7 +356,7 @@ export default function WorkerDashboard({ isOpen, onClose, tourMode = false }) {
   const completedMyJobs = myJobs.filter((job) => job.status === "completed");
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center px-4 ${tourMode ? "z-[205]" : "z-[70]"}`}>
+    <div className={`fixed inset-0 flex items-center justify-center px-4 ${elevateZ}`}>
       <button
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"

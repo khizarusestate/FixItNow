@@ -111,6 +111,21 @@ export default function TourGuideLayer({
     return lockTourScroll();
   }, []);
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        onNext();
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onSkip();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNext, onSkip]);
+
   const remeasure = useCallback(() => {
     const rect = measureTarget(targetSelector, FOCUS_PAD);
     setTargetRect(rect);
@@ -196,8 +211,9 @@ export default function TourGuideLayer({
           </h3>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">{body}</p>
           <p className="mt-2 text-xs text-slate-500">
-            Only the highlighted area is in focus. Use <strong>Next</strong> to
-            continue — page scroll is paused during the tour.
+            Highlighted area stays clear; the rest is blurred.{" "}
+            <strong>Next</strong> or Enter to continue · Esc to skip · scroll
+            paused.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
