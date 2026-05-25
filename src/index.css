@@ -135,6 +135,20 @@ textarea {
   animation: scaleIn 0.3s ease-out;
 }
 
+@keyframes bootstrapProgressLtr {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.bootstrap-progress-bar {
+  width: 38%;
+  animation: bootstrapProgressLtr 1.25s ease-in-out infinite;
+}
+
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }

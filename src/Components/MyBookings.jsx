@@ -19,8 +19,6 @@ import {
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
-import { COACH_SAMPLE_BOOKING } from "../coach/sampleBooking";
-import { writeCoachState } from "../coach/storage";
 
 const STATUS_CONFIG = {
   pending: {
@@ -81,7 +79,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
+export default function MyBookings({ isOpen, onClose }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -94,21 +92,8 @@ export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
 
   useEffect(() => {
     if (!isOpen) return;
-    if (practiceMode) {
-      setBookings([COACH_SAMPLE_BOOKING]);
-      setLoading(false);
-      setError("");
-      setExpandedId(COACH_SAMPLE_BOOKING.id);
-      window.dispatchEvent(new CustomEvent("fixitnow-coach-practice-panel-ready"));
-      return;
-    }
     fetchBookings();
-  }, [isOpen, practiceMode]);
-
-  useEffect(() => {
-    if (!isOpen || !practiceMode) return;
-    setExpandedId(COACH_SAMPLE_BOOKING.id);
-  }, [isOpen, practiceMode]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -164,12 +149,6 @@ export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
     const rating = ratings[id];
     if (!rating) {
       setError("Please select a rating before marking as done.");
-      return;
-    }
-    if (practiceMode && id === COACH_SAMPLE_BOOKING.id) {
-      writeCoachState({ practiceDone: true });
-      setStatusNotice("Practice complete! Your real bookings will appear here after you log in.");
-      onClose();
       return;
     }
     setCompleting(id);
@@ -261,7 +240,7 @@ export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
   };
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center px-4 ${practiceMode ? "z-[220]" : "z-[70]"}`}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <button
         onClick={onClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
@@ -287,11 +266,6 @@ export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
-          {practiceMode && (
-            <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
-              <strong>Practice example.</strong> This is not a real booking — try rating and Mark as Done.
-            </div>
-          )}
           {statusNotice && !error && (
             <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
               {statusNotice}
@@ -588,7 +562,6 @@ export default function MyBookings({ isOpen, onClose, practiceMode = false }) {
                           {canMarkDone && (
                             <button
                               type="button"
-                              data-coach={practiceMode ? "mark-done-btn" : undefined}
                               onClick={() => handleMarkDone(b.id)}
                               disabled={completing === b.id || !ratings[b.id]}
                               className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all px-4 py-3 rounded-lg shadow-md hover:shadow-lg"

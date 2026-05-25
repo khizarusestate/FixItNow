@@ -2,9 +2,6 @@ const KEY = "fixitnow_coach_v2";
 
 const DEFAULT = {
   helpSeen: false,
-  practiceDone: false,
-  myBookingsSeen: false,
-  firstBookingSubmitted: false,
 };
 
 export function readCoachState() {
@@ -24,16 +21,5 @@ export function writeCoachState(patch) {
 }
 
 export function shouldShowHelpCoach() {
-  const s = readCoachState();
-  return !s.helpSeen;
-}
-
-export function shouldShowPracticeCoach() {
-  const s = readCoachState();
-  return s.firstBookingSubmitted && !s.practiceDone;
-}
-
-export function shouldShowMyBookingsCoach() {
-  const s = readCoachState();
-  return s.practiceDone && !s.myBookingsSeen;
+  return !readCoachState().helpSeen;
 }

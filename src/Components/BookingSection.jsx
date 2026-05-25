@@ -1220,10 +1220,6 @@ export default function BookingSection() {
 
             setBookingDone(true);
 
-            window.dispatchEvent(
-              new CustomEvent("fixitnow-first-booking-submitted"),
-            );
-
             if (isAuthenticated && user?.type === "customer") {
               bookingService
                 .getMyBookings()

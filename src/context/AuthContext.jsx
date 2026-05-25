@@ -500,9 +500,6 @@ export function AuthProvider({ children }) {
     }
     setUser(fullUser);
     setIsAuthenticated(true);
-    window.dispatchEvent(
-      new CustomEvent("fixitnow-user-logged-in", { detail: { type: userType } }),
-    );
   };
 
   const updateUser = (newUserData) => {
@@ -599,7 +596,7 @@ export function AuthProvider({ children }) {
           <h2 className="text-xl font-bold text-slate-900">Getting things ready</h2>
           <p className="mt-2 text-sm text-slate-500">{bootstrapStep}</p>
           <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
+            <div className="bootstrap-progress-bar h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
           </div>
         </div>
       </div>

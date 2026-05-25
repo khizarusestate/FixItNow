@@ -16,7 +16,6 @@ export default function Header() {
   const [workerDashOpen, setWorkerDashOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [practiceBookingsOpen, setPracticeBookingsOpen] = useState(false);
   const { openModal } = useModal();
   const auth = useAuth();
   const { isAuthenticated, user, logout, setUser, badgeCount, markUpdatesSeen } = auth || {};
@@ -30,20 +29,10 @@ export default function Header() {
     window.addEventListener('open-worker-dashboard', workerHandler);
     window.addEventListener('open-my-bookings', bookingsHandler);
     window.addEventListener('open-profile-modal', profileHandler);
-    const coachMenu = () => setMenuOpen(true);
-    const coachPractice = () => {
-      setPracticeBookingsOpen(true);
-      setBookingsOpen(false);
-    };
-    window.addEventListener('fixitnow-coach-open-menu', coachMenu);
-    window.addEventListener('fixitnow-coach-open-practice-bookings', coachPractice);
-
     return () => {
       window.removeEventListener('open-worker-dashboard', workerHandler);
       window.removeEventListener('open-my-bookings', bookingsHandler);
       window.removeEventListener('open-profile-modal', profileHandler);
-      window.removeEventListener('fixitnow-coach-open-menu', coachMenu);
-      window.removeEventListener('fixitnow-coach-open-practice-bookings', coachPractice);
     };
   }, []);
 
@@ -112,7 +101,6 @@ export default function Header() {
                   </button>
                 ) : (
                   <button
-                    data-coach="my-bookings-btn"
                     onClick={() => {
                       markUpdatesSeen?.();
                       setBookingsOpen(true);
@@ -196,7 +184,7 @@ export default function Header() {
                     )}
                   </button>
                 ) : (
-                  <button type="button" data-coach="my-bookings-btn" onClick={() => { setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
+                  <button type="button" onClick={() => { setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
                     <ClipboardList size={16} /> My Bookings
                   </button>
                 )}
@@ -230,11 +218,6 @@ export default function Header() {
     </header>
     <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
     <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} />
-    <MyBookings
-      isOpen={practiceBookingsOpen}
-      onClose={() => setPracticeBookingsOpen(false)}
-      practiceMode
-    />
     <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} />
     <ProfileModal
       isOpen={profileOpen}
