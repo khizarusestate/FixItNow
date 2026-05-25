@@ -10,6 +10,7 @@ import {
   Loader2,
   Clock,
   Smartphone,
+  Banknote,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { advertisementService } from "../services/api.js";
@@ -18,6 +19,7 @@ import {
   PAYMENT_METHOD_LABELS,
   getEasypaisaMsisdn,
   getJazzcashMsisdn,
+  requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
 
 export default function AdvertiseSection() {
@@ -33,6 +35,7 @@ export default function AdvertiseSection() {
   const [success, setSuccess] = useState(false);
   const [pendingAds, setPendingAds] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [payAfterWork, setPayAfterWork] = useState(false);
   const [paymentReceipt, setPaymentReceipt] = useState(null);
   const [paymentReference, setPaymentReference] = useState("");
   const [receiptPreview, setReceiptPreview] = useState(null);
@@ -76,6 +79,7 @@ export default function AdvertiseSection() {
   const resetPaymentFields = () => {
     if (receiptPreview) URL.revokeObjectURL(receiptPreview);
     setPaymentMethod("");
+    setPayAfterWork(false);
     setPaymentReceipt(null);
     setPaymentReference("");
     setReceiptPreview(null);
@@ -172,12 +176,12 @@ export default function AdvertiseSection() {
       return;
     }
 
-    if (!paymentMethod) {
+    if (!payAfterWork && !paymentMethod) {
       setError("Please select a payment method.");
       return;
     }
 
-    if (!paymentReceipt) {
+    if (requiresPaymentReceipt(paymentMethod, payAfterWork) && !paymentReceipt) {
       setError("Please upload your payment receipt.");
       return;
     }
@@ -189,11 +193,17 @@ export default function AdvertiseSection() {
       formData.append("purpose", purpose.trim());
       formData.append("duration", duration);
       formData.append("adType", adType);
-      formData.append("paymentMethod", paymentMethod);
+      formData.append("payAfterWork", payAfterWork ? "true" : "false");
+      const methodForApi = payAfterWork
+        ? PAYMENT_METHOD_VALUES.PAY_AFTER_WORK
+        : paymentMethod;
+      formData.append("paymentMethod", methodForApi);
       if (paymentReference.trim()) {
         formData.append("paymentReference", paymentReference.trim());
       }
-      formData.append("paymentReceipt", paymentReceipt);
+      if (paymentReceipt) {
+        formData.append("paymentReceipt", paymentReceipt);
+      }
       files.forEach((file) => formData.append("adFiles", file));
 
       if (!isAuthenticated) {
@@ -495,16 +505,49 @@ export default function AdvertiseSection() {
                     </div>
                   </div>
 
+                  <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={payAfterWork}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setPayAfterWork(checked);
+                        if (checked) {
+                          setPaymentMethod("");
+                          if (receiptPreview) URL.revokeObjectURL(receiptPreview);
+                          setPaymentReceipt(null);
+                          setReceiptPreview(null);
+                          if (receiptInputRef.current) receiptInputRef.current.value = "";
+                        }
+                        setError("");
+                      }}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="text-sm text-amber-950">
+                      <span className="font-semibold block">
+                        Payment after work is completed
+                      </span>
+                      <span className="text-xs text-amber-800/90 mt-0.5 block">
+                        Pay when the service is done — payment fields below are not required.
+                      </span>
+                    </span>
+                  </label>
+
                   {/* Payment method */}
-                  <div>
+                  <div
+                    className={
+                      payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
+                    }
+                  >
                     <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                      Payment method <span className="text-red-500">*</span>
+                      Payment method {!payAfterWork && <span className="text-red-500">*</span>}
                     </label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                      required
+                      required={!payAfterWork}
+                      disabled={payAfterWork}
                     >
                       <option value="">Select payment method</option>
                       <option value={PAYMENT_METHOD_VALUES.EASYPAISA}>
@@ -513,10 +556,26 @@ export default function AdvertiseSection() {
                       <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
                         {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
                       </option>
+                      <option value={PAYMENT_METHOD_VALUES.HAND_TO_HAND}>
+                        {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.HAND_TO_HAND]}
+                      </option>
                     </select>
                   </div>
 
-                  {paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
+                  {!payAfterWork &&
+                    paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
+                    <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
+                      <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
+                      <div className="text-sm text-violet-900">
+                        <p className="font-semibold">Hand to hand payment</p>
+                        <p className="mt-1 text-xs text-violet-800/90">
+                          Pay in cash in person. No receipt upload required.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!payAfterWork && paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 flex gap-3">
                       <Smartphone className="shrink-0 text-emerald-700 mt-0.5" size={20} />
                       <div className="text-sm text-emerald-900">
@@ -532,7 +591,7 @@ export default function AdvertiseSection() {
                     </div>
                   )}
 
-                  {paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
+                  {!payAfterWork && paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
                     <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
                       <Smartphone className="shrink-0 text-sky-700 mt-0.5" size={20} />
                       <div className="text-sm text-sky-900">
@@ -548,7 +607,11 @@ export default function AdvertiseSection() {
                     </div>
                   )}
 
-                  <div>
+                  <div
+                    className={
+                      payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
+                    }
+                  >
                     <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                       Payment reference (optional)
                     </label>
@@ -558,14 +621,25 @@ export default function AdvertiseSection() {
                       onChange={(e) => setPaymentReference(e.target.value)}
                       placeholder="Transaction ID or reference number"
                       maxLength={100}
+                      disabled={payAfterWork}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                     />
                   </div>
 
                   {/* Payment receipt */}
-                  <div>
+                  <div
+                    className={
+                      payAfterWork ||
+                      paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+                        ? "opacity-50 pointer-events-none select-none"
+                        : ""
+                    }
+                  >
                     <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Payment receipt <span className="text-red-500">*</span>
+                      Payment receipt{" "}
+                      {requiresPaymentReceipt(paymentMethod, payAfterWork) && (
+                        <span className="text-red-500">*</span>
+                      )}
                     </label>
                     <input
                       ref={receiptInputRef}
@@ -574,12 +648,20 @@ export default function AdvertiseSection() {
                       onChange={handleReceiptChange}
                       className="sr-only"
                       aria-hidden
+                      disabled={
+                        payAfterWork ||
+                        paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+                      }
                     />
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
                         onClick={() => receiptInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 hover:bg-orange-100"
+                        disabled={
+                          payAfterWork ||
+                          paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+                        }
+                        className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 hover:bg-orange-100 disabled:opacity-60"
                       >
                         <Upload size={18} />
                         {paymentReceipt ? "Change receipt" : "Upload receipt"}

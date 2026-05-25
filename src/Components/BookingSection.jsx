@@ -42,6 +42,7 @@ import {
   getJazzcashMsisdn,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
+  requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
 
 // =======================
@@ -116,6 +117,7 @@ function BookingForm({ service, onClose, onSuccess }) {
     serviceCategory: service?.category || "",
     paymentReceipt: null,
     paymentMethod: "",
+    payAfterWork: false,
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -187,12 +189,15 @@ function BookingForm({ service, onClose, onSuccess }) {
       return;
     }
 
-    if (!form.paymentMethod) {
+    if (!form.payAfterWork && !form.paymentMethod) {
       setError("Please select a payment method.");
       return;
     }
 
-    if (!form.paymentReceipt) {
+    if (
+      requiresPaymentReceipt(form.paymentMethod, form.payAfterWork) &&
+      !form.paymentReceipt
+    ) {
       setError("Please upload payment receipt");
       return;
     }
@@ -218,10 +223,16 @@ function BookingForm({ service, onClose, onSuccess }) {
         if (geo.placeId) formData.append("placeId", geo.placeId);
       }
       formData.append("notes", form.notes.trim());
-      formData.append("paymentMethod", form.paymentMethod);
-      formData.append("payToSummary", buildPayToSummary(form.paymentMethod));
+      formData.append("payAfterWork", form.payAfterWork ? "true" : "false");
+      const methodForApi = form.payAfterWork
+        ? PAYMENT_METHOD_VALUES.PAY_AFTER_WORK
+        : form.paymentMethod;
+      formData.append("paymentMethod", methodForApi);
+      formData.append("payToSummary", buildPayToSummary(methodForApi));
 
-      formData.append("paymentReceipt", form.paymentReceipt);
+      if (form.paymentReceipt) {
+        formData.append("paymentReceipt", form.paymentReceipt);
+      }
 
       await bookingService.createBooking(formData);
 
@@ -384,16 +395,55 @@ function BookingForm({ service, onClose, onSuccess }) {
             />
           </div>
 
+          {/* PAY AFTER WORK */}
+          <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.payAfterWork}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setForm((prev) => ({
+                  ...prev,
+                  payAfterWork: checked,
+                  ...(checked
+                    ? {
+                        paymentMethod: "",
+                        paymentReceipt: null,
+                      }
+                    : {}),
+                }));
+                if (checked && receiptPreview) {
+                  URL.revokeObjectURL(receiptPreview);
+                  setReceiptPreview(null);
+                  if (receiptInputRef.current) receiptInputRef.current.value = "";
+                }
+                setError("");
+              }}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="text-sm text-amber-950">
+              <span className="font-semibold block">Payment after work is completed</span>
+              <span className="text-xs text-amber-800/90 mt-0.5 block">
+                Pay when the job is done — payment details below are not required now.
+              </span>
+            </span>
+          </label>
+
           {/* PAYMENT METHOD */}
-          <div>
+          <div
+            className={
+              form.payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
+            }
+          >
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Payment method <span className="text-red-500">*</span>
+              Payment method {!form.payAfterWork && <span className="text-red-500">*</span>}
             </label>
             <select
               value={form.paymentMethod}
               onChange={(e) => update("paymentMethod", e.target.value)}
               className={inputCls}
-              required
+              required={!form.payAfterWork}
+              disabled={form.payAfterWork}
             >
               <option value="">Select payment method</option>
               <option value={PAYMENT_METHOD_VALUES.EASYPAISA}>
@@ -402,10 +452,26 @@ function BookingForm({ service, onClose, onSuccess }) {
               <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
                 {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
               </option>
+              <option value={PAYMENT_METHOD_VALUES.HAND_TO_HAND}>
+                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.HAND_TO_HAND]}
+              </option>
             </select>
           </div>
 
-          {form.paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
+          {!form.payAfterWork &&
+            form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
+              <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
+              <div className="text-sm text-violet-900">
+                <p className="font-semibold">Hand to hand payment</p>
+                <p className="mt-1 text-violet-800/90 text-xs">
+                  You will pay the worker in cash when they arrive. No receipt upload needed.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!form.payAfterWork && form.paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 flex gap-3">
               <Smartphone className="shrink-0 text-emerald-700 mt-0.5" size={20} />
               <div className="text-sm text-emerald-900">
@@ -421,7 +487,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
           )}
 
-          {form.paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
+          {!form.payAfterWork && form.paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
             <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
               <Smartphone className="shrink-0 text-sky-700 mt-0.5" size={20} />
               <div className="text-sm text-sky-900">
@@ -438,9 +504,19 @@ function BookingForm({ service, onClose, onSuccess }) {
           )}
 
           {/* RECEIPT */}
-          <div>
+          <div
+            className={
+              form.payAfterWork ||
+              form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+                ? "opacity-50 pointer-events-none select-none"
+                : ""
+            }
+          >
             <label className="block text-xs font-semibold text-slate-700 mb-2">
-              Payment receipt <span className="text-red-500">*</span>
+              Payment receipt{" "}
+              {requiresPaymentReceipt(form.paymentMethod, form.payAfterWork) && (
+                <span className="text-red-500">*</span>
+              )}
             </label>
 
             <input
@@ -450,13 +526,21 @@ function BookingForm({ service, onClose, onSuccess }) {
               onChange={handleReceiptChange}
               className="sr-only"
               aria-hidden
+              disabled={
+                form.payAfterWork ||
+                form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+              }
             />
 
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => receiptInputRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 shadow-sm transition-all hover:bg-orange-100 hover:border-orange-300"
+                disabled={
+                  form.payAfterWork ||
+                  form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
+                }
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 shadow-sm transition-all hover:bg-orange-100 hover:border-orange-300 disabled:opacity-60"
               >
                 <Upload size={18} />
                 {form.paymentReceipt ? "Change receipt" : "Upload receipt"}
