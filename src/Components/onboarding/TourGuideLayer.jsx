@@ -5,9 +5,17 @@ import {
   measureTarget,
   getArrowPosition,
 } from "../../onboarding/placement";
+import {
+  lockTourScroll,
+  scrollTourTargetIntoView,
+} from "../../onboarding/tourScrollLock";
 
 const COACH_W = 320;
 const COACH_H = 260;
+const FOCUS_PAD = 10;
+
+const BLUR_PANEL =
+  "fixed z-[216] bg-slate-900/50 backdrop-blur-md pointer-events-auto transition-all duration-300";
 
 function TourArrow({ top, left, rotate }) {
   return (
@@ -23,7 +31,6 @@ function TourArrow({ top, left, rotate }) {
   );
 }
 
-/** Sharp ring around the target — no blur on top of the element */
 function TargetHighlight({ rect }) {
   if (!rect) return null;
   const { top, left, width, height } = rect;
@@ -36,50 +43,51 @@ function TargetHighlight({ rect }) {
       aria-hidden
     >
       <div
-        className="absolute inset-0 rounded-[inherit] border-[3px] border-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.25),0_0_20px_rgba(249,115,22,0.45)]"
+        className="absolute inset-0 rounded-[inherit] border-[3px] border-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.3),0_0_24px_rgba(249,115,22,0.5)]"
         style={{ borderRadius: radius }}
       />
-      <span className="absolute -top-0.5 -left-0.5 h-3 w-3 border-l-[3px] border-t-[3px] border-orange-500 rounded-tl-sm" />
-      <span className="absolute -top-0.5 -right-0.5 h-3 w-3 border-r-[3px] border-t-[3px] border-orange-500 rounded-tr-sm" />
-      <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 border-l-[3px] border-b-[3px] border-orange-500 rounded-bl-sm" />
-      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-r-[3px] border-b-[3px] border-orange-500 rounded-br-sm" />
     </div>
   );
 }
 
-/** Light tint only — no backdrop-blur so the page stays readable */
-function DimOverlay({ rect }) {
-  const tint = "rgba(15, 23, 42, 0.28)";
+/**
+ * Four blurred panels around the focus hole — only the hole stays sharp.
+ */
+function FocusMask({ rect }) {
+  const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 0;
 
   if (!rect) {
-    return (
-      <div
-        className="fixed inset-0 z-[216] pointer-events-none transition-opacity duration-300"
-        style={{ backgroundColor: tint }}
-        aria-hidden
-      />
-    );
+    return <div className={`inset-0 ${BLUR_PANEL}`} aria-hidden />;
   }
 
-  const { top, left, width, height } = rect;
-  const pad = 6;
-  const t = Math.max(0, top - pad);
-  const l = Math.max(0, left - pad);
-  const w = width + pad * 2;
-  const h = height + pad * 2;
-  const hole = `polygon(0% 0%, 0% 100%, ${l}px 100%, ${l}px ${t}px, ${l + w}px ${t}px, ${l + w}px ${t + h}px, ${l}px ${t + h}px, ${l}px 100%, 100% 100%, 100% 0%)`;
+  const t = Math.max(0, rect.top - FOCUS_PAD);
+  const l = Math.max(0, rect.left - FOCUS_PAD);
+  const r = Math.min(vw, rect.left + rect.width + FOCUS_PAD);
+  const b = Math.min(vh, rect.top + rect.height + FOCUS_PAD);
+  const holeH = Math.max(0, b - t);
 
   return (
-    <div className="fixed inset-0 z-[216] pointer-events-none" aria-hidden>
-      <div
-        className="absolute inset-0 transition-all duration-300"
-        style={{
-          backgroundColor: tint,
-          clipPath: hole,
-          WebkitClipPath: hole,
-        }}
-      />
-    </div>
+    <>
+      {t > 0 && (
+        <div className={BLUR_PANEL} style={{ top: 0, left: 0, right: 0, height: t }} />
+      )}
+      {b < vh && (
+        <div
+          className={BLUR_PANEL}
+          style={{ top: b, left: 0, right: 0, bottom: 0 }}
+        />
+      )}
+      {l > 0 && holeH > 0 && (
+        <div className={BLUR_PANEL} style={{ top: t, left: 0, width: l, height: holeH }} />
+      )}
+      {r < vw && holeH > 0 && (
+        <div
+          className={BLUR_PANEL}
+          style={{ top: t, left: r, right: 0, height: holeH }}
+        />
+      )}
+    </>
   );
 }
 
@@ -99,8 +107,12 @@ export default function TourGuideLayer({
   );
   const [arrowPos, setArrowPos] = useState(null);
 
+  useEffect(() => {
+    return lockTourScroll();
+  }, []);
+
   const remeasure = useCallback(() => {
-    const rect = measureTarget(targetSelector, 12);
+    const rect = measureTarget(targetSelector, FOCUS_PAD);
     setTargetRect(rect);
     const next = computeCoachPlacement(rect);
     setPlacement(next);
@@ -109,11 +121,13 @@ export default function TourGuideLayer({
   }, [targetSelector]);
 
   useEffect(() => {
-    remeasure();
-    const t1 = window.setTimeout(remeasure, 100);
-    const t2 = window.setTimeout(remeasure, 400);
+    if (targetSelector) {
+      scrollTourTargetIntoView(targetSelector);
+    }
+    const t0 = window.setTimeout(remeasure, 80);
+    const t1 = window.setTimeout(remeasure, 350);
+    const t2 = window.setTimeout(remeasure, 700);
     window.addEventListener("resize", remeasure);
-    window.addEventListener("scroll", remeasure, true);
     const el = targetSelector ? document.querySelector(targetSelector) : null;
     const ro =
       el && typeof ResizeObserver !== "undefined"
@@ -121,10 +135,10 @@ export default function TourGuideLayer({
         : null;
     ro?.observe(el);
     return () => {
+      window.clearTimeout(t0);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
       window.removeEventListener("resize", remeasure);
-      window.removeEventListener("scroll", remeasure, true);
       ro?.disconnect();
     };
   }, [targetSelector, remeasure, stepIndex, title]);
@@ -133,10 +147,12 @@ export default function TourGuideLayer({
 
   return (
     <>
-      <DimOverlay rect={targetRect} />
+      <FocusMask rect={targetRect} />
       <TargetHighlight rect={targetRect} />
       {arrowPos && targetRect && <TourArrow {...arrowPos} />}
       <div
+        data-tour-coach
+        data-tour-scroll-allowed
         className="fixed z-[220] animate-slideUp pointer-events-auto"
         style={{
           top: coachStyle.top,
@@ -169,7 +185,7 @@ export default function TourGuideLayer({
             <button
               type="button"
               onClick={onSkip}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/60"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               aria-label="Skip tour"
             >
               <X size={18} />
@@ -179,11 +195,10 @@ export default function TourGuideLayer({
             {title}
           </h3>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">{body}</p>
-          {targetRect && (
-            <p className="mt-2 text-xs font-medium text-orange-600">
-              Follow the highlighted area
-            </p>
-          )}
+          <p className="mt-2 text-xs text-slate-500">
+            Only the highlighted area is in focus. Use <strong>Next</strong> to
+            continue — page scroll is paused during the tour.
+          </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="button"

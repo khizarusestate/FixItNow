@@ -32,7 +32,6 @@ import {
 
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
-import { useOnboarding } from "../context/OnboardingContext";
 import { bookingService, servicesService } from "../services/api.js";
 import { getActiveSessionRole } from "../utils/jwt.js";
 import LocationPicker from "./LocationPicker.jsx";
@@ -631,7 +630,6 @@ function BookingForm({ service, onClose, onSuccess }) {
 export default function BookingSection() {
   const { isAuthenticated, user } = useAuth();
   const { openModal } = useModal();
-  const { interceptServiceBook } = useOnboarding();
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -738,8 +736,6 @@ export default function BookingSection() {
         icon: service?.icon,
       };
 
-      if (interceptServiceBook(normalizedService)) return;
-
       if (isAuthenticated && user?.type === "customer" && !hasLocation(user)) {
         openModal("completeProfile");
         return;
@@ -747,7 +743,7 @@ export default function BookingSection() {
 
       setSelectedService(normalizedService);
     },
-    [isAuthenticated, interceptServiceBook, openModal, user],
+    [isAuthenticated, openModal, user?.type],
   );
 
   // =======================

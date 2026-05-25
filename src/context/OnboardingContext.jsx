@@ -95,12 +95,6 @@ export function OnboardingProvider({ children }) {
   const goNext = useCallback(() => {
     const step = steps[stepIndex];
 
-    if (step?.id === "booking-overview") {
-      document
-        .getElementById("booking")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
     if (step?.id === "my-bookings-header") {
       setTourMyBookingsOnly(true);
     }
@@ -131,11 +125,6 @@ export function OnboardingProvider({ children }) {
     setStepIndex(0);
     setTourMyBookingsOnly(false);
     writeOnboardingState({ lastPath: "customer" });
-    window.setTimeout(() => {
-      document
-        .getElementById("booking")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 400);
   }, []);
 
   const startWorkerTour = useCallback(() => {
@@ -156,8 +145,6 @@ export function OnboardingProvider({ children }) {
     },
     [startCustomerTour, startWorkerTour],
   );
-
-  const interceptServiceBook = useCallback(() => false, []);
 
   useEffect(() => {
     if (phase === PHASE.WORKER_DASHBOARD) {
@@ -220,7 +207,6 @@ export function OnboardingProvider({ children }) {
       currentStep,
       tourMyBookingsOnly,
       workerTourMode,
-      interceptServiceBook,
       replayTour,
       skipTour,
       startCustomerTour,
@@ -232,7 +218,6 @@ export function OnboardingProvider({ children }) {
       currentStep,
       tourMyBookingsOnly,
       workerTourMode,
-      interceptServiceBook,
       replayTour,
       skipTour,
       startCustomerTour,
@@ -288,7 +273,6 @@ export function useOnboarding() {
       tourActive: false,
       tourMyBookingsOnly: false,
       workerTourMode: false,
-      interceptServiceBook: () => false,
       replayTour: () => {},
       skipTour: () => {},
     };

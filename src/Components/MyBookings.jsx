@@ -301,7 +301,10 @@ export default function MyBookings({ isOpen, onClose, tourMode = false }) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div
+          className="flex-1 overflow-y-auto p-6"
+          data-tour-scroll-allowed={tourMode ? true : undefined}
+        >
           {tourMode && (
             <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
               <strong>Practice mode.</strong> This sample booking shows how to track status, rate a worker, and mark a job done.
