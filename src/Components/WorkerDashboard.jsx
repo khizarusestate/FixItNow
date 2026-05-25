@@ -12,6 +12,7 @@ import {
 
 import { apiRequestWithAuth } from "../services/api.js";
 import { shouldRefreshBookings } from "../utils/apiError";
+import CompletionTicks from "./CompletionTicks";
 import { useAuth } from "../context/AuthContext";
 import { getUserData } from "../utils/jwt.js";
 
@@ -90,6 +91,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(null);
+  const [completing, setCompleting] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const fetchInFlightRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -220,14 +222,37 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     };
 
     window.addEventListener("fixitnow-worker-dashboard-refresh", scheduleRefresh);
+    window.addEventListener("fixitnow-booking-updated", scheduleRefresh);
     return () => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
       window.removeEventListener(
         "fixitnow-worker-dashboard-refresh",
         scheduleRefresh,
       );
+      window.removeEventListener("fixitnow-booking-updated", scheduleRefresh);
     };
   }, [isOpen, fetchData]);
+
+  const handleMarkJobDone = async (jobId) => {
+    setCompleting(jobId);
+    setError("");
+    try {
+      const res = await apiRequestWithAuth(`/worker-jobs/${jobId}/mark-done`, {
+        method: "POST",
+      });
+      await fetchData(true);
+      if (res?.data?.finalized) {
+        setActiveTab("my-jobs");
+      }
+    } catch (err) {
+      if (shouldRefreshBookings(err)) {
+        await fetchData(true);
+      }
+      setError(err.message || "Failed to mark job as done.");
+    } finally {
+      setCompleting(null);
+    }
+  };
 
   const handleClaimJob = async (jobId) => {
     const jobToClaim = availableJobs.find((j) => j.id === jobId);
@@ -560,25 +585,71 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {myJobs.map((job) => (
-                        <JobCard key={job.id} job={job}>
-                          {job.status === "completed" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                              <CheckCircle size={12} />
-                              Completed
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                              <Briefcase size={12} />
-                              {job.status === "assigned"
-                                ? "Assigned"
-                                : job.status === "in-progress"
-                                  ? "In progress"
-                                  : "Active"}
-                            </span>
-                          )}
-                        </JobCard>
-                      ))}
+                      {myJobs.map((job) => {
+                        const canMarkDone =
+                          job.status !== "completed" &&
+                          !job.workerMarkedDone &&
+                          ["assigned", "in-progress"].includes(job.status);
+                        const waitingCustomer =
+                          job.workerMarkedDone &&
+                          !job.customerMarkedDone &&
+                          job.status !== "completed";
+
+                        return (
+                          <JobCard key={job.id} job={job}>
+                            <div className="flex flex-col items-end gap-2 w-full">
+                              <div className="flex items-center gap-2">
+                                <CompletionTicks
+                                  customerMarkedDone={job.customerMarkedDone}
+                                  workerMarkedDone={job.workerMarkedDone}
+                                />
+                                {job.status === "completed" ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                    <CheckCircle size={12} />
+                                    Completed
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                                    <Briefcase size={12} />
+                                    {job.status === "assigned"
+                                      ? "Assigned"
+                                      : job.status === "in-progress"
+                                        ? "In progress"
+                                        : "Active"}
+                                  </span>
+                                )}
+                              </div>
+                              {waitingCustomer && (
+                                <p className="text-xs text-blue-700 font-medium text-right">
+                                  Waiting for customer rating
+                                </p>
+                              )}
+                              {job.customerMarkedDone && !job.workerMarkedDone && (
+                                <p className="text-xs text-orange-700 font-medium text-right">
+                                  Customer marked done — confirm below
+                                </p>
+                              )}
+                              {canMarkDone && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkJobDone(job.id)}
+                                  disabled={completing === job.id}
+                                  className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                  {completing === job.id ? (
+                                    <span className="inline-flex items-center justify-center gap-2">
+                                      <Loader2 size={16} className="animate-spin" />
+                                      Saving…
+                                    </span>
+                                  ) : (
+                                    "Mark as Done"
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </JobCard>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

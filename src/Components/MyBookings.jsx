@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
+import CompletionTicks from "./CompletionTicks";
 
 const STATUS_CONFIG = {
   pending: {
@@ -152,14 +153,21 @@ export default function MyBookings({ isOpen, onClose }) {
     }
     setCompleting(id);
     try {
-      await apiRequestWithAuth(`/bookings/${id}/complete`, {
+      const payload = await apiRequestWithAuth(`/bookings/${id}/complete`, {
         method: "POST",
         body: JSON.stringify({ rating }),
       });
+      const data = payload?.data || {};
       setBookings((prev) => {
         const updated = prev.map((b) =>
           b.id === id
-            ? { ...b, status: "completed", customerRating: rating }
+            ? {
+                ...b,
+                status: data.status || b.status,
+                customerRating: rating,
+                customerMarkedDone: true,
+                workerMarkedDone: Boolean(data.workerMarkedDone),
+              }
             : b,
         );
         return updated.sort((a, b) => {
@@ -169,6 +177,12 @@ export default function MyBookings({ isOpen, onClose }) {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
       });
+      setStatusNotice(
+        payload?.message ||
+          (data.finalized
+            ? "Booking fully completed."
+            : "Marked done — waiting for worker confirmation."),
+      );
       setRatings((prev) => {
         const newRatings = { ...prev };
         delete newRatings[id];
@@ -298,11 +312,14 @@ export default function MyBookings({ isOpen, onClose }) {
                 const cfg = STATUS_CONFIG[b.status] || STATUS_CONFIG.pending;
                 const Icon = cfg.icon;
                 const canCancel = b.status === "pending";
-                const canMarkDone = [
-                  "assigned",
-                  "in-progress",
-                  "approved",
-                ].includes(b.status);
+                const canMarkDone =
+                  Boolean(b.worker) &&
+                  ["assigned", "in-progress"].includes(b.status) &&
+                  !b.customerMarkedDone;
+                const waitingWorker =
+                  b.customerMarkedDone &&
+                  !b.workerMarkedDone &&
+                  b.status !== "completed";
                 const isExpanded = expandedId === b.id;
 
                 return (
@@ -331,6 +348,10 @@ export default function MyBookings({ isOpen, onClose }) {
                                 }
                               />
                               {cfg.label}
+                              <CompletionTicks
+                                customerMarkedDone={b.customerMarkedDone}
+                                workerMarkedDone={b.workerMarkedDone}
+                              />
                             </span>
                             <span className="text-xs font-medium text-slate-500">
                               {formatDate(b.createdAt)}
@@ -476,6 +497,20 @@ export default function MyBookings({ isOpen, onClose }) {
                           </div>
                         )}
 
+                        {waitingWorker && (
+                          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+                            You marked this job done. Waiting for the worker to
+                            confirm (blue tick).
+                          </div>
+                        )}
+
+                        {b.workerMarkedDone && !b.customerMarkedDone && (
+                          <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-900">
+                            Worker marked done. Please rate and tap Mark as Done
+                            to confirm.
+                          </div>
+                        )}
+
                         {/* Rating Section */}
                         {canMarkDone && (
                           <div className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 p-4 border-2 border-emerald-200">
@@ -532,7 +567,7 @@ export default function MyBookings({ isOpen, onClose }) {
                             >
                               {completing === b.id
                                 ? "Saving..."
-                                : "✓ Mark as Done"}
+                                : "✓ Mark as Done (with rating)"}
                             </button>
                           )}
                           {canCancel && (
