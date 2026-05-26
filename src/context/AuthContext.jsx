@@ -564,6 +564,7 @@ export function AuthProvider({ children }) {
     if (role === "customer" || role === "worker") {
       unregisterWebPush().catch(() => {});
     }
+    /* devicePushEnabled stays on server; user re-enables push after next login if desired */
     if (role) {
       authService.logout(role);
     } else {

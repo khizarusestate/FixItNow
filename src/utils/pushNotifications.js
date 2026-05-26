@@ -2,6 +2,10 @@ import { apiRequest, apiRequestWithAuth } from "../services/api.js";
 
 const DISMISS_KEY = "fixitnow_push_prompt_dismissed";
 
+function prefCacheKey(userId) {
+  return userId ? `fixitnow_device_push_${userId}` : null;
+}
+
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -32,9 +36,38 @@ export function getPushPermissionState() {
   return Notification.permission;
 }
 
-export function shouldShowPushPrompt() {
+export function cacheDevicePushPreference(userId, enabled) {
+  const key = prefCacheKey(userId);
+  if (!key) return;
+  localStorage.setItem(key, enabled ? "1" : "0");
+}
+
+export function readCachedDevicePushPreference(userId) {
+  const key = prefCacheKey(userId);
+  if (!key) return true;
+  const raw = localStorage.getItem(key);
+  if (raw === null) return true;
+  return raw === "1";
+}
+
+export async function fetchDevicePushPreference() {
+  const res = await apiRequestWithAuth("/push/preferences");
+  return res?.data?.devicePushEnabled !== false;
+}
+
+export async function saveDevicePushPreference(enabled) {
+  const res = await apiRequestWithAuth("/push/preferences", {
+    method: "PATCH",
+    body: JSON.stringify({ devicePushEnabled: enabled }),
+  });
+  return res?.data?.devicePushEnabled !== false;
+}
+
+export function shouldShowPushPrompt(userId, devicePushEnabled = true) {
+  if (!devicePushEnabled) return false;
   if (!isPushSupported()) return false;
   if (localStorage.getItem(DISMISS_KEY) === "1") return false;
+  if (Notification.permission === "granted") return false;
   return Notification.permission === "default";
 }
 
@@ -43,7 +76,7 @@ export function dismissPushPrompt() {
 }
 
 /**
- * Must be called from a user gesture (button click) so the browser shows the permission dialog.
+ * Enable device (web) push — call from a user gesture when possible.
  */
 export async function registerWebPush() {
   if (!isPushSupported()) {
@@ -102,4 +135,15 @@ export async function unregisterWebPush() {
   } catch {
     /* best effort */
   }
+}
+
+/** Turn device push on/off (server + browser subscription). */
+export async function setDevicePushEnabled(enabled) {
+  await saveDevicePushPreference(enabled);
+  if (enabled) {
+    const result = await registerWebPush();
+    return result;
+  }
+  await unregisterWebPush();
+  return { ok: true };
 }

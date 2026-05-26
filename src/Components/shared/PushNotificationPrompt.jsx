@@ -5,18 +5,25 @@ import {
   dismissPushPrompt,
   getPushPermissionState,
   registerWebPush,
+  saveDevicePushPreference,
   shouldShowPushPrompt,
+  cacheDevicePushPreference,
 } from "../../utils/pushNotifications.js";
 
 export default function PushNotificationPrompt() {
-  const { isAuthenticated, user } = useAuth();
-  const [visible, setVisible] = useState(() => shouldShowPushPrompt());
+  const { isAuthenticated, user, updateUser } = useAuth();
+  const userId = user?._id || user?.id;
+  const devicePushEnabled = user?.devicePushEnabled !== false;
+  const [visible, setVisible] = useState(() =>
+    shouldShowPushPrompt(userId, devicePushEnabled),
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   if (
     !visible ||
     !isAuthenticated ||
+    !devicePushEnabled ||
     (user?.type !== "customer" && user?.type !== "worker")
   ) {
     return null;
@@ -28,6 +35,9 @@ export default function PushNotificationPrompt() {
     try {
       const result = await registerWebPush();
       if (result.ok) {
+        await saveDevicePushPreference(true).catch(() => {});
+        cacheDevicePushPreference(userId, true);
+        updateUser({ devicePushEnabled: true });
         setVisible(false);
         return;
       }

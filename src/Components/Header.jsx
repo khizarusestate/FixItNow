@@ -216,7 +216,6 @@ export default function Header() {
       isOpen={profileOpen}
       onClose={() => setProfileOpen(false)}
       userData={user}
-      openModal={openModal}
       onProfileUpdate={(updatedData) => {
         setUser(updatedData);
         if (updatedData?.type) {
