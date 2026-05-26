@@ -16,6 +16,7 @@ self.addEventListener("push", (event) => {
     badge: "/Assets/Logo.png",
     data: { url: payload.url || "/" },
     tag: payload.tag || "fixitnow-notification",
+    requireInteraction: payload.type === "urgent",
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
