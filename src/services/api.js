@@ -23,13 +23,21 @@ import { USE_HTTPONLY_COOKIES } from "../config/auth.js";
 
 const ROLES = ["customer", "worker", "admin"];
 
-function clearOtherRoleSessions(activeRole) {
+export function clearOtherRoleSessions(activeRole) {
   for (const r of ROLES) {
     if (r !== activeRole) {
       removeToken(r);
       removeUserData(r);
     }
   }
+}
+
+/** Wipe storage only when the client session window ended (e.g. 3-day remember-me). */
+function clearAuthStorageIfSessionEnded(role) {
+  if (!role || isClientSessionValid(role)) return;
+  removeToken(role);
+  removeUserData(role);
+  clearCookieSession();
 }
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 2;
@@ -87,9 +95,7 @@ export async function ensureAccessToken(role) {
   }
 
   if (!isClientSessionValid(role)) {
-    removeToken(role);
-    removeUserData(role);
-    clearCookieSession();
+    clearAuthStorageIfSessionEnded(role);
     throw new Error("Your session has ended. Please login again.");
   }
 
@@ -104,8 +110,9 @@ export async function ensureAccessToken(role) {
 
   const refreshToken = getRefreshToken(role);
   if (!refreshToken) {
-    removeToken(role);
-    removeUserData(role);
+    if (!isClientSessionValid(role)) {
+      clearAuthStorageIfSessionEnded(role);
+    }
     throw new Error("Authentication required. Please login.");
   }
 
@@ -128,8 +135,7 @@ export async function ensureAccessToken(role) {
     return accessToken;
   } catch (err) {
     failTokenRefresh();
-    removeToken(role);
-    removeUserData(role);
+    clearAuthStorageIfSessionEnded(role);
     throw err;
   } finally {
     isRefreshing = false;
@@ -189,15 +195,12 @@ export async function apiRequest(
 
   if (role && USE_HTTPONLY_COOKIES) {
     if (!isClientSessionValid(role)) {
-      removeToken(role);
-      removeUserData(role);
-      clearCookieSession();
+      clearAuthStorageIfSessionEnded(role);
       throw new Error("Your session has ended. Please login again.");
     }
   } else if (token && role) {
     if (!isClientSessionValid(role)) {
-      removeToken(role);
-      removeUserData(role);
+      clearAuthStorageIfSessionEnded(role);
       throw new Error("Your session has ended. Please login again.");
     }
 
@@ -210,9 +213,8 @@ export async function apiRequest(
         } catch (err) {
           throw err;
         }
-      } else {
-        removeToken(role);
-        removeUserData(role);
+      } else if (!isClientSessionValid(role)) {
+        clearAuthStorageIfSessionEnded(role);
         throw new Error("Your session has expired. Please login again.");
       }
     }
@@ -258,11 +260,8 @@ export async function apiRequest(
           failTokenRefresh();
           console.error("Token refresh failed:", refreshError);
 
-          // Clear token and user data
-          removeToken(role);
-          removeUserData(role);
+          clearAuthStorageIfSessionEnded(role);
 
-          // Show user-friendly message
           if (data.code === "TOKEN_EXPIRED") {
             throw new Error(
               "Your session has expired due to inactivity. Please login again.",
@@ -284,9 +283,7 @@ export async function apiRequest(
           });
         });
       } else {
-        // No refresh token available, logout
-        removeToken(role);
-        removeUserData(role);
+        clearAuthStorageIfSessionEnded(role);
 
         if (data.code === "TOKEN_EXPIRED") {
           throw new Error(

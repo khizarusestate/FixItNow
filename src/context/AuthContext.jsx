@@ -28,6 +28,7 @@ import {
   authService,
   apiRequestWithAuth,
   ensureAccessToken,
+  clearOtherRoleSessions,
 } from "../services/api.js";
 import { SOCKET_URL } from "../config/env.js";
 import { USE_HTTPONLY_COOKIES } from "../config/auth.js";
@@ -216,9 +217,20 @@ export function AuthProvider({ children }) {
           }
         }
       } catch {
-        removeToken(activeRole);
-        removeUserData(activeRole);
-        await finishBootstrap(null, false);
+        if (!isClientSessionValid(activeRole)) {
+          removeToken(activeRole);
+          removeUserData(activeRole);
+          await finishBootstrap(null, false);
+          return;
+        }
+        const cachedUser = getUserData(activeRole);
+        if (!cachedUser) {
+          await finishBootstrap(null, false);
+          return;
+        }
+        setUser({ ...cachedUser, type: activeRole });
+        setIsAuthenticated(true);
+        await finishBootstrap(activeRole, true);
         return;
       }
 
@@ -243,9 +255,11 @@ export function AuthProvider({ children }) {
             await ensureAccessToken(role);
             setSessionExpiring(false);
           } catch {
-            setSessionExpired(true);
-            setSessionExpiring(false);
-            setTimeout(() => handleSessionExpired(), 3000);
+            if (!isClientSessionValid(role)) {
+              setSessionExpired(true);
+              setSessionExpiring(false);
+              setTimeout(() => handleSessionExpired(), 3000);
+            }
           }
           return;
         }
@@ -261,9 +275,11 @@ export function AuthProvider({ children }) {
             await ensureAccessToken(role);
             setSessionExpiring(false);
           } catch {
-            setSessionExpired(true);
-            setSessionExpiring(false);
-            setTimeout(() => handleSessionExpired(), 3000);
+            if (!isClientSessionValid(role)) {
+              setSessionExpired(true);
+              setSessionExpiring(false);
+              setTimeout(() => handleSessionExpired(), 3000);
+            }
             return;
           }
         }
@@ -523,6 +539,7 @@ export function AuthProvider({ children }) {
   };
 
   const login = (userData, userType, token, rememberMe = true) => {
+    clearOtherRoleSessions(userType);
     const fullUser = { ...userData, type: userType };
     setToken(token, userType);
     saveUserData(fullUser, userType);

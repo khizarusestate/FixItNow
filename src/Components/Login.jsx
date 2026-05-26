@@ -258,14 +258,17 @@ export default function Login({ onLoginSuccess }) {
           </div>
 
           <div className="flex items-center justify-between gap-3 text-sm text-slate-500">
-            <label className="inline-flex items-center gap-2">
+            <label
+              className="inline-flex items-center gap-2"
+              title="Stay signed in for 3 days on this device"
+            >
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
               />
-              Remember me
+              Remember me (3 days)
             </label>
             <button
               type="button"

@@ -34,7 +34,7 @@ const REMEMBER_ME_KEYS = {
   worker: "fixitnow_worker_remember_me",
 };
 
-/** Session length when "Remember me" is unchecked */
+/** Client session cap when "Remember me" is checked at login (3 days). */
 export const SESSION_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 
 export const markCookieSession = (role) => {
@@ -88,27 +88,28 @@ export const setRememberMe = (role, remember) => {
 
 export const getRememberMe = (role) => {
   if (!role || role === "admin") return false;
-  const stored = localStorage.getItem(REMEMBER_ME_KEYS[role]);
-  if (stored === null && (getToken(role) || getRefreshToken(role))) {
-    return true;
-  }
-  return stored === "1";
+  return localStorage.getItem(REMEMBER_ME_KEYS[role]) === "1";
 };
 
-/** Client-side session window (remember me vs 3-day limit). */
+/**
+ * Client session validity.
+ * - Remember me checked: expires after 3 days (or when user clears data / logs out).
+ * - Remember me unchecked: no time limit until logout or browser data cleared.
+ */
 export const isClientSessionValid = (role) => {
   if (!role || role === "admin") return true;
+  if (!getUserData(role)) return false;
+
   if (USE_HTTPONLY_COOKIES) {
-    if (getCookieSessionRole() !== role || !getUserData(role)) return false;
-    if (getRememberMe(role)) return true;
-    const expiry = getSessionExpiry(role);
-    return expiry ? expiry.getTime() > Date.now() : false;
+    if (getCookieSessionRole() !== role) return false;
+  } else if (!getToken(role) && !getRefreshToken(role)) {
+    return false;
   }
-  if (getRememberMe(role)) {
-    return !!(getToken(role) || getRefreshToken(role));
-  }
+
+  if (!getRememberMe(role)) return true;
+
   const expiry = getSessionExpiry(role);
-  if (!expiry) return false;
+  if (!expiry) return true;
   return expiry.getTime() > Date.now();
 };
 
@@ -116,9 +117,9 @@ export const applySessionPolicy = (role, rememberMe) => {
   if (!role || role === "admin") return;
   setRememberMe(role, rememberMe);
   if (rememberMe) {
-    removeSessionExpiry(role);
-  } else {
     setSessionExpiry(Date.now() + SESSION_DURATION_MS, role);
+  } else {
+    removeSessionExpiry(role);
   }
 };
 
@@ -246,6 +247,8 @@ const roleHasRestorableSession = (role) => {
 };
 
 export const getActiveSessionRole = () => {
+  const lastRole = getCookieSessionRole();
+  if (lastRole && roleHasRestorableSession(lastRole)) return lastRole;
   if (roleHasRestorableSession("admin")) return "admin";
   if (roleHasRestorableSession("worker")) return "worker";
   if (roleHasRestorableSession("customer")) return "customer";
