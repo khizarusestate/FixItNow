@@ -103,7 +103,7 @@ export default function ProfileSettings({
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
           <h4 className="text-sm font-semibold text-slate-900">Notifications</h4>
           <p className="text-xs text-slate-500 mt-0.5">
-            Control alerts when the app is closed (device push).
+            Controls whether the server sends push alerts when the app is closed. Does not affect your browser notification permission.
           </p>
         </div>
 
@@ -118,8 +118,7 @@ export default function ProfileSettings({
                   Device notifications
                 </p>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  WhatsApp-style alerts when the browser or app is in the
-                  background. The in-app bell and live alerts are not affected.
+                  WhatsApp-style alerts when the browser or app is closed. Turning off stops the server from sending push — it does not change your browser permission. In-app bell is unaffected.
                 </p>
               </div>
               <button
