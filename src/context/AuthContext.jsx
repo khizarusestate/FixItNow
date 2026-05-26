@@ -35,6 +35,7 @@ import { USE_HTTPONLY_COOKIES } from "../config/auth.js";
 import { AppDataProvider } from "./AppDataContext.jsx";
 import { servicesService, bookingService } from "../services/api.js";
 import { shapeServiceCatalog } from "../utils/catalogShape.js";
+import { registerWebPush, unregisterWebPush } from "../utils/pushNotifications.js";
 
 const BOOTSTRAP_TIMEOUT_MS = 10000;
 
@@ -303,6 +304,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const role = user.type;
+    if (role !== "customer" && role !== "worker") return;
+    registerWebPush().catch(() => {});
+  }, [isAuthenticated, user?.type, user?._id, user?.id]);
+
+  useEffect(() => {
     const handleFirstInteraction = () => {
       initNotificationAudio();
       document.removeEventListener("click", handleFirstInteraction);
@@ -549,6 +557,9 @@ export function AuthProvider({ children }) {
     }
     setUser(fullUser);
     setIsAuthenticated(true);
+    if (userType === "customer" || userType === "worker") {
+      registerWebPush().catch(() => {});
+    }
   };
 
   const updateUser = (newUserData) => {
@@ -559,6 +570,9 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     const role = user?.type;
+    if (role === "customer" || role === "worker") {
+      unregisterWebPush().catch(() => {});
+    }
     if (role) {
       authService.logout(role);
     } else {

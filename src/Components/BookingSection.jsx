@@ -1087,28 +1087,21 @@ export default function BookingSection() {
             {!browsingServices ? (
               <div className="py-2 sm:py-4">
                 <div className="mb-8 text-center sm:text-left">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-600">
-                    Our Menu
-                  </p>
-                  <h3 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">
                     Choose a category
                   </h3>
-                  <p className="mt-2 text-base text-slate-600 max-w-xl">
-                    Tap a section to browse services — simple, like a restaurant menu.
-                  </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <div className="grid grid-cols-2 gap-4 sm:gap-5">
                   {pagedCategories.map((category, idx) => {
                     const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
                     const catColor =
                       CATEGORY_COLORS[category] || "from-slate-400 to-slate-600";
-                    const count = categoryCounts[category] || 0;
                     return (
                       <button
                         key={category}
                         type="button"
                         onClick={() => openCategory(category)}
-                        aria-label={`Open ${category}, ${count} services`}
+                        aria-label={`Open ${category}`}
                         className="category-btn group text-left rounded-2xl bg-white/90 p-5 sm:p-6 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn"
                         style={{ animationDelay: `${idx * 40}ms` }}
                       >
@@ -1117,18 +1110,13 @@ export default function BookingSection() {
                         >
                           <CategoryIcon size={28} strokeWidth={2.25} />
                         </div>
-                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
+                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug pr-6">
                           {category}
                         </h4>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-sm text-slate-500">
-                            {count} service{count !== 1 ? "s" : ""}
-                          </span>
-                          <ChevronRight
-                            size={18}
-                            className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform"
-                          />
-                        </div>
+                        <ChevronRight
+                          size={18}
+                          className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform mt-2"
+                        />
                       </button>
                     );
                   })}
