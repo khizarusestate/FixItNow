@@ -4,7 +4,10 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
+import MissedNotificationsModal from "../Components/shared/MissedNotificationsModal.jsx";
+import NotificationLiveToast from "../Components/shared/NotificationLiveToast.jsx";
 import { io } from "socket.io-client";
 import {
   getToken,
@@ -167,6 +170,9 @@ export function AuthProvider({ children }) {
   const [bootstrapStep, setBootstrapStep] = useState("Checking session…");
   const [bootstrapCatalog, setBootstrapCatalog] = useState(null);
   const [bootstrapBookings, setBootstrapBookings] = useState(null);
+  const [missedNotificationsCount, setMissedNotificationsCount] = useState(0);
+  const [showMissedNotifications, setShowMissedNotifications] = useState(false);
+  const missedPromptShownRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -518,6 +524,9 @@ export function AuthProvider({ children }) {
     }
     setUser(null);
     setIsAuthenticated(false);
+    setMissedNotificationsCount(0);
+    setShowMissedNotifications(false);
+    missedPromptShownRef.current = false;
   };
 
   // Clear new job notification
@@ -553,7 +562,7 @@ export function AuthProvider({ children }) {
         const res = await apiRequestWithAuth(
           `/notifications/badge-summary${since ? `?since=${encodeURIComponent(since)}` : ""}`,
         );
-        const count = res?.data?.jobs ?? 0;
+        const count = res?.data?.unread ?? res?.data?.jobs ?? 0;
         setBadgeCount(count);
         if (role === "worker") updateJobCount(count);
       } catch {
@@ -567,6 +576,31 @@ export function AuthProvider({ children }) {
     if (!isAuthenticated || !user?.type) return;
     fetchBadgeSummary(user.type);
   }, [isAuthenticated, user?.type, fetchBadgeSummary]);
+
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      !user?.type ||
+      isInitializing ||
+      missedPromptShownRef.current
+    ) {
+      return;
+    }
+    (async () => {
+      try {
+        const res = await apiRequestWithAuth("/notifications?limit=1");
+        const count = res.unreadCount ?? 0;
+        setBadgeCount(count);
+        if (count > 0) {
+          setMissedNotificationsCount(count);
+          setShowMissedNotifications(true);
+          missedPromptShownRef.current = true;
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isAuthenticated, user?.type, isInitializing]);
 
   const markUpdatesSeen = useCallback(() => {
     if (!user?.type) return;
@@ -821,6 +855,18 @@ export function AuthProvider({ children }) {
             </div>
           </div>
         </div>
+      )}
+
+      <NotificationLiveToast />
+      {showMissedNotifications && missedNotificationsCount > 0 && (
+        <MissedNotificationsModal
+          count={missedNotificationsCount}
+          onOpenBell={() => {
+            setShowMissedNotifications(false);
+            window.dispatchEvent(new CustomEvent("fixitnow-open-notifications"));
+          }}
+          onDismiss={() => setShowMissedNotifications(false)}
+        />
       )}
 
       {/* Session Expired Modal */}

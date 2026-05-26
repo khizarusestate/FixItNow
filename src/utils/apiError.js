@@ -17,6 +17,21 @@ export class ApiClientError extends Error {
 }
 
 const FRIENDLY_BY_CODE = {
+  ACCOUNT_NOT_FOUND: "No account found for this email. Please sign up first.",
+  INVALID_PASSWORD: "Incorrect password. Please try again.",
+  EMAIL_NOT_VERIFIED:
+    "Your email is not verified yet. Check your inbox for the verification code.",
+  ADMIN_NOT_FOUND: "No admin account found for this email.",
+  INVALID_PIN: "Incorrect PIN. Please try again.",
+  ADMIN_LOCKED: "Too many attempts. Your account is temporarily locked.",
+  ADMIN_DEACTIVATED:
+    "Your admin account has been deactivated. Contact the super admin.",
+  WRONG_LOGIN_PORTAL:
+    "This account cannot use this login portal. Try the other login option.",
+  TOKEN_EXPIRED:
+    "Your session has expired due to inactivity. Please sign in again.",
+  INVALID_TOKEN: "Your session is invalid. Please sign in again.",
+  NETWORK_ERROR: "Network error. Please check your internet connection.",
   BOOKING_ALREADY_REJECTED:
     "This booking was already rejected by the admin. Please refresh your bookings list.",
   BOOKING_ALREADY_CANCELLED: "This booking is already cancelled.",
@@ -34,7 +49,6 @@ const FRIENDLY_BY_CODE = {
     "Another worker has already claimed this job. Refresh to see available jobs.",
   BOOKING_NOT_AVAILABLE: "This job is no longer available.",
   BOOKING_NOT_FOUND: "This booking was not found. It may have been removed.",
-  NETWORK_ERROR: "Network error. Please check your internet connection.",
 };
 
 export function createApiClientError(data = {}, status = 0) {

@@ -17,6 +17,7 @@ import {
   clearCookieSession,
 } from "../utils/jwt.js";
 import { createApiClientError } from "../utils/apiError.js";
+import { isCredentialPath } from "../utils/credentialPaths.js";
 import { API_BASE_URL } from "../config/env.js";
 import { USE_HTTPONLY_COOKIES } from "../config/auth.js";
 
@@ -228,6 +229,13 @@ export async function apiRequest(
     });
 
     const data = await response.json().catch(() => ({}));
+
+    const skipAuthRefresh =
+      options.skipAuthRefresh === true || isCredentialPath(path);
+
+    if (response.status === 401 && !isRetry && skipAuthRefresh) {
+      throw createApiClientError(data, response.status);
+    }
 
     if (response.status === 401 && !isRetry) {
       const errorMessage =

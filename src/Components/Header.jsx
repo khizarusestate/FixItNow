@@ -3,7 +3,7 @@ import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCi
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { setUserData } from '../utils/jwt.js';
-import { resolveUploadMediaUrl } from '../utils/mediaUrl.js';
+import ProfileAvatar from './shared/ProfileAvatar.jsx';
 import MyBookings from './MyBookings';
 import WorkerDashboard from './WorkerDashboard';
 import ProfileModal from './ProfileModal';
@@ -118,13 +118,11 @@ export default function Header() {
                   onClick={() => setProfileOpen(true)}
                   className="flex flex-col items-center gap-0.5 p-1 hover:bg-slate-100 rounded-lg transition-all duration-200"
                 >
-                  {user?.profilePicture ? (
-                    <img src={resolveUploadMediaUrl(user.profilePicture)} alt="Profile" className="w-10 h-10 rounded-full object-cover shadow-sm" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                      {user?.fullName?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                  )}
+                  <ProfileAvatar
+                    src={user?.profilePicture}
+                    name={user?.fullName || user?.name}
+                    className="w-10 h-10"
+                  />
                   <span className="text-[10px] text-slate-600 font-medium truncate max-w-[60px]">{user?.fullName?.split(' ')[0] || 'Profile'}</span>
                 </button>
               </>
@@ -187,13 +185,11 @@ export default function Header() {
                   </button>
                 )}
                 <button onClick={() => { setProfileOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                  {user?.profilePicture ? (
-                    <img src={resolveUploadMediaUrl(user.profilePicture)} alt="Profile" className="w-10 h-10 rounded-full object-cover shadow-sm" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-semibold shadow-sm">
-                      {user?.fullName?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                  )}
+                  <ProfileAvatar
+                    src={user?.profilePicture}
+                    name={user?.fullName || user?.name}
+                    className="w-10 h-10"
+                  />
                   <div className="text-left">
                     <p className="font-semibold">{user?.fullName || 'Profile'}</p>
                     <p className="text-xs text-slate-500">View Profile</p>

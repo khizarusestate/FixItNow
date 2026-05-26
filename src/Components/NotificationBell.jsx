@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequestWithAuth } from "../services/api.js";
 
 export default function NotificationBell() {
-  const { isAuthenticated, user, badgeCount, markUpdatesSeen } = useAuth();
+  const { isAuthenticated, user, badgeCount } = useAuth();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -14,7 +14,7 @@ export default function NotificationBell() {
     if (!isAuthenticated || !user?.type) return;
     try {
       setLoading(true);
-      const res = await apiRequestWithAuth("/notifications?limit=15");
+      const res = await apiRequestWithAuth("/notifications?limit=20");
       setItems(res.data || []);
       setUnread(res.unreadCount ?? 0);
     } catch {
@@ -24,48 +24,50 @@ export default function NotificationBell() {
     }
   }, [isAuthenticated, user?.type]);
 
-  const loadAndMarkRead = useCallback(async () => {
-    await load();
-    markUpdatesSeen?.();
-    try {
-      await apiRequestWithAuth("/notifications/read-all", { method: "PATCH" });
-      setUnread(0);
-      setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch {
-      // ignore marking as read failures
-    }
-  }, [load, markUpdatesSeen]);
-
   useEffect(() => {
-    const onNew = async () => {
+    const onNew = () => {
       setUnread((c) => Math.min(c + 1, 99));
-      if (open) {
-        await loadAndMarkRead();
-      }
+      if (open) load();
     };
     window.addEventListener("fixitnow-notification-new", onNew);
     return () => window.removeEventListener("fixitnow-notification-new", onNew);
-  }, [open, loadAndMarkRead]);
+  }, [open, load]);
+
+  useEffect(() => {
+    const openBell = () => {
+      setOpen(true);
+      load();
+    };
+    window.addEventListener("fixitnow-open-notifications", openBell);
+    return () => window.removeEventListener("fixitnow-open-notifications", openBell);
+  }, [load]);
+
+  useEffect(() => {
+    if (open) load();
+  }, [open, load]);
 
   if (!isAuthenticated) return null;
 
   const displayCount =
-    unread > 0
-      ? unread > 9
-        ? "9+"
-        : unread
-      : badgeCount > 0
-        ? badgeCount > 9
-          ? "9+"
-          : badgeCount
-        : null;
+    unread > 0 ? (unread > 9 ? "9+" : unread) : badgeCount > 0 ? (badgeCount > 9 ? "9+" : badgeCount) : null;
 
   const markAllRead = async () => {
     try {
       await apiRequestWithAuth("/notifications/read-all", { method: "PATCH" });
       setUnread(0);
-      markUpdatesSeen?.();
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const markOneRead = async (id) => {
+    try {
+      await apiRequestWithAuth(`/notifications/${id}/read`, { method: "PATCH" });
+      setItems((prev) =>
+        prev.map((n) => (String(n._id) === String(id) ? { ...n, isRead: true } : n)),
+      );
+      setUnread((c) => Math.max(0, c - 1));
     } catch {
       /* ignore */
     }
@@ -75,12 +77,7 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         type="button"
-        onClick={async () => {
-          if (!open) {
-            await loadAndMarkRead();
-          }
-          setOpen((o) => !o);
-        }}
+        onClick={() => setOpen((o) => !o)}
         className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-700"
         aria-label="Notifications"
       >
@@ -101,9 +98,7 @@ export default function NotificationBell() {
           />
           <div className="absolute right-0 top-full mt-2 z-50 w-80 max-h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <span className="font-semibold text-slate-900">
-                Notifications
-              </span>
+              <span className="font-semibold text-slate-900">Notifications</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -133,18 +128,30 @@ export default function NotificationBell() {
                 </p>
               ) : (
                 items.map((n) => (
-                  <div
+                  <button
                     key={n._id}
-                    className={`px-4 py-3 border-b border-slate-50 text-sm ${
-                      !n.isRead ? "bg-orange-50/50" : ""
+                    type="button"
+                    onClick={() => {
+                      if (!n.isRead) markOneRead(n._id);
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-slate-50 text-sm ${
+                      !n.isRead ? "bg-orange-50/60" : "bg-white"
                     }`}
                   >
-                    <p className="font-medium text-slate-900">{n.title}</p>
-                    <p className="text-slate-600 mt-0.5">{n.message}</p>
+                    <p
+                      className={`font-medium ${
+                        !n.isRead ? "text-orange-700" : "text-slate-800"
+                      }`}
+                    >
+                      {n.title}
+                    </p>
+                    <p className={`mt-0.5 ${!n.isRead ? "text-slate-700" : "text-slate-500"}`}>
+                      {n.message}
+                    </p>
                     <p className="text-[10px] text-slate-400 mt-1">
                       {new Date(n.createdAt).toLocaleString()}
                     </p>
-                  </div>
+                  </button>
                 ))
               )}
             </div>
