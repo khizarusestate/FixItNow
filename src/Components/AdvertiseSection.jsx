@@ -26,30 +26,59 @@ import {
   formatAdPrice,
   getAdPrice,
 } from "../utils/adPricing.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
+
+const AD_DRAFT_KEY = "fixitnow_draft_advertise";
 
 export default function AdvertiseSection() {
   const { user, isAuthenticated } = useAuth();
+  const savedDraft = loadFormDraft(AD_DRAFT_KEY, {});
   const [showModal, setShowModal] = useState(false);
-  const [purpose, setPurpose] = useState("");
-  const [duration, setDuration] = useState("1 week");
-  const [adType, setAdType] = useState("image");
+  const [purpose, setPurpose] = useState(savedDraft.purpose ?? "");
+  const [duration, setDuration] = useState(savedDraft.duration ?? "1 week");
+  const [adType, setAdType] = useState(savedDraft.adType ?? "image");
   const [files, setFiles] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [pendingAds, setPendingAds] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [payAfterWork, setPayAfterWork] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(savedDraft.paymentMethod ?? "");
+  const [payAfterWork, setPayAfterWork] = useState(savedDraft.payAfterWork ?? false);
   const [paymentReceipt, setPaymentReceipt] = useState(null);
-  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentReference, setPaymentReference] = useState(savedDraft.paymentReference ?? "");
   const [receiptPreview, setReceiptPreview] = useState(null);
+  const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
+  const [showPayAck, setShowPayAck] = useState(false);
   const [guestContact, setGuestContact] = useState({
-    name: "",
-    email: "",
-    phone: "",
+    name: savedDraft.guestContact?.name ?? "",
+    email: savedDraft.guestContact?.email ?? "",
+    phone: savedDraft.guestContact?.phone ?? "",
   });
   const receiptInputRef = useRef(null);
+
+  useEffect(() => {
+    saveFormDraft(AD_DRAFT_KEY, {
+      purpose,
+      duration,
+      adType,
+      paymentMethod,
+      payAfterWork,
+      paymentReference,
+      guestContact,
+      termsAgreed,
+    });
+  }, [
+    purpose,
+    duration,
+    adType,
+    paymentMethod,
+    payAfterWork,
+    paymentReference,
+    guestContact,
+    termsAgreed,
+  ]);
 
   const fetchPendingAds = useCallback(async () => {
     if (!isAuthenticated) {
@@ -155,8 +184,28 @@ export default function AdvertiseSection() {
     setError("");
   };
 
-  const handleSubmit = async (e) => {
+  const resetFormFields = () => {
+    setPurpose("");
+    setDuration("1 week");
+    setFiles([]);
+    setFilePreviews([]);
+    setAdType("image");
+    resetPaymentFields();
+    setGuestContact({ name: "", email: "", phone: "" });
+    setTermsAgreed(false);
+  };
+
+  const scrollToTerms = (e) => {
     e.preventDefault();
+    closeModal();
+    window.setTimeout(() => {
+      document
+        .getElementById("terms-of-service")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  };
+
+  const submitAdvertisement = async () => {
     setError("");
 
     if (!isAuthenticated) {
@@ -221,11 +270,8 @@ export default function AdvertiseSection() {
 
       setSuccess(true);
       fetchPendingAds();
-      setPurpose("");
-      setFiles([]);
-      setFilePreviews([]);
-      setAdType("image");
-      resetPaymentFields();
+      clearFormDraft(AD_DRAFT_KEY);
+      resetFormFields();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -233,17 +279,33 @@ export default function AdvertiseSection() {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!termsAgreed) {
+      setError("Please agree to the terms and conditions.");
+      return;
+    }
+    if (payAfterWork) {
+      setShowPayAck(true);
+      return;
+    }
+    await submitAdvertisement();
+  };
+
   const closeModal = () => {
+    saveFormDraft(AD_DRAFT_KEY, {
+      purpose,
+      duration,
+      adType,
+      paymentMethod,
+      payAfterWork,
+      paymentReference,
+      guestContact,
+      termsAgreed,
+    });
     setShowModal(false);
     setError("");
     setSuccess(false);
-    setPurpose("");
-    setDuration("1 week");
-    setFiles([]);
-    setFilePreviews([]);
-    setAdType("image");
-    resetPaymentFields();
-    setGuestContact({ name: "", email: "", phone: "" });
   };
 
   const openAdModal = () => {
@@ -269,7 +331,7 @@ export default function AdvertiseSection() {
                     {pendingAds.length} advertisement{pendingAds.length > 1 ? "s" : ""} pending review
                   </p>
                   <p className="mt-0.5 text-xs text-amber-800/90">
-                    We will notify you when each ad is approved or needs changes.
+                    We will notify you when each ad is reviewed.
                   </p>
                   <ul className="mt-2 space-y-1 text-xs text-slate-700">
                     {pendingAds.slice(0, 3).map((a) => (
@@ -293,30 +355,8 @@ export default function AdvertiseSection() {
             Advertise With Us
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Reach thousands of verified customers and professionals on FixItNow.
-            Submit your advertisement and our team will review it within 24
-            hours.
+            Reach customers on FixItNow. Submit your ad for review.
           </p>
-
-          <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-orange-200 bg-white/90 p-4 text-left shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3">
-              Pricing (PKR)
-            </p>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 text-sm">
-              {Object.entries(AD_DURATION_PRICING).map(([key, { label, price }]) => (
-                <li
-                  key={key}
-                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
-                >
-                  <span className="font-semibold text-slate-800">{label}</span>
-                  <span className="block text-orange-600 font-bold">Rs {price}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-slate-500">
-              Pay via EasyPaisa, JazzCash, or hand-to-hand. Admin confirms payment before your ad goes live.
-            </p>
-          </div>
 
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <button
@@ -326,11 +366,6 @@ export default function AdvertiseSection() {
               <Megaphone size={18} />
               Submit Advertisement
             </button>
-            {!isAuthenticated && (
-              <p className="text-sm text-slate-500">
-                No account needed — submit as a guest
-              </p>
-            )}
           </div>
         </div>
       </section>
@@ -347,11 +382,9 @@ export default function AdvertiseSection() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">
-                    Advertise With Us
+                    Submit Advertisement
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Complete the form below
-                  </p>
+                  <p className="text-xs text-slate-500">Fill in the details below</p>
                 </div>
               </div>
               <button
@@ -370,11 +403,10 @@ export default function AdvertiseSection() {
                     <CheckCircle size={32} className="text-green-600" />
                   </div>
                   <h4 className="text-xl font-bold text-slate-900">
-                    Submitted Successfully!
+                    Submitted
                   </h4>
                   <p className="mt-2 text-slate-600">
-                    Your advertisement has been submitted and will be reviewed
-                    by our team within 24 hours.
+                    Your ad is under review. We will notify you when it is approved.
                   </p>
                   <button
                     onClick={closeModal}
@@ -385,6 +417,23 @@ export default function AdvertiseSection() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-orange-600 mb-2">
+                      Pricing (PKR)
+                    </p>
+                    <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 text-xs">
+                      {Object.entries(AD_DURATION_PRICING).map(([key, { label, price }]) => (
+                        <li
+                          key={key}
+                          className="rounded-lg border border-white/80 bg-white px-2 py-1.5"
+                        >
+                          <span className="font-medium text-slate-700">{label}</span>
+                          <span className="block text-orange-600 font-bold">Rs {price}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
                   {/* Contact details */}
                   <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
@@ -553,11 +602,9 @@ export default function AdvertiseSection() {
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                     />
                     <span className="text-sm text-amber-950">
-                      <span className="font-semibold block">
-                        Payment after work is completed
-                      </span>
+                      <span className="font-semibold block">Pay after work is completed</span>
                       <span className="text-xs text-amber-800/90 mt-0.5 block">
-                        Pay when the service is done — payment fields below are not required.
+                        Payment fields below are optional.
                       </span>
                     </span>
                   </label>
@@ -596,10 +643,8 @@ export default function AdvertiseSection() {
                     <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
                       <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
                       <div className="text-sm text-violet-900">
-                        <p className="font-semibold">Hand to hand payment</p>
-                        <p className="mt-1 text-xs text-violet-800/90">
-                          Pay in cash in person. No receipt upload required.
-                        </p>
+                        <p className="font-semibold">Hand to hand</p>
+                        <p className="mt-1 text-xs text-violet-800/90">Pay in cash. No receipt needed.</p>
                       </div>
                     </div>
                   )}
@@ -815,9 +860,31 @@ export default function AdvertiseSection() {
                   )}
 
                   {/* Submit */}
+                  <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={(e) => {
+                        setTermsAgreed(e.target.checked);
+                        setError("");
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="text-xs text-slate-600 leading-snug">
+                      I agree to the{" "}
+                      <button
+                        type="button"
+                        onClick={scrollToTerms}
+                        className="font-semibold text-orange-600 underline hover:text-orange-700"
+                      >
+                        terms and conditions
+                      </button>
+                    </span>
+                  </label>
+
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !termsAgreed}
                     className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
@@ -837,6 +904,16 @@ export default function AdvertiseSection() {
             </div>
           </div>
         </div>
+      )}
+
+      {showPayAck && (
+        <PayAfterWorkAckModal
+          onClose={() => setShowPayAck(false)}
+          onConfirm={async () => {
+            setShowPayAck(false);
+            await submitAdvertisement();
+          }}
+        />
       )}
     </>
   );

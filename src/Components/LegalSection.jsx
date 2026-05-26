@@ -4,66 +4,47 @@ export default function LegalSection() {
   return (
     <section
       id="legal"
-      className="scroll-mt-20 bg-slate-100 px-5 py-16 sm:px-8 lg:px-10"
+      className="scroll-mt-20 bg-slate-100 px-5 py-12 sm:px-8 lg:px-10"
     >
       <div className="mx-auto max-w-4xl">
-        <p className="text-center text-sm font-bold uppercase tracking-widest text-orange-600 mb-2">
+        <h2 className="text-center text-2xl font-bold text-slate-900 mb-8">
           Legal
-        </p>
-        <h2 className="text-center text-3xl font-bold text-slate-900 mb-10">
-          Policies &amp; Terms
         </h2>
 
-        <div className="space-y-8">
-          <article className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="text-orange-500" size={24} />
-              <h3 className="text-xl font-bold text-slate-900">Privacy Policy</h3>
+        <div className="space-y-6">
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="text-orange-500" size={22} />
+              <h3 className="text-lg font-bold text-slate-900">Privacy Policy</h3>
             </div>
-            <div className="prose prose-slate max-w-none text-sm text-slate-600 space-y-3">
+            <div className="text-sm text-slate-600 space-y-2">
               <p>
-                Fix It Now collects information you provide when booking services,
-                creating an account, or contacting us — including name, phone, email,
-                address, and payment receipts you upload.
+                We collect name, contact, location, and payment proof to process
+                bookings and assign workers. We do not sell your data.
               </p>
-              <p>
-                We use this data to process bookings, assign workers, send status
-                updates, and improve our platform. We do not sell your personal data
-                to third parties.
-              </p>
-              <p>
-                Payment receipts and location data are stored securely on our servers.
-                You may request account deletion by contacting support.
-              </p>
-              <p className="text-xs text-slate-500">Last updated: May 2026</p>
+              <p>You may request account deletion via support.</p>
+              <p className="text-xs text-slate-400">Updated May 2026</p>
             </div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <FileText className="text-orange-500" size={24} />
-              <h3 className="text-xl font-bold text-slate-900">Terms of Service</h3>
+          <article
+            id="terms-of-service"
+            className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <FileText className="text-orange-500" size={22} />
+              <h3 className="text-lg font-bold text-slate-900">Terms of Service</h3>
             </div>
-            <div className="prose prose-slate max-w-none text-sm text-slate-600 space-y-3">
+            <div className="text-sm text-slate-600 space-y-2">
               <p>
-                By using Fix It Now you agree to book services in good faith, provide
-                accurate contact and location details, and upload genuine payment
-                proof when required.
+                Provide accurate details and genuine payment proof when required.
+                Bookings are confirmed after admin review.
               </p>
               <p>
-                Bookings are confirmed after admin review. Service quality is between
-                you and the assigned worker; the platform facilitates matching and
-                communication.
+                Cancel while pending. Workers must act professionally. Accounts may
+                be suspended for abuse or non-payment.
               </p>
-              <p>
-                Cancellations are allowed while a booking is still pending. Refunds for
-                completed payments follow our support review process.
-              </p>
-              <p>
-                Workers must maintain professional conduct and accurate profiles.
-                Accounts may be suspended or removed for fraud or abuse.
-              </p>
-              <p className="text-xs text-slate-500">Last updated: May 2026</p>
+              <p className="text-xs text-slate-400">Updated May 2026</p>
             </div>
           </article>
         </div>

@@ -46,6 +46,8 @@ import {
   PAYMENT_METHOD_VALUES,
   requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
 
 // =======================
 // CATEGORY ICONS
@@ -109,34 +111,77 @@ const getIconComponent = (iconName) => {
 function BookingForm({ service, onClose, onSuccess }) {
   const { user } = useAuth();
   const receiptInputRef = useRef(null);
+  const draftKey = `fixitnow_draft_booking_${service?.id || "service"}`;
+  const savedDraft = loadFormDraft(draftKey, {});
+  const hadDraft = Boolean(savedDraft.name || savedDraft.email || savedDraft.phone);
 
-  const [geo, setGeo] = useState(() => geoFromUser(user));
+  const [geo, setGeo] = useState(() =>
+    savedDraft.geo ? savedDraft.geo : geoFromUser(user),
+  );
   const [form, setForm] = useState({
-    name: user?.fullName || user?.name || "",
-    phone: user?.phone || user?.phoneNumber || "",
-    email: user?.email || "",
-    notes: "",
+    name: savedDraft.name ?? user?.fullName ?? user?.name ?? "",
+    phone: savedDraft.phone ?? user?.phone ?? user?.phoneNumber ?? "",
+    email: savedDraft.email ?? user?.email ?? "",
+    notes: savedDraft.notes ?? "",
     serviceCategory: service?.category || "",
     paymentReceipt: null,
-    paymentMethod: "",
-    payAfterWork: false,
+    paymentMethod: savedDraft.paymentMethod ?? "",
+    payAfterWork: savedDraft.payAfterWork ?? false,
   });
+  const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
+  const [showPayAck, setShowPayAck] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [receiptPreview, setReceiptPreview] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      setGeo(geoFromUser(user));
-      setForm((prev) => ({
-        ...prev,
-        name: user?.fullName || user?.name || "",
-        phone: user?.phone || user?.phoneNumber || "",
-        email: user?.email || "",
-      }));
-    }
-  }, [user]);
+    if (!user || hadDraft) return;
+    setGeo(geoFromUser(user));
+    setForm((prev) => ({
+      ...prev,
+      name: user?.fullName || user?.name || prev.name,
+      phone: user?.phone || user?.phoneNumber || prev.phone,
+      email: user?.email || prev.email,
+    }));
+  }, [user, hadDraft]);
+
+  useEffect(() => {
+    saveFormDraft(draftKey, {
+      name: form.name,
+      phone: form.phone,
+      email: form.email,
+      notes: form.notes,
+      paymentMethod: form.paymentMethod,
+      payAfterWork: form.payAfterWork,
+      geo,
+      termsAgreed,
+    });
+  }, [draftKey, form, geo, termsAgreed]);
+
+  const handleClose = () => {
+    saveFormDraft(draftKey, {
+      name: form.name,
+      phone: form.phone,
+      email: form.email,
+      notes: form.notes,
+      paymentMethod: form.paymentMethod,
+      payAfterWork: form.payAfterWork,
+      geo,
+      termsAgreed,
+    });
+    onClose();
+  };
+
+  const scrollToTerms = (e) => {
+    e.preventDefault();
+    handleClose();
+    window.setTimeout(() => {
+      document
+        .getElementById("terms-of-service")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 350);
+  };
 
   useEffect(() => {
     return () => {
@@ -183,11 +228,14 @@ function BookingForm({ service, onClose, onSuccess }) {
     setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const submitBooking = async () => {
     if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
       setError("Please fill all required fields.");
+      return;
+    }
+
+    if (!termsAgreed) {
+      setError("Please agree to the terms and conditions.");
       return;
     }
 
@@ -238,6 +286,7 @@ function BookingForm({ service, onClose, onSuccess }) {
 
       await bookingService.createBooking(formData);
 
+      clearFormDraft(draftKey);
       onSuccess();
     } catch (err) {
       console.error("Booking error:", err);
@@ -250,6 +299,22 @@ function BookingForm({ service, onClose, onSuccess }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!termsAgreed) {
+      setError("Please agree to the terms and conditions.");
+      return;
+    }
+
+    if (form.payAfterWork) {
+      setShowPayAck(true);
+      return;
+    }
+
+    await submitBooking();
   };
 
   const inputCls =
@@ -278,7 +343,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
             >
@@ -423,11 +488,8 @@ function BookingForm({ service, onClose, onSuccess }) {
               }}
               className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
             />
-            <span className="text-sm text-amber-950">
-              <span className="font-semibold block">Payment after work is completed</span>
-              <span className="text-xs text-amber-800/90 mt-0.5 block">
-                Pay when the job is done — payment details below are not required now.
-              </span>
+            <span className="text-sm text-amber-950 font-medium">
+              Pay after work is completed
             </span>
           </label>
 
@@ -482,9 +544,6 @@ function BookingForm({ service, onClose, onSuccess }) {
                   Send payment to this number:{" "}
                   <span className="font-mono font-bold">{getEasypaisaMsisdn()}</span>
                 </p>
-                <p className="mt-1 text-xs text-emerald-700/90">
-                  Then upload your payment receipt below.
-                </p>
               </div>
             </div>
           )}
@@ -497,9 +556,6 @@ function BookingForm({ service, onClose, onSuccess }) {
                 <p className="mt-1 text-sky-800">
                   Send payment to this number:{" "}
                   <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
-                </p>
-                <p className="mt-1 text-xs text-sky-700/90">
-                  Then upload your payment receipt below.
                 </p>
               </div>
             </div>
@@ -601,10 +657,31 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
           )}
 
-          {/* SUBMIT */}
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={termsAgreed}
+              onChange={(e) => {
+                setTermsAgreed(e.target.checked);
+                setError("");
+              }}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="text-xs text-slate-600 leading-snug">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={scrollToTerms}
+                className="font-semibold text-orange-600 underline hover:text-orange-700"
+              >
+                terms and conditions
+              </button>
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !termsAgreed}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-sm font-bold text-white disabled:opacity-60 hover:shadow-lg transition-all"
           >
             {submitting ? (
@@ -621,6 +698,16 @@ function BookingForm({ service, onClose, onSuccess }) {
           </button>
         </form>
       </div>
+
+      {showPayAck && (
+        <PayAfterWorkAckModal
+          onClose={() => setShowPayAck(false)}
+          onConfirm={async () => {
+            setShowPayAck(false);
+            await submitBooking();
+          }}
+        />
+      )}
     </div>
   );
 }

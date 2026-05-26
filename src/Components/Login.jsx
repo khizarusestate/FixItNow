@@ -4,12 +4,15 @@ import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { isApiClientError } from "../utils/apiError.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
+const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
 
 export default function Login({ onLoginSuccess }) {
   const { activeModal, closeModal, switchModal, openModal, modalPayload } =
     useModal();
+  const savedDraft = loadFormDraft(LOGIN_DRAFT_KEY, {});
 
   useEffect(() => {
     if (activeModal === "login" && modalPayload?.email) {
@@ -34,15 +37,38 @@ export default function Login({ onLoginSuccess }) {
     setIsError(false);
   };
   const { login } = useAuth();
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState({
+    email: savedDraft.email ?? "",
+    password: savedDraft.password ?? "",
+  });
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [loginType, setLoginType] = useState("customer"); // 'customer' | 'worker'
+  const [loginType, setLoginType] = useState(savedDraft.loginType ?? "customer");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(savedDraft.rememberMe ?? true);
+
+  useEffect(() => {
+    if (activeModal !== "login") return;
+    saveFormDraft(LOGIN_DRAFT_KEY, {
+      email: form.email,
+      password: form.password,
+      loginType,
+      rememberMe,
+    });
+  }, [activeModal, form.email, form.password, loginType, rememberMe]);
 
   if (activeModal !== "login") return null;
+
+  const handleClose = () => {
+    saveFormDraft(LOGIN_DRAFT_KEY, {
+      email: form.email,
+      password: form.password,
+      loginType,
+      rememberMe,
+    });
+    closeModal();
+  };
 
   const update = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -115,7 +141,8 @@ export default function Login({ onLoginSuccess }) {
       setIsError(false);
       if (onLoginSuccess) onLoginSuccess(userData);
       setTimeout(() => {
-        closeModal();
+        clearFormDraft(LOGIN_DRAFT_KEY);
+        handleClose();
         setForm(initialForm);
         setMessage("");
         // Show complete profile modal if user hasn't completed profile
@@ -148,7 +175,7 @@ export default function Login({ onLoginSuccess }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <button
-        onClick={closeModal}
+        onClick={handleClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
         aria-label="Close"
       />
@@ -162,13 +189,11 @@ export default function Login({ onLoginSuccess }) {
               Welcome back
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {loginType === "worker"
-                ? "Sign in as a professional worker."
-                : "Sign in to access your account."}
+              {loginType === "worker" ? "Worker sign in" : "Customer sign in"}
             </p>
           </div>
           <button
-            onClick={closeModal}
+            onClick={handleClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
           >
             <X size={18} />
@@ -291,7 +316,7 @@ export default function Login({ onLoginSuccess }) {
             </p>
             {loginType === "worker" && (
               <p className="text-xs text-slate-400">
-                Workers need to be approved by admin before login.
+                Admin approval required before login.
               </p>
             )}
           </div>

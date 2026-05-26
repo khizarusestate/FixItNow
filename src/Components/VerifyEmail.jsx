@@ -2,12 +2,18 @@ import { useState, useEffect } from "react";
 import { X, Mail, RefreshCcw, CheckCircle } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
+const VERIFY_DRAFT_KEY = "fixitnow_draft_verify";
 const initialForm = { email: "", code: "" };
 
 export default function VerifyEmail() {
   const { activeModal, closeModal, switchModal, modalPayload } = useModal();
-  const [form, setForm] = useState(initialForm);
+  const savedDraft = loadFormDraft(VERIFY_DRAFT_KEY, {});
+  const [form, setForm] = useState({
+    email: savedDraft.email ?? "",
+    code: savedDraft.code ?? "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -24,6 +30,11 @@ export default function VerifyEmail() {
       }));
     }
   }, [activeModal, modalPayload?.email, modalPayload?.emailLocked]);
+
+  useEffect(() => {
+    if (activeModal !== "verifyEmail") return;
+    saveFormDraft(VERIFY_DRAFT_KEY, { email: form.email, code: form.code });
+  }, [activeModal, form.email, form.code]);
 
   if (activeModal !== "verifyEmail") return null;
 
@@ -52,6 +63,7 @@ export default function VerifyEmail() {
         setMessage(response.message || "Email verified successfully.");
         setIsError(false);
         setDone(true);
+        clearFormDraft(VERIFY_DRAFT_KEY);
       }
     } catch (err) {
       setMessage(err.message || "Verification failed.");
@@ -88,8 +100,8 @@ export default function VerifyEmail() {
   };
 
   const handleClose = () => {
+    saveFormDraft(VERIFY_DRAFT_KEY, { email: form.email, code: form.code });
     closeModal();
-    setForm(initialForm);
     setMessage("");
     setDone(false);
     setIsError(false);

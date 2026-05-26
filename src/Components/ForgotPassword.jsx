@@ -1,18 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Mail, Key, ArrowRight, CheckCircle } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
+const FORGOT_DRAFT_KEY = "fixitnow_draft_forgot";
 const initialState = { email: "", code: "", password: "" };
 
 export default function ForgotPassword() {
   const { activeModal, closeModal, switchModal } = useModal();
-  const [form, setForm] = useState(initialState);
-  const [step, setStep] = useState("request");
+  const savedDraft = loadFormDraft(FORGOT_DRAFT_KEY, {});
+  const [form, setForm] = useState({
+    email: savedDraft.email ?? "",
+    code: savedDraft.code ?? "",
+    password: "",
+  });
+  const [step, setStep] = useState(savedDraft.step ?? "request");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (activeModal !== "forgotPassword") return;
+    saveFormDraft(FORGOT_DRAFT_KEY, {
+      email: form.email,
+      code: form.code,
+      step,
+    });
+  }, [activeModal, form.email, form.code, step]);
 
   if (activeModal !== "forgotPassword") return null;
 
@@ -71,6 +87,7 @@ export default function ForgotPassword() {
         setMessage(response.message || "Password reset successfully.");
         setIsError(false);
         setDone(true);
+        clearFormDraft(FORGOT_DRAFT_KEY);
       }
     } catch (err) {
       setMessage(err.message || "Unable to reset password.");
@@ -81,9 +98,12 @@ export default function ForgotPassword() {
   };
 
   const handleClose = () => {
+    saveFormDraft(FORGOT_DRAFT_KEY, {
+      email: form.email,
+      code: form.code,
+      step,
+    });
     closeModal();
-    setForm(initialState);
-    setStep("request");
     setMessage("");
     setIsError(false);
     setDone(false);

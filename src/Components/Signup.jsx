@@ -13,7 +13,9 @@ import { authService, servicesService } from "../services/api.js";
 import LocationPicker from "./LocationPicker.jsx";
 import SearchableSelect from "./SearchableSelect.jsx";
 import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
+import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
+const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
 const initialWorker = {
   fullName: "",
@@ -26,17 +28,34 @@ const initialWorker = {
 const emptyGeo = { location: "", latitude: null, longitude: null, placeId: "" };
 export default function Signup() {
   const { activeModal, closeModal, switchModal } = useModal();
-  const [signupType, setSignupType] = useState("customer");
-  const [customerForm, setCustomerForm] = useState(initialCustomer);
-  const [workerForm, setWorkerForm] = useState(initialWorker);
+  const savedDraft = loadFormDraft(SIGNUP_DRAFT_KEY, {});
+  const [signupType, setSignupType] = useState(savedDraft.signupType ?? "customer");
+  const [customerForm, setCustomerForm] = useState({
+    ...initialCustomer,
+    ...savedDraft.customerForm,
+  });
+  const [workerForm, setWorkerForm] = useState({
+    ...initialWorker,
+    ...savedDraft.workerForm,
+  });
   const [showPw, setShowPw] = useState(false);
   const [showWorkerPw, setShowWorkerPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
-  const [workerGeo, setWorkerGeo] = useState(emptyGeo);
+  const [workerGeo, setWorkerGeo] = useState(savedDraft.workerGeo ?? emptyGeo);
   const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
+
+  useEffect(() => {
+    if (activeModal !== "signup") return;
+    saveFormDraft(SIGNUP_DRAFT_KEY, {
+      signupType,
+      customerForm,
+      workerForm,
+      workerGeo,
+    });
+  }, [activeModal, signupType, customerForm, workerForm, workerGeo]);
 
   const updateCustomer = (k, v) => setCustomerForm((f) => ({ ...f, [k]: v }));
   const updateWorker = (k, v) => setWorkerForm((f) => ({ ...f, [k]: v }));
@@ -87,7 +106,10 @@ export default function Signup() {
           password: customerForm.password,
         });
 
-        if (response.success) setDone(true);
+        if (response.success) {
+          clearFormDraft(SIGNUP_DRAFT_KEY);
+          setDone(true);
+        }
       } else {
         if (
           !workerForm.fullName ||
@@ -124,7 +146,10 @@ export default function Signup() {
           serviceCategories: [],
         });
 
-        if (response.success) setDone(true);
+        if (response.success) {
+          clearFormDraft(SIGNUP_DRAFT_KEY);
+          setDone(true);
+        }
       }
     } catch (err) {
       setMessage(err.message || "Registration failed. Please try again.");
@@ -135,10 +160,13 @@ export default function Signup() {
   };
 
   const handleClose = () => {
+    saveFormDraft(SIGNUP_DRAFT_KEY, {
+      signupType,
+      customerForm,
+      workerForm,
+      workerGeo,
+    });
     closeModal();
-    setCustomerForm(initialCustomer);
-    setWorkerForm(initialWorker);
-    setWorkerGeo(emptyGeo);
     setDone(false);
     setMessage("");
   };
