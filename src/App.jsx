@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "./context/AuthContext";
-import { CoachProvider } from "./context/CoachContext";
+import { GuideProvider } from "./context/GuideContext";
 import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
@@ -32,7 +32,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <CoachProvider>
+        <GuideProvider>
         <ModalProvider>
           <div className="relative">
             <Header />
@@ -58,7 +58,7 @@ export default function App() {
             </Suspense>
           </div>
         </ModalProvider>
-        </CoachProvider>
+        </GuideProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

@@ -8,15 +8,15 @@ import MyBookings from './MyBookings';
 import WorkerDashboard from './WorkerDashboard';
 import ProfileModal from './ProfileModal';
 import NotificationBell from './NotificationBell';
-import HelpModal from './HelpModal';
+import { useGuide } from '../context/GuideContext';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookingsOpen, setBookingsOpen] = useState(false);
   const [workerDashOpen, setWorkerDashOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
   const { openModal } = useModal();
+  const { openGuide } = useGuide();
   const auth = useAuth();
   const { isAuthenticated, user, logout, setUser, badgeCount, markUpdatesSeen } = auth || {};
   const displayBadge = badgeCount > 0 ? (badgeCount > 9 ? '9+' : badgeCount) : null;
@@ -38,7 +38,7 @@ export default function Header() {
 
   const close = () => setMenuOpen(false);
   const openHelp = () => {
-    setHelpOpen(true);
+    openGuide();
     close();
   };
 
@@ -73,7 +73,6 @@ export default function Header() {
           <nav className="hidden lg:flex items-center gap-2 justify-end">
             <button
               type="button"
-              data-coach="help-btn"
               onClick={openHelp}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 border border-slate-200 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all whitespace-nowrap"
               aria-label="Help"
@@ -144,7 +143,6 @@ export default function Header() {
           <div className="flex lg:hidden items-center gap-1">
             <button
               type="button"
-              data-coach="help-btn"
               onClick={openHelp}
               className="p-2 rounded-lg text-slate-700 hover:bg-orange-50"
               aria-label="Help"
@@ -169,7 +167,7 @@ export default function Header() {
             <button onClick={() => { scrollToSection('contact'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
               <Mail size={16} /> Contact
             </button>
-            <button type="button" data-coach="help-btn" onClick={openHelp} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
+            <button type="button" onClick={openHelp} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
               <HelpCircle size={16} /> Help
             </button>
             {isAuthenticated ? (
@@ -216,7 +214,6 @@ export default function Header() {
         )}
       </div>
     </header>
-    <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
     <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} />
     <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} />
     <ProfileModal
