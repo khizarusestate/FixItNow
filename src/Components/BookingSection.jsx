@@ -774,7 +774,11 @@ export default function BookingSection() {
       .then((res) => {
         if (cancelled) return;
         const list = res?.data || [];
-        setPendingBookingCount(list.filter((b) => b.status === "pending").length);
+        setPendingBookingCount(
+          list.filter(
+            (b) => b.status === "pending" || b.status === "pending-confirmation",
+          ).length,
+        );
       })
       .catch(() => {
         if (!cancelled) setPendingBookingCount(0);
@@ -1275,7 +1279,11 @@ export default function BookingSection() {
                 .then((res) => {
                   const list = res?.data || [];
                   setPendingBookingCount(
-                    list.filter((b) => b.status === "pending").length,
+                    list.filter(
+                      (b) =>
+                        b.status === "pending" ||
+                        b.status === "pending-confirmation",
+                    ).length,
                   );
                 })
                 .catch(() => {});

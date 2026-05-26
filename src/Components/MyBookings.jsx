@@ -29,6 +29,14 @@ const STATUS_CONFIG = {
     label: "Pending",
     priority: 1,
   },
+  "pending-confirmation": {
+    icon: AlertCircle,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    label: "Pending Confirmation",
+    priority: 1,
+  },
   approved: {
     icon: CheckCircle,
     color: "text-blue-600",
@@ -311,7 +319,8 @@ export default function MyBookings({ isOpen, onClose }) {
               {bookings.map((b) => {
                 const cfg = STATUS_CONFIG[b.status] || STATUS_CONFIG.pending;
                 const Icon = cfg.icon;
-                const canCancel = b.status === "pending";
+                const canCancel =
+                  b.status === "pending" || b.status === "pending-confirmation";
                 const canMarkDone =
                   Boolean(b.worker) &&
                   ["assigned", "in-progress"].includes(b.status) &&
@@ -366,7 +375,7 @@ export default function MyBookings({ isOpen, onClose }) {
                             </p>
                           )}
                           {getApprovedTimestamp(b) &&
-                            b.status !== "pending" && (
+                            !["pending", "pending-confirmation"].includes(b.status) && (
                               <p className="text-xs text-slate-500 mt-1">
                                 Approved on{" "}
                                 {formatDateTime(getApprovedTimestamp(b))}

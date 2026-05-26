@@ -139,11 +139,21 @@ export async function unregisterWebPush() {
 
 /** Turn device push on/off (server + browser subscription). */
 export async function setDevicePushEnabled(enabled) {
-  await saveDevicePushPreference(enabled);
   if (enabled) {
+    // First try to register in browser. Only then persist server preference,
+    // otherwise user ends up with devicePushEnabled=true but no subscription.
     const result = await registerWebPush();
+    if (!result?.ok) {
+      // Revert server flag to keep state consistent with browser.
+      await saveDevicePushPreference(false).catch(() => {});
+      return result;
+    }
+    await saveDevicePushPreference(true);
     return result;
   }
+
+  // Disable: persist server flag then remove browser subscription.
+  await saveDevicePushPreference(false);
   await unregisterWebPush();
   return { ok: true };
 }
