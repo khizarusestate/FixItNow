@@ -110,7 +110,7 @@ const getIconComponent = (iconName) => {
 // =======================
 
 function BookingForm({ service, onClose, onSuccess }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const receiptInputRef = useRef(null);
   const draftKey = `fixitnow_draft_booking_${service?.id || "service"}`;
   const savedDraft = loadFormDraft(draftKey, {});
@@ -290,7 +290,9 @@ function BookingForm({ service, onClose, onSuccess }) {
         formData.append("paymentReceipt", form.paymentReceipt);
       }
 
-      await bookingService.createBooking(formData);
+      await bookingService.createBooking(formData, {
+        asGuest: !(isAuthenticated && user?.type === "customer"),
+      });
 
       clearFormDraft(draftKey);
       onSuccess();
@@ -361,21 +363,14 @@ function BookingForm({ service, onClose, onSuccess }) {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
           {/* PRICE */}
-          {service?.price && (
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Banknote className="text-orange-600" size={20} />
-
-                  <span className="text-sm font-semibold text-slate-700">
-                    Service Price
-                  </span>
-                </div>
-
-                <span className="text-2xl font-bold text-orange-600">
-                  PKR {service.price}
-                </span>
-              </div>
+          {service?.price > 0 && (
+            <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Service Price
+              </p>
+              <p className="mt-1 text-2xl font-bold text-orange-600">
+                PKR {service.price}
+              </p>
             </div>
           )}
 
@@ -827,7 +822,14 @@ export default function BookingSection() {
 
       setSelectedService(normalizedService);
     },
-    [isAuthenticated, openModal, user?.type],
+    [
+      isAuthenticated,
+      openModal,
+      user?.type,
+      user?.location,
+      user?.address,
+      user?.serviceArea,
+    ],
   );
 
   // =======================
@@ -1187,16 +1189,14 @@ export default function BookingSection() {
                                   <ServiceIcon size={24} strokeWidth={2.25} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                                    <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
-                                      {service?.name}
-                                    </h4>
-                                    {service?.price > 0 && (
-                                      <span className="font-bold text-orange-600 text-base whitespace-nowrap">
-                                        PKR {service.price}
-                                      </span>
-                                    )}
-                                  </div>
+                                  <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
+                                    {service?.name}
+                                  </h4>
+                                  {service?.price > 0 && (
+                                    <p className="mt-1.5 inline-block rounded-lg bg-orange-100 px-2.5 py-1 text-sm font-bold text-orange-700">
+                                      PKR {service.price}
+                                    </p>
+                                  )}
                                   {service?.description && (
                                     <p className="mt-1.5 text-sm text-slate-600 line-clamp-2 leading-relaxed">
                                       {service.description}

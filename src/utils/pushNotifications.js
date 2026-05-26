@@ -1,5 +1,7 @@
 import { apiRequest, apiRequestWithAuth } from "../services/api.js";
 
+const DISMISS_KEY = "fixitnow_push_prompt_dismissed";
+
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -12,17 +14,39 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function getVapidPublicKey() {
-  const res = await apiRequest("/push/vapid-public-key");
+  const res = await apiRequest("/push/vapid-public-key", { skipAuth: true });
   return res?.data?.publicKey || res?.publicKey || "";
 }
 
+export function isPushSupported() {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
+export function getPushPermissionState() {
+  if (!isPushSupported()) return "unsupported";
+  return Notification.permission;
+}
+
+export function shouldShowPushPrompt() {
+  if (!isPushSupported()) return false;
+  if (localStorage.getItem(DISMISS_KEY) === "1") return false;
+  return Notification.permission === "default";
+}
+
+export function dismissPushPrompt() {
+  localStorage.setItem(DISMISS_KEY, "1");
+}
+
+/**
+ * Must be called from a user gesture (button click) so the browser shows the permission dialog.
+ */
 export async function registerWebPush() {
-  if (
-    typeof window === "undefined" ||
-    !("serviceWorker" in navigator) ||
-    !("PushManager" in window) ||
-    !("Notification" in window)
-  ) {
+  if (!isPushSupported()) {
     return { ok: false, reason: "unsupported" };
   }
 
@@ -31,9 +55,13 @@ export async function registerWebPush() {
     return { ok: false, reason: "disabled" };
   }
 
-  const permission = await Notification.requestPermission();
+  let permission = Notification.permission;
+  if (permission === "default") {
+    permission = await Notification.requestPermission();
+  }
+
   if (permission !== "granted") {
-    return { ok: false, reason: "denied" };
+    return { ok: false, reason: permission === "denied" ? "denied" : "dismissed" };
   }
 
   const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -54,6 +82,7 @@ export async function registerWebPush() {
     body: JSON.stringify({ subscription: subscription.toJSON() }),
   });
 
+  localStorage.removeItem(DISMISS_KEY);
   return { ok: true };
 }
 

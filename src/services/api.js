@@ -181,7 +181,8 @@ export async function apiRequest(
   retryCount = 0,
   isRetry = false,
 ) {
-  const role = getActiveSessionRole();
+  const skipAuth = options.skipAuth === true;
+  const role = skipAuth ? null : getActiveSessionRole();
   let token = role ? getToken(role) : null;
 
   // Don't set Content-Type for FormData - let browser set it with boundary
@@ -225,8 +226,9 @@ export async function apiRequest(
   }
 
   try {
+    const { skipAuth: _skipAuth, ...fetchOptions } = options;
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      ...options,
+      ...fetchOptions,
       headers,
     });
 
@@ -467,12 +469,14 @@ export const authService = {
 
 // Booking endpoints
 export const bookingService = {
-  createBooking: (data) => {
-    const role = getActiveSessionRole();
-    const request = role === "customer" ? apiRequestWithAuth : apiRequest;
+  createBooking: (data, { asGuest = false } = {}) => {
+    const role = asGuest ? null : getActiveSessionRole();
+    const request =
+      !asGuest && role === "customer" ? apiRequestWithAuth : apiRequest;
     const opts = {
       method: "POST",
       body: data,
+      skipAuth: asGuest,
       headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
     };
     if (!(data instanceof FormData)) {
