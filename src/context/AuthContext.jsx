@@ -7,7 +7,7 @@ import {
   useRef,
 } from "react";
 import MissedNotificationsModal from "../Components/shared/MissedNotificationsModal.jsx";
-import NotificationLiveToast from "../Components/shared/NotificationLiveToast.jsx";
+import LiveNotificationHost from "../Components/shared/LiveNotificationHost.jsx";
 import { io } from "socket.io-client";
 import {
   getToken,
@@ -163,7 +163,6 @@ export function AuthProvider({ children }) {
   const [rejectionMessage, setRejectionMessage] = useState("");
   const [newJobNotification, setNewJobNotification] = useState(null);
   const [badgeCount, setBadgeCount] = useState(0);
-  const [adStatusMessage, setAdStatusMessage] = useState(null);
   const [sessionExpiring, setSessionExpiring] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -370,10 +369,21 @@ export function AuthProvider({ children }) {
       setNewJobNotification(data);
       setBadgeCount((c) => Math.min(c + 1, 99));
       playNotificationTone();
+      const booking = data.booking || {};
       window.dispatchEvent(
-        new CustomEvent("fixitnow-notification-new", { detail: data }),
+        new CustomEvent("fixitnow-notification-new", {
+          detail: {
+            id: data.id || `job-${booking._id || booking.id || Date.now()}`,
+            title: "New Job Assigned!",
+            message:
+              data.message ||
+              `${booking.serviceTitle || "Job"}${booking.customerName ? ` — ${booking.customerName}` : ""}`,
+            type: "job",
+            booking,
+            relatedEntityId: booking._id || booking.id,
+          },
+        }),
       );
-      setTimeout(() => setNewJobNotification(null), 30000);
     });
 
     socket.on("notification-new", (data) => {
@@ -450,8 +460,24 @@ export function AuthProvider({ children }) {
     });
 
     const handleAdStatusUpdate = (data) => {
-      setAdStatusMessage(
-        data.message || `Your advertisement has been ${data.status}.`,
+      const msg =
+        data.message || `Your advertisement has been ${data.status}.`;
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-live-alert", {
+          detail: {
+            id: `ad-${data.adId || data.status}`,
+            title:
+              data.status === "approved"
+                ? "Advertisement approved"
+                : data.status === "rejected"
+                  ? "Advertisement rejected"
+                  : "Advertisement update",
+            message: msg,
+            type: data.status === "approved" ? "success" : "warning",
+            link: "#advertise",
+            dismissOnly: true,
+          },
+        }),
       );
       window.dispatchEvent(
         new CustomEvent("fixitnow-ad-status-update", { detail: data }),
@@ -571,6 +597,35 @@ export function AuthProvider({ children }) {
     },
     [updateJobCount],
   );
+
+  useEffect(() => {
+    if (!sessionExpiring) return;
+    window.dispatchEvent(
+      new CustomEvent("fixitnow-live-alert", {
+        detail: {
+          id: "session-expiring",
+          kind: "session-expiring",
+          title: "Session Expiring Soon",
+          message:
+            "Your session will expire in less than 5 minutes. Please save your work and login again.",
+          dismissOnly: true,
+        },
+      }),
+    );
+  }, [sessionExpiring]);
+
+  useEffect(() => {
+    const onDismissSession = () => handleSessionExpiringClose();
+    window.addEventListener(
+      "fixitnow-dismiss-session-expiring",
+      onDismissSession,
+    );
+    return () =>
+      window.removeEventListener(
+        "fixitnow-dismiss-session-expiring",
+        onDismissSession,
+      );
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.type) return;
@@ -729,64 +784,6 @@ export function AuthProvider({ children }) {
         </div>
       )}
 
-      {/* Advertisement status toast */}
-      {adStatusMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 max-w-md -translate-x-1/2 animate-fadeIn">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-lg">
-            <p className="text-sm text-slate-700">{adStatusMessage}</p>
-            <button
-              type="button"
-              onClick={() => setAdStatusMessage(null)}
-              className="text-xs font-semibold text-orange-600 hover:text-orange-700"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* New Job Assignment Notification (Worker Only) */}
-      {newJobNotification && user?.type === "worker" && (
-        <div className="fixed top-20 right-4 z-50 max-w-sm animate-slideInRight">
-          <div className="bg-orange-500 text-white rounded-xl shadow-2xl p-4 border-l-4 border-orange-600">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-sm mb-1">New Job Assigned!</h3>
-                <p className="text-sm text-white/90 mb-2">
-                  {newJobNotification.message}
-                </p>
-                <p className="text-xs text-white/70">
-                  {newJobNotification.booking?.serviceTitle} -{" "}
-                  {newJobNotification.booking?.customerName}
-                </p>
-                <button
-                  type="button"
-                  onClick={openWorkerDashboard}
-                  className="mt-2 text-xs bg-white text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded font-semibold transition-colors"
-                >
-                  Open Dashboard
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Account Rejected Modal */}
       {accountRejected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -817,47 +814,7 @@ export function AuthProvider({ children }) {
         </div>
       )}
 
-      {/* Session Expiring Warning */}
-      {sessionExpiring && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm animate-slideInRight">
-          <div className="bg-amber-500 text-white rounded-xl shadow-2xl p-4 border-l-4 border-amber-600">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-white mb-1">
-                  Session Expiring Soon
-                </h4>
-                <p className="text-sm text-white/90">
-                  Your session will expire in less than 5 minutes. Please save
-                  your work and login again.
-                </p>
-                <button
-                  onClick={handleSessionExpiringClose}
-                  className="mt-2 text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-white transition-colors"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <NotificationLiveToast />
+      <LiveNotificationHost />
       {showMissedNotifications && missedNotificationsCount > 0 && (
         <MissedNotificationsModal
           count={missedNotificationsCount}
