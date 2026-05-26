@@ -48,6 +48,7 @@ import {
 } from "../utils/platformPayment.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
+import MenuPagination, { MENU_PAGE_SIZE } from "./shared/MenuPagination.jsx";
 
 // =======================
 // CATEGORY ICONS
@@ -729,7 +730,8 @@ export default function BookingSection() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
-  const [page, setPage] = useState(1);
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [servicePage, setServicePage] = useState(1);
 
   const [services, setServices] = useState({});
   const [categories, setCategories] = useState([]);
@@ -884,75 +886,50 @@ export default function BookingSection() {
   const openCategory = useCallback((category) => {
     setSelectedCategory(category);
     setSearch("");
-    setPage(1);
+    setServicePage(1);
   }, []);
 
   const backToCategories = useCallback(() => {
     setSelectedCategory(null);
     setSearch("");
-    setPage(1);
+    setServicePage(1);
   }, []);
 
-  // Reset paging when filters change
   useEffect(() => {
-    setPage(1);
+    setServicePage(1);
   }, [search, selectedCategory]);
 
-  // Rows-based pagination (2 rows, then 2 rows, then 3 rows...)
-  const [gridCols, setGridCols] = useState(() => {
-    if (typeof window === "undefined") return 1;
-    if (window.matchMedia("(min-width: 1024px)").matches) return 3;
-    if (window.matchMedia("(min-width: 640px)").matches) return 2;
-    return 1;
-  });
+  const categoryTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(categories.length / MENU_PAGE_SIZE)),
+    [categories.length],
+  );
+
+  const pagedCategories = useMemo(() => {
+    const start = (categoryPage - 1) * MENU_PAGE_SIZE;
+    return categories.slice(start, start + MENU_PAGE_SIZE);
+  }, [categories, categoryPage]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mLg = window.matchMedia("(min-width: 1024px)");
-    const mSm = window.matchMedia("(min-width: 640px)");
-    const update = () => {
-      setGridCols(mLg.matches ? 3 : mSm.matches ? 2 : 1);
-    };
-    update();
-    mLg.addEventListener?.("change", update);
-    mSm.addEventListener?.("change", update);
-    return () => {
-      mLg.removeEventListener?.("change", update);
-      mSm.removeEventListener?.("change", update);
-    };
-  }, []);
-
-  const rowsForPage = useCallback((p) => (p <= 2 ? 2 : 3), []);
-  const itemsForPage = useCallback(
-    (p) => rowsForPage(p) * gridCols,
-    [gridCols, rowsForPage],
-  );
-  const startIndexForPage = useCallback(
-    (p) => {
-      let start = 0;
-      for (let i = 1; i < p; i++) start += itemsForPage(i);
-      return start;
-    },
-    [itemsForPage],
-  );
-  const totalPages = useMemo(() => {
-    const total = filteredServices.length;
-    if (!total) return 1;
-    let p = 1;
-    let covered = 0;
-    while (covered < total && p < 200) {
-      covered += itemsForPage(p);
-      p++;
+    if (categoryPage > categoryTotalPages) {
+      setCategoryPage(categoryTotalPages);
     }
-    return Math.max(1, p - 1);
-  }, [filteredServices.length, itemsForPage]);
+  }, [categoryPage, categoryTotalPages]);
 
-  const currentStart = startIndexForPage(page);
-  const currentEnd = currentStart + itemsForPage(page);
-  const pagedServices = useMemo(
-    () => filteredServices.slice(currentStart, currentEnd),
-    [filteredServices, currentEnd, currentStart],
+  const serviceTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredServices.length / MENU_PAGE_SIZE)),
+    [filteredServices.length],
   );
+
+  const pagedServices = useMemo(() => {
+    const start = (servicePage - 1) * MENU_PAGE_SIZE;
+    return filteredServices.slice(start, start + MENU_PAGE_SIZE);
+  }, [filteredServices, servicePage]);
+
+  useEffect(() => {
+    if (servicePage > serviceTotalPages) {
+      setServicePage(serviceTotalPages);
+    }
+  }, [servicePage, serviceTotalPages]);
 
   // Workers don't book through this section — hide UI only after all hooks run
   // (early return above caused "Rendered fewer hooks than expected".)
@@ -1077,7 +1054,7 @@ export default function BookingSection() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setPage(1);
+                setServicePage(1);
               }}
               className="w-full rounded-full border-2 border-slate-200 pl-14 pr-6 py-4 text-base outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition-all hover:border-slate-300"
             />
@@ -1104,24 +1081,24 @@ export default function BookingSection() {
           </div>
         )}
 
-        {/* CONTENT — category menu, then services list */}
+        {/* CONTENT — open menu: categories, then services */}
         {!loading && !error && (
-          <div className="rounded-2xl border-2 border-orange-100 bg-white shadow-xl overflow-hidden animate-slideUp">
+          <div className="animate-slideUp w-full">
             {!browsingServices ? (
-              <div className="p-5 sm:p-8">
-                <div className="mb-6 text-center sm:text-left">
+              <div className="py-2 sm:py-4">
+                <div className="mb-8 text-center sm:text-left">
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-600">
                     Our Menu
                   </p>
-                  <h3 className="mt-1 text-xl sm:text-2xl font-bold text-slate-900">
+                  <h3 className="mt-1 text-2xl sm:text-3xl font-bold text-slate-900">
                     Choose a category
                   </h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Tap a section to see available services — like a restaurant menu.
+                  <p className="mt-2 text-base text-slate-600 max-w-xl">
+                    Tap a section to browse services — simple, like a restaurant menu.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {categories.map((category, idx) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  {pagedCategories.map((category, idx) => {
                     const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
                     const catColor =
                       CATEGORY_COLORS[category] || "from-slate-400 to-slate-600";
@@ -1131,23 +1108,24 @@ export default function BookingSection() {
                         key={category}
                         type="button"
                         onClick={() => openCategory(category)}
-                        className="category-btn group text-left rounded-2xl border border-orange-100 bg-gradient-to-br from-white to-orange-50/40 p-4 sm:p-5 hover:border-orange-300 hover:shadow-lg hover:-translate-y-0.5 transition-all animate-scaleIn"
+                        aria-label={`Open ${category}, ${count} services`}
+                        className="category-btn group text-left rounded-2xl bg-white/90 p-5 sm:p-6 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn"
                         style={{ animationDelay: `${idx * 40}ms` }}
                       >
                         <div
-                          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-3`}
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-4`}
                         >
-                          <CategoryIcon size={24} />
+                          <CategoryIcon size={28} strokeWidth={2.25} />
                         </div>
-                        <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug pr-1">
+                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
                           {category}
                         </h4>
                         <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-xs text-slate-500">
+                          <span className="text-sm text-slate-500">
                             {count} service{count !== 1 ? "s" : ""}
                           </span>
                           <ChevronRight
-                            size={16}
+                            size={18}
                             className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform"
                           />
                         </div>
@@ -1155,23 +1133,30 @@ export default function BookingSection() {
                     );
                   })}
                 </div>
-                {categories.length === 0 && (
-                  <p className="text-center text-slate-500 py-12">
+                {categories.length === 0 ? (
+                  <p className="text-center text-slate-500 py-12 text-base">
                     No categories available yet.
                   </p>
+                ) : (
+                  <MenuPagination
+                    page={categoryPage}
+                    totalPages={categoryTotalPages}
+                    totalItems={categories.length}
+                    onPageChange={setCategoryPage}
+                  />
                 )}
               </div>
             ) : (
-              <div className="flex flex-col min-h-[420px] max-h-[min(78vh,760px)] bg-[#fffdf9]">
-                <div className="sticky top-0 z-10 border-b border-orange-100/80 bg-white/95 backdrop-blur px-4 py-3 sm:px-6">
-                  <div className="flex items-center gap-3">
+              <div className="flex flex-col w-full">
+                <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm py-4 mb-2">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <button
                       type="button"
                       onClick={backToCategories}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/80 hover:bg-orange-50 hover:ring-orange-200 transition-colors"
                     >
-                      <ChevronLeft size={16} />
-                      Menu
+                      <ChevronLeft size={18} />
+                      Categories
                     </button>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
@@ -1179,83 +1164,91 @@ export default function BookingSection() {
                           ? "Search results"
                           : "Services"}
                       </p>
-                      <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">
+                      <h3 className="font-bold text-slate-900 text-lg sm:text-xl truncate">
                         {selectedCategory ||
                           (search.trim() ? `“${search.trim()}”` : "All services")}
                       </h3>
                     </div>
                     {filteredServices.length > 0 && (
-                      <span className="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-800">
+                      <span className="shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800">
                         {filteredServices.length}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="w-full">
                   {filteredServices.length > 0 ? (
-                    <ul className="divide-y divide-orange-100/60">
-                      {pagedServices.map((service, idx) => {
-                        const ServiceIcon = getIconComponent(service?.icon);
-                        const catColor =
-                          CATEGORY_COLORS[service?.category] ||
-                          "from-slate-400 to-slate-600";
-                        return (
-                          <li
-                            key={service?._id || service?.id}
-                            className="animate-scaleIn"
-                            style={{ animationDelay: `${idx * 20}ms` }}
-                          >
-                            <div className="flex items-start gap-3 sm:gap-4 px-3 py-4 sm:px-6 sm:py-5 hover:bg-orange-50/40 transition-colors">
-                              <div
-                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br ${catColor} flex items-center justify-center text-white shrink-0`}
-                              >
-                                <ServiceIcon size={20} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                                  <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
-                                    {service?.name}
-                                  </h4>
-                                  {service?.price > 0 && (
-                                    <span className="font-bold text-orange-600 text-sm whitespace-nowrap">
-                                      PKR {service.price}
-                                    </span>
+                    <>
+                      <ul className="space-y-3">
+                        {pagedServices.map((service, idx) => {
+                          const ServiceIcon = getIconComponent(service?.icon);
+                          const catColor =
+                            CATEGORY_COLORS[service?.category] ||
+                            "from-slate-400 to-slate-600";
+                          return (
+                            <li
+                              key={service?._id || service?.id}
+                              className="animate-scaleIn rounded-2xl bg-white/90 hover:bg-orange-50/50 transition-colors"
+                              style={{ animationDelay: `${idx * 20}ms` }}
+                            >
+                              <div className="flex items-start gap-4 sm:gap-5 p-4 sm:p-5">
+                                <div
+                                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shrink-0`}
+                                >
+                                  <ServiceIcon size={24} strokeWidth={2.25} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                    <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
+                                      {service?.name}
+                                    </h4>
+                                    {service?.price > 0 && (
+                                      <span className="font-bold text-orange-600 text-base whitespace-nowrap">
+                                        PKR {service.price}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {service?.description && (
+                                    <p className="mt-1.5 text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                                      {service.description}
+                                    </p>
+                                  )}
+                                  {!selectedCategory && service?.category && (
+                                    <p className="mt-1.5 text-[11px] uppercase tracking-wider text-orange-600/90 font-semibold">
+                                      {service.category}
+                                    </p>
                                   )}
                                 </div>
-                                {service?.description && (
-                                  <p className="mt-1 text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                                    {service.description}
-                                  </p>
-                                )}
-                                {!selectedCategory && service?.category && (
-                                  <p className="mt-1 text-[10px] uppercase tracking-wider text-orange-600/80 font-semibold">
-                                    {service.category}
-                                  </p>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectService(service)}
+                                  className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 sm:px-5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-bold group mt-0.5 shadow-sm"
+                                >
+                                  Book
+                                  <ArrowRight
+                                    size={16}
+                                    className="group-hover:translate-x-0.5 transition-transform hidden sm:block"
+                                  />
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectService(service)}
-                                className="shrink-0 flex items-center gap-1 px-3 py-2 sm:px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all text-xs font-bold group mt-0.5"
-                              >
-                                Book
-                                <ArrowRight
-                                  size={14}
-                                  className="group-hover:translate-x-0.5 transition-transform hidden sm:block"
-                                />
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <MenuPagination
+                        page={servicePage}
+                        totalPages={serviceTotalPages}
+                        totalItems={filteredServices.length}
+                        onPageChange={setServicePage}
+                      />
+                    </>
                   ) : (
-                    <div className="text-center py-16 px-4">
+                    <div className="text-center py-16 px-4 rounded-2xl bg-white/60">
                       <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
                         <Search className="text-slate-400" size={28} />
                       </div>
-                      <p className="text-slate-600 font-medium">
+                      <p className="text-slate-600 font-medium text-base">
                         {search.trim()
                           ? "No services match your search"
                           : "No services in this category yet"}
@@ -1272,30 +1265,6 @@ export default function BookingSection() {
                     </div>
                   )}
                 </div>
-
-                {filteredServices.length > 0 && totalPages > 1 && (
-                  <div className="border-t border-orange-100 px-4 py-3 flex items-center justify-center gap-3 bg-white">
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Prev
-                    </button>
-                    <span className="text-xs font-semibold text-slate-600">
-                      {page} / {totalPages}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page >= totalPages}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>
