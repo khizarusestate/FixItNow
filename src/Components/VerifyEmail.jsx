@@ -20,6 +20,8 @@ export default function VerifyEmail() {
   const [done, setDone] = useState(false);
 
   const emailLocked = Boolean(modalPayload?.emailLocked && modalPayload?.email);
+  const accountRole = modalPayload?.accountRole || "customer";
+  const isWorkerAccount = accountRole === "worker";
 
   useEffect(() => {
     if (activeModal !== "verifyEmail") return;
@@ -148,12 +150,17 @@ export default function VerifyEmail() {
                 Email verified!
               </h3>
               <p className="text-sm text-slate-600 mb-5">
-                You can now login with your credentials.
+                {isWorkerAccount
+                  ? "Email verified. Your application is pending admin approval — you can login once approved."
+                  : "You can now login with your credentials."}
               </p>
               <button
                 type="button"
                 onClick={() => {
-                  switchModal("login", { email: form.email });
+                  switchModal("login", {
+                    email: form.email,
+                    loginType: isWorkerAccount ? "worker" : "customer",
+                  });
                   setDone(false);
                   setForm((f) => ({ ...initialForm, email: f.email }));
                 }}

@@ -213,42 +213,53 @@ export default function Signup() {
                   : "Account created successfully!"}
               </h3>
               <p className="text-sm text-slate-600 mb-2">
+                Please check your email for a 6-digit verification code before
+                logging in.
                 {signupType === "worker"
-                  ? "Your account needs admin approval. Please wait for verification."
-                  : "Please check your email for a 6-digit verification code before logging in."}
+                  ? " After verifying, wait for admin approval."
+                  : ""}
               </p>
               {signupType === "worker" ? (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-5">
                   <p className="text-sm text-orange-700 font-medium">
-                    Admin will approve your account, then you can login.
+                    Step 1: Verify your email with the code we sent.
                   </p>
                   <p className="text-xs text-orange-600 mt-1">
-                    Please wait a moment. You will receive notification via
-                    email or SMS.
+                    Step 2: Admin will approve your worker account — you will be
+                    notified by email.
                   </p>
                 </div>
               ) : null}
-              {signupType === "customer" && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() =>
-                      switchModal("verifyEmail", {
-                        email: customerForm.email.trim().toLowerCase(),
-                        emailLocked: true,
-                      })
-                    }
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-                  >
-                    Verify Email <ArrowRight size={15} />
-                  </button>
-                  <button
-                    onClick={() => switchModal("login")}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    Login Now
-                  </button>
-                </div>
-              )}
+              <div className="space-y-3">
+                <button
+                  onClick={() =>
+                    switchModal("verifyEmail", {
+                      email: (
+                        signupType === "worker"
+                          ? workerForm.emailAddress
+                          : customerForm.email
+                      )
+                        .trim()
+                        .toLowerCase(),
+                      emailLocked: true,
+                      accountRole: signupType,
+                    })
+                  }
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors ${
+                    signupType === "worker"
+                      ? "bg-slate-900 hover:bg-slate-800"
+                      : "bg-slate-900 hover:bg-slate-800"
+                  }`}
+                >
+                  Verify Email <ArrowRight size={15} />
+                </button>
+                <button
+                  onClick={() => switchModal("login")}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Login Now
+                </button>
+              </div>
             </div>
           ) : (
             <>
