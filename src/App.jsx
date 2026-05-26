@@ -15,7 +15,6 @@ const ReviewsSection = lazy(() => import("./Components/ReviewsSection"));
 const About = lazy(() => import("./Components/About"));
 const Login = lazy(() => import("./Components/Login"));
 const Signup = lazy(() => import("./Components/Signup"));
-const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
@@ -51,7 +50,6 @@ export default function App() {
               <About />
               <Login />
               <Signup />
-              <VerifyEmail />
               <ForgotPassword />
               <WorkerModal />
               <CompleteProfile />

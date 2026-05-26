@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Briefcase, LogOut, AlertCircle, ArrowRight } from "lucide-react";
+import { X, Briefcase, LogOut, AlertCircle } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
 import { isAuthenticated, logout } from "../utils/jwt.js";
@@ -26,7 +26,7 @@ const FALLBACK_SERVICES = [
 ];
 
 export default function WorkerModal() {
-  const { activeModal, closeModal, switchModal } = useModal();
+  const { activeModal, closeModal } = useModal();
   const [form, setForm] = useState(initial);
   const [geo, setGeo] = useState(emptyGeo);
   const [serviceCategories, setServiceCategories] = useState([]);
@@ -35,7 +35,6 @@ export default function WorkerModal() {
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -99,7 +98,6 @@ export default function WorkerModal() {
       });
       if (response.success) {
         if (isCustomerLoggedIn) logout();
-        setRegisteredEmail(form.emailAddress.trim().toLowerCase());
         setDone(true);
         setForm(initial);
         setGeo(emptyGeo);
@@ -115,7 +113,6 @@ export default function WorkerModal() {
   const handleClose = () => {
     closeModal();
     setDone(false);
-    setRegisteredEmail("");
     setMessage("");
   };
   const inputCls =
@@ -161,17 +158,16 @@ export default function WorkerModal() {
               <h3 className="text-lg font-bold text-slate-900 mb-2">
                 Application Submitted!
               </h3>
-              <p className="text-sm text-slate-600 mb-2">
-                Check your email for a 6-digit verification code. After
-                verifying, wait for admin approval before logging in.
+              <p className="text-sm text-slate-600 mb-4">
+                Admin will review your application. You can log in after
+                approval.
               </p>
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4 text-left">
                 <p className="text-sm text-orange-700 font-medium">
-                  Step 1: Verify your email with the code we sent.
+                  Application received
                 </p>
                 <p className="text-xs text-orange-600 mt-1">
-                  Step 2: Admin will approve your account — you will be notified
-                  by email.
+                  You will be notified by email when your account is approved.
                 </p>
               </div>
               {isCustomerLoggedIn && (
@@ -183,28 +179,13 @@ export default function WorkerModal() {
                   </p>
                 </div>
               )}
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    switchModal("verifyEmail", {
-                      email: registeredEmail,
-                      emailLocked: true,
-                      accountRole: "worker",
-                    })
-                  }
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-                >
-                  Verify Email <ArrowRight size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="w-full rounded-lg border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="w-full rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
+              >
+                Close
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">

@@ -3,7 +3,6 @@ import { X, LogIn, User, Briefcase, Eye, EyeOff } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
-import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
@@ -27,25 +26,6 @@ export default function Login({ onLoginSuccess }) {
     }
   }, [activeModal, modalPayload?.email, modalPayload?.loginType]);
 
-  const isEmailNotVerifiedError = (payload) =>
-    payload?.code === "EMAIL_NOT_VERIFIED" ||
-    (payload?.status === 403 &&
-      /verify your email/i.test(payload?.message || ""));
-
-  const redirectToVerifyEmail = (email) => {
-    const normalized = String(email || form.email || "")
-      .trim()
-      .toLowerCase();
-    switchModal("verifyEmail", {
-      email: normalized,
-      emailLocked: true,
-      accountRole: loginType,
-    });
-    setMessage(
-      "Your email is not verified yet. Enter the 6-digit code we sent you.",
-    );
-    setIsError(false);
-  };
   const { login } = useAuth();
   const [form, setForm] = useState({
     email: savedDraft.email ?? "",
@@ -113,10 +93,6 @@ export default function Login({ onLoginSuccess }) {
       }
 
       if (!response?.success) {
-        if (isEmailNotVerifiedError(response)) {
-          redirectToVerifyEmail(response?.email);
-          return;
-        }
         setMessage(
           response?.message || "Login failed. Please check your credentials.",
         );
@@ -162,10 +138,6 @@ export default function Login({ onLoginSuccess }) {
         }
       }, 800);
     } catch (err) {
-      if (isApiClientError(err) && isEmailNotVerifiedError(err)) {
-        redirectToVerifyEmail(err.details?.email);
-        return;
-      }
       setMessage(err.message || "Login failed. Please check your credentials.");
       setIsError(true);
     } finally {
@@ -320,23 +292,9 @@ export default function Login({ onLoginSuccess }) {
             </p>
             {loginType === "worker" && (
               <p className="text-xs text-slate-400">
-                Verify your email first, then wait for admin approval.
+                Admin approval is required before you can log in as a worker.
               </p>
             )}
-            <p className="text-xs text-slate-400">
-              <button
-                type="button"
-                onClick={() =>
-                  switchModal("verifyEmail", {
-                    email: form.email.trim().toLowerCase(),
-                    accountRole: loginType,
-                  })
-                }
-                className="font-medium text-orange-500 hover:text-orange-600"
-              >
-                Verify email with code
-              </button>
-            </p>
           </div>
         </form>
       </div>

@@ -19,8 +19,6 @@ export class ApiClientError extends Error {
 const FRIENDLY_BY_CODE = {
   ACCOUNT_NOT_FOUND: "No account found for this email. Please sign up first.",
   INVALID_PASSWORD: "Incorrect password. Please try again.",
-  EMAIL_NOT_VERIFIED:
-    "Your email is not verified yet. Check your inbox for the verification code.",
   ADMIN_NOT_FOUND: "No admin account found for this email.",
   INVALID_PIN: "Incorrect PIN. Please try again.",
   ADMIN_LOCKED: "Too many attempts. Your account is temporarily locked.",
