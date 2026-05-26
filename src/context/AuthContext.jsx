@@ -83,7 +83,9 @@ async function runAppBootstrap(role, isAuthenticated, onStep) {
           .then((res) => {
             const list = res?.data || [];
             result.customerBookings = list;
-            result.pendingCount = list.filter((b) => b.status === "pending")
+            result.pendingCount = list.filter(
+              (b) => b.status === "pending" || b.status === "pending-confirmation",
+            )
               .length;
           })
           .catch(() => {}),
