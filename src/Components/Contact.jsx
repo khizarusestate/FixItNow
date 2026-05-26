@@ -23,36 +23,36 @@ export default function Contact() {
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-4 gap-2 sm:gap-4">
               <a href="tel:+923256776142" className="group">
-                <div className="h-full rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-600/5 p-8 backdrop-blur transition-all duration-300 hover:scale-105 hover:border-orange-500/40 hover:shadow-orange-500/20">
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
-                      <Phone size={28} className="text-orange-400" />
+                <div className="h-full rounded-xl border border-orange-500/25 bg-orange-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-orange-400/60 hover:bg-orange-500/15">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
+                      <Phone size={18} className="text-orange-300 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-orange-300">Phone</h3>
+                    <h3 className="text-xs sm:text-sm font-semibold text-orange-200">Phone</h3>
                   </div>
                 </div>
               </a>
 
               <a href="mailto:khizarusestate@gmail.com" className="group">
-                <div className="h-full rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-600/5 p-8 backdrop-blur transition-all duration-300 hover:scale-105 hover:border-blue-500/40 hover:shadow-blue-500/20">
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
-                      <Mail size={28} className="text-blue-400" />
+                <div className="h-full rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-blue-400/60 hover:bg-blue-500/15">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+                      <Mail size={18} className="text-blue-300 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-blue-300">Email</h3>
+                    <h3 className="text-xs sm:text-sm font-semibold text-blue-200">Email</h3>
                   </div>
                 </div>
               </a>
 
               <div className="group">
-                <div className="h-full rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-600/5 p-8 backdrop-blur transition-all duration-300 hover:scale-105 hover:border-green-500/40 hover:shadow-green-500/20">
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
-                      <Clock size={28} className="text-green-400" />
+                <div className="h-full rounded-xl border border-green-500/25 bg-green-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-green-400/60 hover:bg-green-500/15">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
+                      <Clock size={18} className="text-green-300 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-green-300">24/7</h3>
+                    <h3 className="text-xs sm:text-sm font-semibold text-green-200">24/7</h3>
                   </div>
                 </div>
               </div>
@@ -63,12 +63,12 @@ export default function Contact() {
                 rel="noopener noreferrer"
                 className="group"
               >
-                <div className="h-full rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-8 backdrop-blur transition-all duration-300 hover:scale-105 hover:border-purple-500/40 hover:shadow-purple-500/20">
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
-                      <MapPin size={28} className="text-purple-400" />
+                <div className="h-full rounded-xl border border-purple-500/25 bg-purple-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-purple-400/60 hover:bg-purple-500/15">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+                      <MapPin size={18} className="text-purple-300 sm:h-5 sm:w-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-purple-300">Location</h3>
+                    <h3 className="text-xs sm:text-sm font-semibold text-purple-200">Location</h3>
                   </div>
                 </div>
               </a>

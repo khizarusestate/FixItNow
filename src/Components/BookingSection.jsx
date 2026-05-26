@@ -234,6 +234,11 @@ function BookingForm({ service, onClose, onSuccess }) {
       return;
     }
 
+    if (!hasLocation(geo)) {
+      setError("Please select the service location.");
+      return;
+    }
+
     if (!termsAgreed) {
       setError("Please agree to the terms and conditions.");
       return;
@@ -442,7 +447,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
 
             <LocationPicker
-              label="Service location (optional)"
+              label="Service location *"
               value={geo}
               onChange={setGeo}
             />

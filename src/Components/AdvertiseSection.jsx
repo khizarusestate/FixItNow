@@ -27,7 +27,6 @@ import {
   getAdPrice,
 } from "../utils/adPricing.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
 
 const AD_DRAFT_KEY = "fixitnow_draft_advertise";
 
@@ -45,12 +44,10 @@ export default function AdvertiseSection() {
   const [success, setSuccess] = useState(false);
   const [pendingAds, setPendingAds] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState(savedDraft.paymentMethod ?? "");
-  const [payAfterWork, setPayAfterWork] = useState(savedDraft.payAfterWork ?? false);
   const [paymentReceipt, setPaymentReceipt] = useState(null);
   const [paymentReference, setPaymentReference] = useState(savedDraft.paymentReference ?? "");
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [showPayAck, setShowPayAck] = useState(false);
   const [guestContact, setGuestContact] = useState({
     name: savedDraft.guestContact?.name ?? "",
     email: savedDraft.guestContact?.email ?? "",
@@ -64,7 +61,6 @@ export default function AdvertiseSection() {
       duration,
       adType,
       paymentMethod,
-      payAfterWork,
       paymentReference,
       guestContact,
       termsAgreed,
@@ -74,11 +70,19 @@ export default function AdvertiseSection() {
     duration,
     adType,
     paymentMethod,
-    payAfterWork,
     paymentReference,
     guestContact,
     termsAgreed,
   ]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setGuestContact((prev) => ({
+      name: prev.name || user?.fullName || "",
+      email: prev.email || user?.email || user?.emailAddress || "",
+      phone: prev.phone || user?.phone || user?.phoneNumber || "",
+    }));
+  }, [isAuthenticated, user]);
 
   const fetchPendingAds = useCallback(async () => {
     if (!isAuthenticated) {
@@ -113,7 +117,6 @@ export default function AdvertiseSection() {
   const resetPaymentFields = () => {
     if (receiptPreview) URL.revokeObjectURL(receiptPreview);
     setPaymentMethod("");
-    setPayAfterWork(false);
     setPaymentReceipt(null);
     setPaymentReference("");
     setReceiptPreview(null);
@@ -230,12 +233,12 @@ export default function AdvertiseSection() {
       return;
     }
 
-    if (!payAfterWork && !paymentMethod) {
+    if (!paymentMethod) {
       setError("Please select a payment method.");
       return;
     }
 
-    if (requiresPaymentReceipt(paymentMethod, payAfterWork) && !paymentReceipt) {
+    if (requiresPaymentReceipt(paymentMethod, false) && !paymentReceipt) {
       setError("Please upload your payment receipt.");
       return;
     }
@@ -247,11 +250,8 @@ export default function AdvertiseSection() {
       formData.append("purpose", purpose.trim());
       formData.append("duration", duration);
       formData.append("adType", adType);
-      formData.append("payAfterWork", payAfterWork ? "true" : "false");
-      const methodForApi = payAfterWork
-        ? PAYMENT_METHOD_VALUES.PAY_AFTER_WORK
-        : paymentMethod;
-      formData.append("paymentMethod", methodForApi);
+      formData.append("payAfterWork", "false");
+      formData.append("paymentMethod", paymentMethod);
       if (paymentReference.trim()) {
         formData.append("paymentReference", paymentReference.trim());
       }
@@ -285,10 +285,6 @@ export default function AdvertiseSection() {
       setError("Please agree to the terms and conditions.");
       return;
     }
-    if (payAfterWork) {
-      setShowPayAck(true);
-      return;
-    }
     await submitAdvertisement();
   };
 
@@ -298,7 +294,6 @@ export default function AdvertiseSection() {
       duration,
       adType,
       paymentMethod,
-      payAfterWork,
       paymentReference,
       guestContact,
       termsAgreed,
@@ -446,18 +441,13 @@ export default function AdvertiseSection() {
                         </label>
                         <input
                           type="text"
-                          value={
-                            isAuthenticated
-                              ? user?.fullName || ""
-                              : guestContact.name
-                          }
+                          value={guestContact.name}
                           onChange={(e) =>
                             setGuestContact((p) => ({
                               ...p,
                               name: e.target.value,
                             }))
                           }
-                          disabled={isAuthenticated}
                           required
                           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                         />
@@ -469,18 +459,13 @@ export default function AdvertiseSection() {
                           </label>
                           <input
                             type="email"
-                            value={
-                              isAuthenticated
-                                ? user?.email || user?.emailAddress || ""
-                                : guestContact.email
-                            }
+                            value={guestContact.email}
                             onChange={(e) =>
                               setGuestContact((p) => ({
                                 ...p,
                                 email: e.target.value,
                               }))
                             }
-                            disabled={isAuthenticated}
                             required
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                           />
@@ -491,18 +476,13 @@ export default function AdvertiseSection() {
                           </label>
                           <input
                             type="text"
-                            value={
-                              isAuthenticated
-                                ? user?.phone || user?.phoneNumber || ""
-                                : guestContact.phone
-                            }
+                            value={guestContact.phone}
                             onChange={(e) =>
                               setGuestContact((p) => ({
                                 ...p,
                                 phone: e.target.value,
                               }))
                             }
-                            disabled={isAuthenticated}
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                           />
                         </div>
@@ -583,47 +563,16 @@ export default function AdvertiseSection() {
                     </div>
                   </div>
 
-                  <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={payAfterWork}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setPayAfterWork(checked);
-                        if (checked) {
-                          setPaymentMethod("");
-                          if (receiptPreview) URL.revokeObjectURL(receiptPreview);
-                          setPaymentReceipt(null);
-                          setReceiptPreview(null);
-                          if (receiptInputRef.current) receiptInputRef.current.value = "";
-                        }
-                        setError("");
-                      }}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span className="text-sm text-amber-950">
-                      <span className="font-semibold block">Pay after work is completed</span>
-                      <span className="text-xs text-amber-800/90 mt-0.5 block">
-                        Payment fields below are optional.
-                      </span>
-                    </span>
-                  </label>
-
                   {/* Payment method */}
-                  <div
-                    className={
-                      payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
-                    }
-                  >
+                  <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                      Payment method {!payAfterWork && <span className="text-red-500">*</span>}
+                      Payment method <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                      required={!payAfterWork}
-                      disabled={payAfterWork}
+                      required
                     >
                       <option value="">Select payment method</option>
                       <option value={PAYMENT_METHOD_VALUES.EASYPAISA}>
@@ -638,8 +587,7 @@ export default function AdvertiseSection() {
                     </select>
                   </div>
 
-                  {!payAfterWork &&
-                    paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
+                  {paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
                     <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
                       <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
                       <div className="text-sm text-violet-900">
@@ -649,7 +597,7 @@ export default function AdvertiseSection() {
                     </div>
                   )}
 
-                  {!payAfterWork && paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
+                  {paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 flex gap-3">
                       <Smartphone className="shrink-0 text-emerald-700 mt-0.5" size={20} />
                       <div className="text-sm text-emerald-900">
@@ -665,7 +613,7 @@ export default function AdvertiseSection() {
                     </div>
                   )}
 
-                  {!payAfterWork && paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
+                  {paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
                     <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
                       <Smartphone className="shrink-0 text-sky-700 mt-0.5" size={20} />
                       <div className="text-sm text-sky-900">
@@ -681,11 +629,7 @@ export default function AdvertiseSection() {
                     </div>
                   )}
 
-                  <div
-                    className={
-                      payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
-                    }
-                  >
+                  <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                       Payment reference (optional)
                     </label>
@@ -695,7 +639,6 @@ export default function AdvertiseSection() {
                       onChange={(e) => setPaymentReference(e.target.value)}
                       placeholder="Transaction ID or reference number"
                       maxLength={100}
-                      disabled={payAfterWork}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                     />
                   </div>
@@ -703,7 +646,6 @@ export default function AdvertiseSection() {
                   {/* Payment receipt */}
                   <div
                     className={
-                      payAfterWork ||
                       paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
                         ? "opacity-50 pointer-events-none select-none"
                         : ""
@@ -711,7 +653,7 @@ export default function AdvertiseSection() {
                   >
                     <label className="block text-sm font-semibold text-slate-900 mb-2">
                       Payment receipt{" "}
-                      {requiresPaymentReceipt(paymentMethod, payAfterWork) && (
+                      {requiresPaymentReceipt(paymentMethod, false) && (
                         <span className="text-red-500">*</span>
                       )}
                     </label>
@@ -723,7 +665,6 @@ export default function AdvertiseSection() {
                       className="sr-only"
                       aria-hidden
                       disabled={
-                        payAfterWork ||
                         paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
                       }
                     />
@@ -732,7 +673,6 @@ export default function AdvertiseSection() {
                         type="button"
                         onClick={() => receiptInputRef.current?.click()}
                         disabled={
-                          payAfterWork ||
                           paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
                         }
                         className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 hover:bg-orange-100 disabled:opacity-60"
@@ -906,15 +846,6 @@ export default function AdvertiseSection() {
         </div>
       )}
 
-      {showPayAck && (
-        <PayAfterWorkAckModal
-          onClose={() => setShowPayAck(false)}
-          onConfirm={async () => {
-            setShowPayAck(false);
-            await submitAdvertisement();
-          }}
-        />
-      )}
     </>
   );
 }
