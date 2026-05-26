@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  Bell,
   LogOut,
   Trash2,
   AlertTriangle,
-  Smartphone,
 } from "lucide-react";
 import { apiRequestWithAuth } from "../lib/api";
 import {
-  getPushPermissionState,
   isPushSupported,
   setDevicePushEnabled,
   cacheDevicePushPreference,
@@ -24,7 +21,6 @@ export default function ProfileSettings({
     userData?.devicePushEnabled !== false,
   );
   const [pushBusy, setPushBusy] = useState(false);
-  const [pushMessage, setPushMessage] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,7 +33,6 @@ export default function ProfileSettings({
   const handlePushToggle = async () => {
     const next = !devicePushEnabled;
     setPushBusy(true);
-    setPushMessage("");
     setError("");
 
     try {
@@ -45,13 +40,11 @@ export default function ProfileSettings({
         const result = await setDevicePushEnabled(true);
         if (!result.ok) {
           if (result.reason === "denied") {
-            setPushMessage(
-              "Browser blocked notifications. Enable them in site settings, then try again.",
-            );
+            setError("Notifications blocked in browser settings.");
           } else if (result.reason === "disabled") {
-            setPushMessage("Device push is not configured on the server yet.");
+            setError("Push is not configured on the server yet.");
           } else {
-            setPushMessage("Could not enable device notifications.");
+            setError("Could not enable notifications.");
           }
           setPushBusy(false);
           return;
@@ -63,11 +56,6 @@ export default function ProfileSettings({
       setDevicePushEnabledState(next);
       cacheDevicePushPreference(userId, next);
       onPreferenceChange?.({ devicePushEnabled: next });
-      setPushMessage(
-        next
-          ? "Device notifications are on."
-          : "Device notifications are off. In-app alerts still work.",
-      );
     } catch (err) {
       setError(err.message || "Could not update notification setting.");
     } finally {
@@ -94,74 +82,30 @@ export default function ProfileSettings({
     }
   };
 
-  const permission = getPushPermissionState();
   const pushSupported = isPushSupported();
 
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-slate-200 overflow-hidden">
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-          <h4 className="text-sm font-semibold text-slate-900">Notifications</h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Controls whether the server sends push alerts when the app is closed. Does not affect your browser notification permission.
-          </p>
-        </div>
-
-        <div className="p-4 flex items-start gap-3">
-          <div className="p-2 bg-orange-100 rounded-lg shrink-0">
-            <Smartphone size={20} className="text-orange-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-slate-900">
-                  Device notifications
-                </p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  WhatsApp-style alerts when the browser or app is closed. Turning off stops the server from sending push — it does not change your browser permission. In-app bell is unaffected.
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={devicePushEnabled}
-                disabled={pushBusy || !pushSupported}
-                onClick={handlePushToggle}
-                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 disabled:opacity-50 ${
-                  devicePushEnabled ? "bg-orange-500" : "bg-slate-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform mt-0.5 ${
-                    devicePushEnabled ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-            </div>
-            {!pushSupported && (
-              <p className="text-xs text-amber-700 mt-2">
-                Not supported in this browser.
-              </p>
-            )}
-            {pushSupported && permission === "denied" && devicePushEnabled && (
-              <p className="text-xs text-amber-700 mt-2">
-                Notifications are blocked in browser settings. Allow them for
-                this site to receive device alerts.
-              </p>
-            )}
-            {pushMessage && (
-              <p className="text-xs text-emerald-700 mt-2 font-medium">
-                {pushMessage}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="px-4 pb-4">
-          <div className="flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-800">
-            <Bell size={14} className="shrink-0" />
-            <span>In-app notification bell stays on regardless of this setting.</span>
-          </div>
+        <div className="p-4 flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-slate-900">Notifications</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={devicePushEnabled}
+            aria-label="Notifications"
+            disabled={pushBusy || !pushSupported}
+            onClick={handlePushToggle}
+            className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 disabled:opacity-50 ${
+              devicePushEnabled ? "bg-orange-500" : "bg-slate-300"
+            }`}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform mt-0.5 ${
+                devicePushEnabled ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
         </div>
       </section>
 
