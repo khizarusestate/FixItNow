@@ -441,19 +441,61 @@ export function AuthProvider({ children }) {
       });
     });
 
+    const pushLiveBookingAlert = (data, role) => {
+      if (role !== "customer" && role !== "worker") return;
+      setBadgeCount((c) => Math.min(c + 1, 99));
+      playNotificationTone();
+      const title =
+        data?.title ||
+        (role === "worker"
+          ? data?.customerMarkedDone
+            ? "Customer marked job done"
+            : "Booking update"
+          : "Booking update");
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-notification-new", {
+          detail: {
+            id: data?.bookingId || data?.id || `booking-${Date.now()}`,
+            title,
+            message: data?.message || "",
+            type: role === "worker" ? "job" : "booking",
+            booking: data,
+            relatedEntityId: data?.bookingId,
+            link: role === "customer" ? "#booking" : "",
+          },
+        }),
+      );
+    };
+
     socket.on("booking-status-update", (data) => {
-      if (user?.type === "customer") {
-        setBadgeCount((c) => Math.min(c + 1, 99));
-        playNotificationTone();
-      }
+      const role = getActiveSessionRole();
+      pushLiveBookingAlert(data, role);
       window.dispatchEvent(
         new CustomEvent("fixitnow-booking-updated", { detail: data }),
       );
+      emitWorkerDashboardRefresh();
     });
 
-    // Worker: job marked as done by customer
-    socket.on("new-booking", emitWorkerDashboardRefresh);
-    socket.on("booking-status-update", emitWorkerDashboardRefresh);
+    socket.on("new-booking", (data) => {
+      if (getActiveSessionRole() === "worker") {
+        setBadgeCount((c) => Math.min(c + 1, 99));
+        playNotificationTone();
+        window.dispatchEvent(
+          new CustomEvent("fixitnow-notification-new", {
+            detail: {
+              id: data?.bookingId || data?.id || `new-booking-${Date.now()}`,
+              title: "New job available",
+              message:
+                data?.message ||
+                `${data?.serviceTitle || "A new job"} was posted near you.`,
+              type: "job",
+              booking: data,
+            },
+          }),
+        );
+      }
+      emitWorkerDashboardRefresh();
+    });
     socket.on("booking-status-changed", emitWorkerDashboardRefresh);
     socket.on("job-assigned", emitWorkerDashboardRefresh);
     socket.on("refresh", (payload) => {
@@ -464,6 +506,22 @@ export function AuthProvider({ children }) {
 
     socket.on("job-completed", (data) => {
       emitWorkerDashboardRefresh();
+      if (getActiveSessionRole() === "worker") {
+        setBadgeCount((c) => Math.min(c + 1, 99));
+        playNotificationTone();
+        window.dispatchEvent(
+          new CustomEvent("fixitnow-notification-new", {
+            detail: {
+              id: data?.bookingId || `job-done-${Date.now()}`,
+              title: "Job completed",
+              message:
+                data?.message ||
+                `${data?.serviceTitle || "Your job"} is fully completed.`,
+              type: "job",
+            },
+          }),
+        );
+      }
       // Refresh earnings and rating in local storage
       if (data.totalEarnings !== undefined) {
         setUser((currentUser) => {
@@ -556,9 +614,12 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = (newUserData) => {
-    const updatedUser = { ...user, ...newUserData };
-    setUser(updatedUser);
-    saveUserData(updatedUser, updatedUser.type);
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updatedUser = { ...prev, ...newUserData };
+      saveUserData(updatedUser, updatedUser.type);
+      return updatedUser;
+    });
   };
 
   const logout = () => {

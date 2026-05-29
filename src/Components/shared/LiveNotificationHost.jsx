@@ -112,7 +112,7 @@ export default function LiveNotificationHost() {
 
   return (
     <LiveNotificationPanel
-      variant="customer"
+      variant={user?.type === "worker" ? "worker" : "customer"}
       title={resolved.title}
       message={resolved.message}
       actions={panelActions}

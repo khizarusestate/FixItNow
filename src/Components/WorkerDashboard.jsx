@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Phone,
   Search,
+  User,
 } from "lucide-react";
 
 import { apiRequestWithAuth } from "../services/api.js";
@@ -18,6 +19,10 @@ import { getUserData } from "../utils/jwt.js";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
+}
+
+function jobCustomerName(job) {
+  return job?.customerName?.trim() || (job?.isGuest ? "Guest" : "") || "";
 }
 
 function formatDistance(km) {
@@ -31,7 +36,7 @@ function JobCard({ job, children }) {
   const displayLocation = job?.location || job?.address || "N/A";
   const distanceLabel = formatDistance(job?._distanceKm);
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 animate-fade-in">
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-base font-semibold text-slate-900">
           {job.serviceTitle || "Service"}
@@ -47,6 +52,12 @@ function JobCard({ job, children }) {
         ) : null}
       </div>
       <div className="mt-3 space-y-2 text-sm text-slate-600">
+        {jobCustomerName(job) ? (
+          <div className="flex items-start gap-2">
+            <User size={16} className="mt-0.5 shrink-0 text-orange-500" />
+            <span className="font-medium text-slate-800">{jobCustomerName(job)}</span>
+          </div>
+        ) : null}
         <div className="flex items-start gap-2">
           <Phone size={16} className="mt-0.5 shrink-0 text-orange-500" />
           <span className="break-all">{jobPhone(job)}</span>
@@ -111,6 +122,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           job.serviceTitle?.toLowerCase().includes(q) ||
           job.address?.toLowerCase().includes(q) ||
           job.location?.toLowerCase().includes(q) ||
+          jobCustomerName(job).toLowerCase().includes(q) ||
           jobPhone(job).toLowerCase().includes(q),
       ),
     );
@@ -169,12 +181,14 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
       if (profileData && updateUser) {
         updateUser({
-          rating: profileData.rating,
-          primaryServiceCategory:
-            profileData.primaryServiceCategory || profileData.serviceCategory,
-          serviceCategory:
-            profileData.serviceCategory || profileData.primaryServiceCategory,
-          fullName: profileData.fullName,
+          ...profileData,
+          id: profileData.id || profileData._id,
+          _id: profileData._id || profileData.id,
+          email: profileData.emailAddress || profileData.email,
+          emailAddress: profileData.emailAddress || profileData.email,
+          phone: profileData.phoneNumber || profileData.phone,
+          phoneNumber: profileData.phoneNumber || profileData.phone,
+          type: "worker",
         });
       }
 
@@ -309,7 +323,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
 
-      <div className="relative w-full max-w-6xl h-[95vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-6xl h-[95vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scaleIn">
         {/* HEADER */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 shrink-0">
           <div>
@@ -440,7 +454,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search by job title, phone, or location..."
+                      placeholder="Search by job title, customer, phone, or location..."
                       className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                     {searchTerm && (
@@ -517,6 +531,17 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                             </div>
                           </div>
                           <div className="mt-3 space-y-2 text-sm text-slate-600">
+                            {jobCustomerName(job) ? (
+                              <div className="flex items-start gap-2">
+                                <User
+                                  size={16}
+                                  className="mt-0.5 shrink-0 text-orange-500"
+                                />
+                                <span className="font-medium text-slate-800">
+                                  {jobCustomerName(job)}
+                                </span>
+                              </div>
+                            ) : null}
                             <div className="flex items-start gap-2">
                               <Phone
                                 size={16}
@@ -589,7 +614,9 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                           job.status !== "completed" &&
                           !job.workerMarkedDone &&
                           ["assigned", "in-progress"].includes(job.status);
+                        const isGuestJob = Boolean(job.isGuest);
                         const waitingCustomer =
+                          !isGuestJob &&
                           job.workerMarkedDone &&
                           !job.customerMarkedDone &&
                           job.status !== "completed";
@@ -599,6 +626,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                             <div className="flex flex-col items-end gap-2 w-full">
                               <div className="flex items-center gap-2">
                                 <CompletionTicks
+                                  guestOnly={isGuestJob}
                                   customerMarkedDone={job.customerMarkedDone}
                                   workerMarkedDone={job.workerMarkedDone}
                                 />

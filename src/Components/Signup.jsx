@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
-import LocationPicker from "./LocationPicker.jsx";
 import SearchableSelect from "./SearchableSelect.jsx";
 import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
@@ -25,7 +24,6 @@ const initialWorker = {
   password: "",
   primaryServiceCategory: "",
 };
-const emptyGeo = { location: "", latitude: null, longitude: null, placeId: "" };
 export default function Signup() {
   const { activeModal, closeModal, switchModal } = useModal();
   const savedDraft = loadFormDraft(SIGNUP_DRAFT_KEY, {});
@@ -44,7 +42,6 @@ export default function Signup() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
-  const [workerGeo, setWorkerGeo] = useState(savedDraft.workerGeo ?? emptyGeo);
   const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
 
   useEffect(() => {
@@ -53,9 +50,8 @@ export default function Signup() {
       signupType,
       customerForm,
       workerForm,
-      workerGeo,
     });
-  }, [activeModal, signupType, customerForm, workerForm, workerGeo]);
+  }, [activeModal, signupType, customerForm, workerForm]);
 
   const updateCustomer = (k, v) => setCustomerForm((f) => ({ ...f, [k]: v }));
   const updateWorker = (k, v) => setWorkerForm((f) => ({ ...f, [k]: v }));
@@ -117,8 +113,7 @@ export default function Signup() {
           !workerForm.phoneNumber ||
           !workerForm.cnicNumber ||
           !workerForm.password ||
-          !workerForm.primaryServiceCategory ||
-          !workerGeo.location?.trim()
+          !workerForm.primaryServiceCategory
         ) {
           setMessage("Please fill all required fields.");
           setIsError(true);
@@ -138,11 +133,6 @@ export default function Signup() {
         // Merge service city and area into service area string
         const response = await authService.registerWorker({
           ...workerForm,
-          location: workerGeo.location.trim(),
-          serviceArea: workerGeo.location.trim(),
-          latitude: workerGeo.latitude,
-          longitude: workerGeo.longitude,
-          placeId: workerGeo.placeId,
           serviceCategories: [],
         });
 
@@ -164,7 +154,6 @@ export default function Signup() {
       signupType,
       customerForm,
       workerForm,
-      workerGeo,
     });
     closeModal();
     setDone(false);
@@ -406,13 +395,9 @@ export default function Signup() {
                         required
                       />
                     </div>
-                    <LocationPicker
-                      label="Location"
-                      required
-                      disabled={submitting}
-                      value={workerGeo}
-                      onChange={setWorkerGeo}
-                    />
+                    <p className="text-xs text-slate-500 rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+                      After approval, log in and add your work location in Complete Profile.
+                    </p>
                   </>
                 )}
 

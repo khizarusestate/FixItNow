@@ -111,6 +111,7 @@ export default function Login({ onLoginSuccess }) {
           serviceArea: "",
         };
         login(userData, "worker", authToken, rememberMe);
+        window.dispatchEvent(new CustomEvent("fixitnow-show-worker-guide"));
       } else {
         userData = response.customer || {
           fullName: form.email.split("@")[0],
