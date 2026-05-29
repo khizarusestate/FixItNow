@@ -1,4 +1,4 @@
-/** MSISDNs for wallet payments (set in `.env` — never commit real secrets). */
+/** MSISDN for JazzCash (set in `.env` — never commit real secrets). */
 export function getJazzcashMsisdn() {
   return String(
     import.meta.env.VITE_PLATFORM_JAZZCASH_MSISDN ||
@@ -7,25 +7,31 @@ export function getJazzcashMsisdn() {
   ).trim();
 }
 
-/** Dummy card gateway info (display only). */
-export const CARD_PAYMENT_DUMMY = {
-  title: "Card payment (demo)",
-  lines: [
-    "Merchant: Fix It Now (Demo)",
-    "Card number: 4242 4242 4242 4242",
-    "Expiry: 12 / 2030",
-    "CVV: 123",
-    "Reference: FIXITNOW-DEMO",
-  ],
-};
+/** Bank transfer details from env (demo / production account info). */
+export function getBankTransferDetails() {
+  return {
+    bankName: String(import.meta.env.VITE_PLATFORM_BANK_NAME || "Demo Bank").trim(),
+    accountTitle: String(
+      import.meta.env.VITE_PLATFORM_BANK_ACCOUNT_TITLE || "Fix It Now",
+    ).trim(),
+    accountNumber: String(
+      import.meta.env.VITE_PLATFORM_BANK_ACCOUNT_NUMBER || "01234567890123",
+    ).trim(),
+    iban: String(
+      import.meta.env.VITE_PLATFORM_BANK_IBAN || "PK00DEMO0000001234567890",
+    ).trim(),
+  };
+}
 
 export const PAYMENT_METHOD_VALUES = {
   JAZZCASH: "jazzcash",
+  BANK_TRANSFER: "bank-transfer",
   PAY_AFTER_WORK: "pay-after-work",
 };
 
 export const PAYMENT_METHOD_LABELS = {
   [PAYMENT_METHOD_VALUES.JAZZCASH]: "JazzCash",
+  [PAYMENT_METHOD_VALUES.BANK_TRANSFER]: "Bank transfer",
   [PAYMENT_METHOD_VALUES.PAY_AFTER_WORK]: "Payment after work",
 };
 
@@ -33,15 +39,23 @@ export function parsePayAfterWorkFlag(value) {
   return value === true || value === "true" || value === "1";
 }
 
-export function isWalletPaymentMethod(method) {
+export function isUpfrontPaymentMethod(method) {
   const m = String(method || "").trim().toLowerCase();
-  return m === PAYMENT_METHOD_VALUES.JAZZCASH;
+  return (
+    m === PAYMENT_METHOD_VALUES.JAZZCASH ||
+    m === PAYMENT_METHOD_VALUES.BANK_TRANSFER
+  );
 }
 
-/** Receipt required only for JazzCash when paying upfront. */
+/** @deprecated use isUpfrontPaymentMethod */
+export function isWalletPaymentMethod(method) {
+  return isUpfrontPaymentMethod(method);
+}
+
+/** Receipt required for JazzCash / bank transfer when paying upfront. */
 export function requiresPaymentReceipt(method, payAfterWork) {
   if (parsePayAfterWorkFlag(payAfterWork)) return false;
-  return isWalletPaymentMethod(method);
+  return isUpfrontPaymentMethod(method);
 }
 
 /** Short text stored on the booking for admin / history. */
@@ -52,6 +66,10 @@ export function buildPayToSummary(method) {
   }
   if (m === PAYMENT_METHOD_VALUES.JAZZCASH) {
     return `JazzCash → ${getJazzcashMsisdn()}`;
+  }
+  if (m === PAYMENT_METHOD_VALUES.BANK_TRANSFER) {
+    const b = getBankTransferDetails();
+    return `Bank → ${b.bankName} / ${b.accountTitle} / ${b.accountNumber}${b.iban ? ` / IBAN ${b.iban}` : ""}`;
   }
   return "";
 }

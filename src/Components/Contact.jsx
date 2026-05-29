@@ -1,6 +1,15 @@
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, Phone, ArrowUpRight } from "lucide-react";
+
+const FOOTER_LINKS = [
+  { label: "Book a service", href: "#booking" },
+  { label: "Advertise", href: "#advertise" },
+  { label: "Reviews", href: "#reviews" },
+  { label: "Privacy & Terms", href: "#legal" },
+];
 
 export default function Contact() {
+  const year = new Date().getFullYear();
+
   return (
     <>
       <section
@@ -16,44 +25,42 @@ export default function Contact() {
               <h2 className="font-display text-4xl font-bold leading-tight sm:text-5xl mb-4">
                 Get in Touch
               </h2>
-              <p className="mt-4 text-sm text-slate-400">
-                <a href="#legal" className="text-orange-400 hover:underline">
-                  Privacy &amp; Terms
-                </a>
+              <p className="mt-4 text-sm text-slate-400 max-w-md mx-auto">
+                Questions about bookings, workers, or ads? Reach us anytime.
               </p>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 sm:gap-4">
-              <a href="tel:+923256776142" className="group">
-                <div className="h-full rounded-xl border border-orange-500/25 bg-orange-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-orange-400/60 hover:bg-orange-500/15">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
-                      <Phone size={18} className="text-orange-300 sm:h-5 sm:w-5" />
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-semibold text-orange-200">Phone</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto">
+              <a
+                href="tel:+923256776142"
+                className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-orange-400/40 hover:bg-white/10"
+              >
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-300 group-hover:bg-orange-500/30">
+                    <Phone size={18} />
                   </div>
+                  <span className="text-xs font-semibold text-slate-200">Call</span>
                 </div>
               </a>
 
-              <a href="mailto:khizarusestate@gmail.com" className="group">
-                <div className="h-full rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-blue-400/60 hover:bg-blue-500/15">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
-                      <Mail size={18} className="text-blue-300 sm:h-5 sm:w-5" />
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-semibold text-blue-200">Email</h3>
+              <a
+                href="mailto:khizarusestate@gmail.com"
+                className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-orange-400/40 hover:bg-white/10"
+              >
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-300 group-hover:bg-orange-500/30">
+                    <Mail size={18} />
                   </div>
+                  <span className="text-xs font-semibold text-slate-200">Email</span>
                 </div>
               </a>
 
-              <div className="group">
-                <div className="h-full rounded-xl border border-green-500/25 bg-green-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-green-400/60 hover:bg-green-500/15">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
-                      <Clock size={18} className="text-green-300 sm:h-5 sm:w-5" />
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-semibold text-green-200">24/7</h3>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-300">
+                    <Clock size={18} />
                   </div>
+                  <span className="text-xs font-semibold text-slate-200">24/7</span>
                 </div>
               </div>
 
@@ -61,15 +68,13 @@ export default function Contact() {
                 href="https://maps.google.com/?q=Gujranwala+Punjab+Pakistan"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group"
+                className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-orange-400/40 hover:bg-white/10"
               >
-                <div className="h-full rounded-xl border border-purple-500/25 bg-purple-500/10 p-3 sm:p-4 transition-all duration-300 hover:border-purple-400/60 hover:bg-purple-500/15">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
-                      <MapPin size={18} className="text-purple-300 sm:h-5 sm:w-5" />
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-semibold text-purple-200">Location</h3>
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-300 group-hover:bg-orange-500/30">
+                    <MapPin size={18} />
                   </div>
+                  <span className="text-xs font-semibold text-slate-200">Map</span>
                 </div>
               </a>
             </div>
@@ -77,15 +82,83 @@ export default function Contact() {
         </div>
       </section>
 
-      <footer className="bg-white px-5 py-8 sm:px-8 lg:px-10 border-t border-slate-200">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <img src="/Assets/Logo.png" alt="Fix It Now" className="h-12 w-auto" />
-              <p className="font-semibold text-slate-900">FixItNow</p>
+      <footer className="border-t border-slate-800 bg-slate-950 text-slate-300">
+        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
+          <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+            <div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/Assets/Logo.png"
+                  alt="Fix It Now"
+                  className="h-11 w-auto rounded-lg"
+                />
+                <div>
+                  <p className="font-display text-lg font-bold text-white">
+                    FixItNow
+                  </p>
+                  <p className="text-xs text-slate-500">Home services, simplified</p>
+                </div>
+              </div>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
+                Book trusted workers for repairs, cleaning, and more — or list your
+                skills as a pro.
+              </p>
             </div>
-            <p className="text-sm text-slate-500">
-              Copyright 2026 FixItNow. All rights reserved.
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
+                Quick links
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {FOOTER_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      className="group inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white"
+                    >
+                      {link.label}
+                      <ArrowUpRight
+                        size={14}
+                        className="opacity-0 -translate-y-0.5 transition-all group-hover:opacity-100 group-hover:translate-y-0"
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
+                Contact
+              </p>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400">
+                <li>
+                  <a
+                    href="tel:+923256776142"
+                    className="hover:text-orange-300 transition-colors"
+                  >
+                    +92 325 6776142
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:khizarusestate@gmail.com"
+                    className="hover:text-orange-300 transition-colors break-all"
+                  >
+                    khizarusestate@gmail.com
+                  </a>
+                </li>
+                <li className="text-slate-500">Gujranwala, Punjab, Pakistan</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-slate-800 pt-6 sm:flex-row">
+            <p className="text-xs text-slate-500">
+              © {year} FixItNow. All rights reserved.
+            </p>
+            <p className="text-xs text-slate-600">
+              Built for customers &amp; workers across Pakistan
             </p>
           </div>
         </div>

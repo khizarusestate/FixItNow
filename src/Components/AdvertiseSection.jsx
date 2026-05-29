@@ -19,6 +19,7 @@ import {
   getJazzcashMsisdn,
   requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
+import BankTransferInfo from "./shared/BankTransferInfo.jsx";
 import {
   AD_DURATION_PRICING,
   formatAdPrice,
@@ -576,8 +577,15 @@ export default function AdvertiseSection() {
                       <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
                         {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
                       </option>
+                      <option value={PAYMENT_METHOD_VALUES.BANK_TRANSFER}>
+                        {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.BANK_TRANSFER]}
+                      </option>
                     </select>
                   </div>
+
+                  {paymentMethod === PAYMENT_METHOD_VALUES.BANK_TRANSFER && (
+                    <BankTransferInfo />
+                  )}
 
                   {paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
                     <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
