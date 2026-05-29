@@ -13,6 +13,8 @@ import { authService, servicesService } from "../services/api.js";
 import SearchableSelect from "./SearchableSelect.jsx";
 import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
+import { isGoogleSignInEnabled } from "../config/oauth.js";
 
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
@@ -407,6 +409,32 @@ export default function Signup() {
                   >
                     {message}
                   </p>
+                )}
+
+                {signupType === "customer" && isGoogleSignInEnabled() && (
+                  <>
+                    <GoogleSignInButton
+                      disabled={submitting}
+                      onSuccess={() => {
+                        clearFormDraft(SIGNUP_DRAFT_KEY);
+                        setDone(true);
+                        setMessage("");
+                        setIsError(false);
+                      }}
+                      onError={(msg) => {
+                        setMessage(msg);
+                        setIsError(true);
+                      }}
+                    />
+                    <div className="relative py-1">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-200" />
+                      </div>
+                      <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
+                        or sign up with email
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 <button

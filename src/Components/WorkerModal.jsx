@@ -4,7 +4,6 @@ import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
 import { isAuthenticated, logout } from "../utils/jwt.js";
 import LocationPicker from "./LocationPicker.jsx";
-import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 const initial = {
   fullName: "",
@@ -37,8 +36,6 @@ export default function WorkerModal() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
-  const [termsAgreed, setTermsAgreed] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     if (activeModal === "worker") {
@@ -74,13 +71,6 @@ export default function WorkerModal() {
     setSubmitting(true);
     setMessage("");
     setIsError(false);
-
-    if (!termsAgreed) {
-      setMessage("Please agree to the terms and conditions.");
-      setIsError(true);
-      setSubmitting(false);
-      return;
-    }
 
     if (!geo.location?.trim()) {
       setMessage("Please select your location on the map.");
@@ -289,15 +279,9 @@ export default function WorkerModal() {
                   {message}
                 </p>
               )}
-              <TermsCheckbox
-                checked={termsAgreed}
-                onChange={(v) => { setTermsAgreed(v); setMessage(""); }}
-                onOpenTerms={() => setShowTerms(true)}
-              />
-              <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
               <button
                 type="submit"
-                disabled={submitting || !termsAgreed}
+                disabled={submitting}
                 className="w-full rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors disabled:opacity-60"
               >
                 {submitting ? "Submitting..." : "Submit Application"}

@@ -16,6 +16,7 @@
     "audit:ci": "npm audit --audit-level=high"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "@tailwindcss/vite": "^4.1.18",
     "country-flag-icons": "^1.6.16",
     "leaflet": "^1.9.4",

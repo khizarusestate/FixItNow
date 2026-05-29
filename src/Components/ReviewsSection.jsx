@@ -8,15 +8,11 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  User,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { appReviewService } from "../services/api.js";
-import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 const REVIEWS_PER_PAGE = 3;
 
@@ -34,11 +30,6 @@ export default function ReviewsSection() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingReviews, setPendingReviews] = useState([]);
-  const [termsAgreed, setTermsAgreed] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
 
   const fetchPendingReviews = useCallback(async () => {
     if (!isAuthenticated) {
@@ -87,8 +78,8 @@ export default function ReviewsSection() {
     e.preventDefault();
     setError("");
 
-    if (!termsAgreed) {
-      setError("Please agree to the terms and conditions.");
+    if (!isAuthenticated) {
+      setError("Please login to submit a review.");
       return;
     }
 
@@ -97,39 +88,19 @@ export default function ReviewsSection() {
       return;
     }
 
-    // Guest validation
-    if (!isAuthenticated) {
-      if (!guestName.trim() || guestName.trim().length < 2) {
-        setError("Please enter your name.");
-        return;
-      }
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim());
-      if (!emailOk) {
-        setError("Please enter a valid email address.");
-        return;
-      }
-    }
-
     setLoading(true);
 
     try {
-      const payload = { rating, comment: comment.trim() };
-      if (!isAuthenticated) {
-        payload.guestName = guestName.trim();
-        payload.guestEmail = guestEmail.trim().toLowerCase();
-        payload.guestPhone = guestPhone.trim();
-      }
-      await appReviewService.submit(payload, { asGuest: !isAuthenticated });
+      await appReviewService.submit({
+        rating,
+        comment: comment.trim(),
+      });
 
       setSuccess(true);
       setComment("");
       setRating(5);
-      setTermsAgreed(false);
-      setGuestName("");
-      setGuestEmail("");
-      setGuestPhone("");
       fetchReviews();
-      if (isAuthenticated) fetchPendingReviews();
+      fetchPendingReviews();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -143,13 +114,13 @@ export default function ReviewsSection() {
     setSuccess(false);
     setComment("");
     setRating(5);
-    setTermsAgreed(false);
-    setGuestName("");
-    setGuestEmail("");
-    setGuestPhone("");
   };
 
   const openReviewModal = () => {
+    if (!isAuthenticated) {
+      modal?.openModal?.("login");
+      return;
+    }
     setShowModal(true);
   };
 
@@ -437,75 +408,48 @@ export default function ReviewsSection() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Submitter details */}
-                  {isAuthenticated ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-                        Your details (auto-filled)
-                      </p>
-                      <div className="grid grid-cols-1 gap-3">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-slate-500">Name</label>
-                          <input type="text" value={user?.fullName || ""} disabled className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-500">Email</label>
-                            <input type="email" value={user?.email || user?.emailAddress || ""} disabled className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100" />
-                          </div>
-                          <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-500">Phone</label>
-                            <input type="text" value={user?.phone || user?.phoneNumber || ""} disabled className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-4 space-y-3">
-                      <p className="text-xs font-bold uppercase tracking-wider text-orange-600">
-                        Your details (guest)
-                      </p>
-                      <div className="relative">
-                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Your details (auto-filled)
+                    </p>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          Name
+                        </label>
                         <input
                           type="text"
-                          placeholder="Your name *"
-                          value={guestName}
-                          onChange={(e) => setGuestName(e.target.value)}
-                          required
-                          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+                          value={user?.fullName || ""}
+                          disabled
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                         />
                       </div>
-                      <div className="relative">
-                        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="email"
-                          placeholder="Email address *"
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
-                          required
-                          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={user?.email || user?.emailAddress || ""}
+                            disabled
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500">
+                            Phone
+                          </label>
+                          <input
+                            type="text"
+                            value={user?.phone || user?.phoneNumber || ""}
+                            disabled
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
+                          />
+                        </div>
                       </div>
-                      <div className="relative">
-                        <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="tel"
-                          placeholder="Phone (optional)"
-                          value={guestPhone}
-                          onChange={(e) => setGuestPhone(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
-                        />
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        Or{" "}
-                        <button type="button" onClick={() => modal?.openModal?.("login")} className="text-orange-500 underline font-medium">
-                          sign in
-                        </button>{" "}
-                        to auto-fill your details.
-                      </p>
                     </div>
-                  )}
+                  </div>
 
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-900">
@@ -540,21 +484,17 @@ export default function ReviewsSection() {
 
                   {error && (
                     <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                      <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                      <AlertTriangle
+                        size={16}
+                        className="mt-0.5 flex-shrink-0"
+                      />
                       <span>{error}</span>
                     </div>
                   )}
 
-                  <TermsCheckbox
-                    checked={termsAgreed}
-                    onChange={(v) => { setTermsAgreed(v); setError(""); }}
-                    onOpenTerms={() => setShowTerms(true)}
-                  />
-                  <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
-
                   <button
                     type="submit"
-                    disabled={loading || !termsAgreed}
+                    disabled={loading}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-400 px-6 py-3 text-sm font-bold text-slate-900 shadow-lg transition-all hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? (

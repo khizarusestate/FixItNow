@@ -10,14 +10,12 @@ import {
   Loader2,
   Clock,
   Smartphone,
-  Banknote,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { advertisementService } from "../services/api.js";
 import {
   PAYMENT_METHOD_VALUES,
   PAYMENT_METHOD_LABELS,
-  getEasypaisaMsisdn,
   getJazzcashMsisdn,
   requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
@@ -27,7 +25,6 @@ import {
   getAdPrice,
 } from "../utils/adPricing.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 const AD_DRAFT_KEY = "fixitnow_draft_advertise";
 
@@ -49,7 +46,6 @@ export default function AdvertiseSection() {
   const [paymentReference, setPaymentReference] = useState(savedDraft.paymentReference ?? "");
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [showTerms, setShowTerms] = useState(false);
   const [guestContact, setGuestContact] = useState({
     name: savedDraft.guestContact?.name ?? "",
     email: savedDraft.guestContact?.email ?? "",
@@ -200,7 +196,15 @@ export default function AdvertiseSection() {
     setTermsAgreed(false);
   };
 
-  const openTerms = () => setShowTerms(true);
+  const scrollToTerms = (e) => {
+    e.preventDefault();
+    closeModal();
+    window.setTimeout(() => {
+      document
+        .getElementById("terms-of-service")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  };
 
   const submitAdvertisement = async () => {
     setError("");
@@ -569,43 +573,11 @@ export default function AdvertiseSection() {
                       required
                     >
                       <option value="">Select payment method</option>
-                      <option value={PAYMENT_METHOD_VALUES.EASYPAISA}>
-                        {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.EASYPAISA]}
-                      </option>
                       <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
                         {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
                       </option>
-                      <option value={PAYMENT_METHOD_VALUES.HAND_TO_HAND}>
-                        {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.HAND_TO_HAND]}
-                      </option>
                     </select>
                   </div>
-
-                  {paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
-                    <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
-                      <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
-                      <div className="text-sm text-violet-900">
-                        <p className="font-semibold">Hand to hand</p>
-                        <p className="mt-1 text-xs text-violet-800/90">Pay in cash. No receipt needed.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 flex gap-3">
-                      <Smartphone className="shrink-0 text-emerald-700 mt-0.5" size={20} />
-                      <div className="text-sm text-emerald-900">
-                        <p className="font-semibold">Pay via EasyPaisa</p>
-                        <p className="mt-1 text-emerald-800">
-                          Send payment to:{" "}
-                          <span className="font-mono font-bold">{getEasypaisaMsisdn()}</span>
-                        </p>
-                        <p className="mt-1 text-xs text-emerald-700/90">
-                          Upload your payment receipt below.
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
                   {paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
                     <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
@@ -638,13 +610,7 @@ export default function AdvertiseSection() {
                   </div>
 
                   {/* Payment receipt */}
-                  <div
-                    className={
-                      paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-                        ? "opacity-50 pointer-events-none select-none"
-                        : ""
-                    }
-                  >
+                  <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2">
                       Payment receipt{" "}
                       {requiresPaymentReceipt(paymentMethod, false) && (
@@ -658,17 +624,11 @@ export default function AdvertiseSection() {
                       onChange={handleReceiptChange}
                       className="sr-only"
                       aria-hidden
-                      disabled={
-                        paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-                      }
                     />
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
                         onClick={() => receiptInputRef.current?.click()}
-                        disabled={
-                          paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-                        }
                         className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 hover:bg-orange-100 disabled:opacity-60"
                       >
                         <Upload size={18} />
@@ -794,12 +754,27 @@ export default function AdvertiseSection() {
                   )}
 
                   {/* Submit */}
-                  <TermsCheckbox
-                    checked={termsAgreed}
-                    onChange={(v) => { setTermsAgreed(v); setError(""); }}
-                    onOpenTerms={openTerms}
-                  />
-                  <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+                  <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={(e) => {
+                        setTermsAgreed(e.target.checked);
+                        setError("");
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="text-xs text-slate-600 leading-snug">
+                      I agree to the{" "}
+                      <button
+                        type="button"
+                        onClick={scrollToTerms}
+                        className="font-semibold text-orange-600 underline hover:text-orange-700"
+                      >
+                        terms and conditions
+                      </button>
+                    </span>
+                  </label>
 
                   <button
                     type="submit"

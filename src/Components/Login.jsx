@@ -4,7 +4,8 @@ import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
+import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
+import { isGoogleSignInEnabled } from "../config/oauth.js";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
@@ -38,7 +39,6 @@ export default function Login({ onLoginSuccess }) {
   const [loginType, setLoginType] = useState(savedDraft.loginType ?? "customer");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(savedDraft.rememberMe ?? true);
-  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     if (activeModal !== "login") return;
@@ -280,6 +280,37 @@ export default function Login({ onLoginSuccess }) {
             </span>
           </button>
 
+          {loginType === "customer" && isGoogleSignInEnabled() && (
+            <>
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
+                  or
+                </p>
+              </div>
+              <GoogleSignInButton
+                disabled={submitting}
+                onSuccess={(userData) => {
+                  setMessage("Login successful!");
+                  setIsError(false);
+                  if (onLoginSuccess) onLoginSuccess(userData);
+                  setTimeout(() => {
+                    clearFormDraft(LOGIN_DRAFT_KEY);
+                    handleClose();
+                    setForm(initialForm);
+                    setMessage("");
+                  }, 800);
+                }}
+                onError={(msg) => {
+                  setMessage(msg);
+                  setIsError(true);
+                }}
+              />
+            </>
+          )}
+
           <div className="text-center space-y-2">
             <p className="text-sm text-slate-500">
               Don't have an account?{" "}
@@ -298,20 +329,9 @@ export default function Login({ onLoginSuccess }) {
                 Admin approval is required before you can log in as a worker.
               </p>
             )}
-            <p className="text-xs text-slate-400 pt-1">
-              By signing in you agree to our{" "}
-              <button
-                type="button"
-                onClick={() => setShowTerms(true)}
-                className="text-orange-500 underline hover:text-orange-600"
-              >
-                Terms &amp; Conditions
-              </button>
-            </p>
           </div>
         </form>
       </div>
-      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
     </div>
   );
 }

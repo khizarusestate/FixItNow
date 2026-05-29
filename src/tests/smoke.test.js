@@ -6,16 +6,14 @@ import {
 } from "../utils/platformPayment.js";
 
 describe("platformPayment", () => {
-  it("exposes wallet and hand-to-hand payment methods", () => {
-    expect(PAYMENT_METHOD_VALUES.EASYPAISA).toBe("easypaisa");
+  it("exposes jazzcash and pay-after-work", () => {
     expect(PAYMENT_METHOD_VALUES.JAZZCASH).toBe("jazzcash");
-    expect(PAYMENT_METHOD_VALUES.HAND_TO_HAND).toBe("hand-to-hand");
+    expect(PAYMENT_METHOD_VALUES.PAY_AFTER_WORK).toBe("pay-after-work");
   });
 
-  it("requires receipt only for wallet when paying upfront", () => {
+  it("requires receipt only for jazzcash when paying upfront", () => {
     expect(requiresPaymentReceipt("jazzcash", false)).toBe(true);
-    expect(requiresPaymentReceipt("hand-to-hand", false)).toBe(false);
-    expect(requiresPaymentReceipt("easypaisa", true)).toBe(false);
+    expect(requiresPaymentReceipt("jazzcash", true)).toBe(false);
   });
 
   it("parses pay-after-work flag", () => {

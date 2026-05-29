@@ -40,7 +40,6 @@ import LocationPicker from "./LocationPicker.jsx";
 import { geoFromUser, hasLocation } from "../utils/location.js";
 import {
   buildPayToSummary,
-  getEasypaisaMsisdn,
   getJazzcashMsisdn,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
@@ -49,7 +48,6 @@ import {
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
 import MenuPagination, { MENU_PAGE_SIZE } from "./shared/MenuPagination.jsx";
-import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 // =======================
 // CATEGORY ICONS
@@ -131,7 +129,6 @@ function BookingForm({ service, onClose, onSuccess }) {
     payAfterWork: savedDraft.payAfterWork ?? false,
   });
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [showTerms, setShowTerms] = useState(false);
   const [showPayAck, setShowPayAck] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
@@ -176,7 +173,15 @@ function BookingForm({ service, onClose, onSuccess }) {
     onClose();
   };
 
-  const openTerms = () => setShowTerms(true);
+  const scrollToTerms = (e) => {
+    e.preventDefault();
+    handleClose();
+    window.setTimeout(() => {
+      document
+        .getElementById("terms-of-service")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 350);
+  };
 
   useEffect(() => {
     return () => {
@@ -505,43 +510,11 @@ function BookingForm({ service, onClose, onSuccess }) {
               disabled={form.payAfterWork}
             >
               <option value="">Select payment method</option>
-              <option value={PAYMENT_METHOD_VALUES.EASYPAISA}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.EASYPAISA]}
-              </option>
               <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
                 {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
               </option>
-              <option value={PAYMENT_METHOD_VALUES.HAND_TO_HAND}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.HAND_TO_HAND]}
-              </option>
             </select>
           </div>
-
-          {!form.payAfterWork &&
-            form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND && (
-            <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 flex gap-3">
-              <Banknote className="shrink-0 text-violet-700 mt-0.5" size={20} />
-              <div className="text-sm text-violet-900">
-                <p className="font-semibold">Hand to hand payment</p>
-                <p className="mt-1 text-violet-800/90 text-xs">
-                  You will pay the worker in cash when they arrive. No receipt upload needed.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {!form.payAfterWork && form.paymentMethod === PAYMENT_METHOD_VALUES.EASYPAISA && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 flex gap-3">
-              <Smartphone className="shrink-0 text-emerald-700 mt-0.5" size={20} />
-              <div className="text-sm text-emerald-900">
-                <p className="font-semibold">Pay via EasyPaisa</p>
-                <p className="mt-1 text-emerald-800">
-                  Send payment to this number:{" "}
-                  <span className="font-mono font-bold">{getEasypaisaMsisdn()}</span>
-                </p>
-              </div>
-            </div>
-          )}
 
           {!form.payAfterWork && form.paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
             <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
@@ -559,10 +532,7 @@ function BookingForm({ service, onClose, onSuccess }) {
           {/* RECEIPT */}
           <div
             className={
-              form.payAfterWork ||
-              form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-                ? "opacity-50 pointer-events-none select-none"
-                : ""
+              form.payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
             }
           >
             <label className="block text-xs font-semibold text-slate-700 mb-2">
@@ -579,20 +549,14 @@ function BookingForm({ service, onClose, onSuccess }) {
               onChange={handleReceiptChange}
               className="sr-only"
               aria-hidden
-              disabled={
-                form.payAfterWork ||
-                form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-              }
+              disabled={form.payAfterWork}
             />
 
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => receiptInputRef.current?.click()}
-                disabled={
-                  form.payAfterWork ||
-                  form.paymentMethod === PAYMENT_METHOD_VALUES.HAND_TO_HAND
-                }
+                disabled={form.payAfterWork}
                 className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 shadow-sm transition-all hover:bg-orange-100 hover:border-orange-300 disabled:opacity-60"
               >
                 <Upload size={18} />
@@ -652,13 +616,27 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
           )}
 
-          <TermsCheckbox
-            checked={termsAgreed}
-            onChange={(v) => { setTermsAgreed(v); setError(""); }}
-            onOpenTerms={openTerms}
-          />
-
-          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={termsAgreed}
+              onChange={(e) => {
+                setTermsAgreed(e.target.checked);
+                setError("");
+              }}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="text-xs text-slate-600 leading-snug">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={scrollToTerms}
+                className="font-semibold text-orange-600 underline hover:text-orange-700"
+              >
+                terms and conditions
+              </button>
+            </span>
+          </label>
 
           <button
             type="submit"
@@ -1079,45 +1057,30 @@ export default function BookingSection() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 sm:gap-5">
                   {pagedCategories.map((category, idx) => {
+                    const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
                     const catColor =
                       CATEGORY_COLORS[category] || "from-slate-400 to-slate-600";
-                    const count = categoryCounts[category] || 0;
-                    // First letter of each word → abbrev badge (e.g. "Home Repair" → "HR")
-                    const abbrev = category
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2);
                     return (
                       <button
                         key={category}
                         type="button"
                         onClick={() => openCategory(category)}
                         aria-label={`Open ${category}`}
-                        className="category-btn group text-left rounded-2xl bg-white/90 p-5 sm:p-6 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn border border-slate-100 hover:border-orange-200"
+                        className="category-btn group text-left rounded-2xl bg-white/90 p-5 sm:p-6 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn"
                         style={{ animationDelay: `${idx * 40}ms` }}
                       >
-                        {/* Letter badge — gradient background, bold abbrev */}
                         <div
-                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-4 select-none`}
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-4`}
                         >
-                          <span className="text-xl sm:text-2xl font-black tracking-tight leading-none">
-                            {abbrev}
-                          </span>
+                          <CategoryIcon size={28} strokeWidth={2.25} />
                         </div>
-                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
+                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug pr-6">
                           {category}
                         </h4>
-                        <div className="flex items-center justify-between mt-1.5">
-                          <span className="text-xs text-slate-400 font-medium">
-                            {count} service{count !== 1 ? "s" : ""}
-                          </span>
-                          <ChevronRight
-                            size={16}
-                            className="text-orange-400 shrink-0 group-hover:translate-x-0.5 transition-transform"
-                          />
-                        </div>
+                        <ChevronRight
+                          size={18}
+                          className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform mt-2"
+                        />
                       </button>
                     );
                   })}
