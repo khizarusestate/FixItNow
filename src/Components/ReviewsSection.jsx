@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { appReviewService } from "../services/api.js";
+import TermsAgreement from "./shared/TermsAgreement.jsx";
 
 const REVIEWS_PER_PAGE = 3;
 
@@ -30,6 +31,7 @@ export default function ReviewsSection() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingReviews, setPendingReviews] = useState([]);
+  const [termsAgreed, setTermsAgreed] = useState(false);
 
   const fetchPendingReviews = useCallback(async () => {
     if (!isAuthenticated) {
@@ -88,6 +90,11 @@ export default function ReviewsSection() {
       return;
     }
 
+    if (!termsAgreed) {
+      setError("Please agree to the terms and conditions.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -114,6 +121,7 @@ export default function ReviewsSection() {
     setSuccess(false);
     setComment("");
     setRating(5);
+    setTermsAgreed(false);
   };
 
   const openReviewModal = () => {
@@ -205,13 +213,11 @@ export default function ReviewsSection() {
               Customer Reviews
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-slate-600">
-              See what people say about Fix It Now — three reviews per row on
-              large screens, like our booking section.
+              Real feedback from customers who booked through Fix It Now.
             </p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-4">
-            {/* Summary — booking-style sidebar weight */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white shadow-xl">
                 <h3 className="mb-4 text-lg font-bold">Ratings overview</h3>
@@ -256,7 +262,6 @@ export default function ReviewsSection() {
               </div>
             </div>
 
-            {/* Review cards — 3 per row on lg */}
             <div className="lg:col-span-3">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-xl font-bold text-slate-900">
@@ -410,7 +415,7 @@ export default function ReviewsSection() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Your details (auto-filled)
+                      Your profile
                     </p>
                     <div className="grid grid-cols-1 gap-3">
                       <div>
@@ -482,6 +487,14 @@ export default function ReviewsSection() {
                     </p>
                   </div>
 
+                  <TermsAgreement
+                    checked={termsAgreed}
+                    onChange={(v) => {
+                      setTermsAgreed(v);
+                      setError("");
+                    }}
+                  />
+
                   {error && (
                     <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                       <AlertTriangle
@@ -494,7 +507,7 @@ export default function ReviewsSection() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !termsAgreed}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-400 px-6 py-3 text-sm font-bold text-slate-900 shadow-lg transition-all hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? (

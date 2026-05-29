@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 
 const getImageUrl = (url) => resolveUploadMediaUrl(url);
 
-/** Ads shown per page — matches booking grid (3 cards per row on large screens) */
 const ADS_PER_PAGE = 3;
 
 function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
@@ -221,7 +220,7 @@ export default function ApprovedAds() {
             Featured Advertisements
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-slate-600">
-            Support our partners — same card layout as our service listings
+            Trusted partners promoting services on Fix It Now.
           </p>
         </div>
 

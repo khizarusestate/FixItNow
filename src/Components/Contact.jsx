@@ -1,10 +1,11 @@
 import { Clock, Mail, MapPin, Phone, ArrowUpRight } from "lucide-react";
+import { openLegalModal } from "../utils/openLegal.js";
 
 const FOOTER_LINKS = [
   { label: "Book a service", href: "#booking" },
   { label: "Advertise", href: "#advertise" },
   { label: "Reviews", href: "#reviews" },
-  { label: "Privacy & Terms", href: "#legal" },
+  { label: "Privacy & Terms", action: "legal" },
 ];
 
 export default function Contact() {
@@ -111,17 +112,31 @@ export default function Contact() {
               </p>
               <ul className="mt-4 space-y-2.5">
                 {FOOTER_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      className="group inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white"
-                    >
-                      {link.label}
-                      <ArrowUpRight
-                        size={14}
-                        className="opacity-0 -translate-y-0.5 transition-all group-hover:opacity-100 group-hover:translate-y-0"
-                      />
-                    </a>
+                  <li key={link.label}>
+                    {link.action === "legal" ? (
+                      <button
+                        type="button"
+                        onClick={openLegalModal}
+                        className="group inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white"
+                      >
+                        {link.label}
+                        <ArrowUpRight
+                          size={14}
+                          className="opacity-0 -translate-y-0.5 transition-all group-hover:opacity-100 group-hover:translate-y-0"
+                        />
+                      </button>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="group inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white"
+                      >
+                        {link.label}
+                        <ArrowUpRight
+                          size={14}
+                          className="opacity-0 -translate-y-0.5 transition-all group-hover:opacity-100 group-hover:translate-y-0"
+                        />
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

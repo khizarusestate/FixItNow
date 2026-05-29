@@ -14,7 +14,8 @@ import SearchableSelect from "./SearchableSelect.jsx";
 import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
-import { isGoogleSignInEnabled } from "../config/oauth.js";
+import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
+import TermsAgreement from "./shared/TermsAgreement.jsx";
 
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
@@ -27,6 +28,7 @@ const initialWorker = {
   primaryServiceCategory: "",
 };
 export default function Signup() {
+  const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal } = useModal();
   const savedDraft = loadFormDraft(SIGNUP_DRAFT_KEY, {});
   const [signupType, setSignupType] = useState(savedDraft.signupType ?? "customer");
@@ -44,6 +46,7 @@ export default function Signup() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
   const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
 
   useEffect(() => {
@@ -52,8 +55,9 @@ export default function Signup() {
       signupType,
       customerForm,
       workerForm,
+      termsAgreed,
     });
-  }, [activeModal, signupType, customerForm, workerForm]);
+  }, [activeModal, signupType, customerForm, workerForm, termsAgreed]);
 
   const updateCustomer = (k, v) => setCustomerForm((f) => ({ ...f, [k]: v }));
   const updateWorker = (k, v) => setWorkerForm((f) => ({ ...f, [k]: v }));
@@ -81,6 +85,11 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!termsAgreed) {
+      setMessage("Please agree to the terms and conditions.");
+      setIsError(true);
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -411,10 +420,19 @@ export default function Signup() {
                   </p>
                 )}
 
-                {signupType === "customer" && isGoogleSignInEnabled() && (
+                <TermsAgreement
+                  checked={termsAgreed}
+                  onChange={(v) => {
+                    setTermsAgreed(v);
+                    setMessage("");
+                  }}
+                  prefix="By signing up, you agree to the"
+                />
+
+                {signupType === "customer" && isGoogleSignInEnabled && (
                   <>
                     <GoogleSignInButton
-                      disabled={submitting}
+                      disabled={submitting || !termsAgreed}
                       onSuccess={() => {
                         clearFormDraft(SIGNUP_DRAFT_KEY);
                         setDone(true);
@@ -439,7 +457,7 @@ export default function Signup() {
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !termsAgreed}
                   className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${
                     signupType === "worker"
                       ? "bg-slate-900 hover:bg-slate-800"

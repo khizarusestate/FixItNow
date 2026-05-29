@@ -5,12 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
-import { isGoogleSignInEnabled } from "../config/oauth.js";
+import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
 
 export default function Login({ onLoginSuccess }) {
+  const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal, openModal, modalPayload } =
     useModal();
   const savedDraft = loadFormDraft(LOGIN_DRAFT_KEY, {});
@@ -280,7 +281,7 @@ export default function Login({ onLoginSuccess }) {
             </span>
           </button>
 
-          {loginType === "customer" && isGoogleSignInEnabled() && (
+          {loginType === "customer" && isGoogleSignInEnabled && (
             <>
               <div className="relative py-1">
                 <div className="absolute inset-0 flex items-center">

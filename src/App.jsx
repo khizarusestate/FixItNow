@@ -1,14 +1,13 @@
 import { lazy, Suspense } from "react";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./context/AuthContext";
-import { GOOGLE_CLIENT_ID, isGoogleSignInEnabled } from "./config/oauth.js";
+import { OAuthConfigProvider } from "./context/OAuthConfigContext.jsx";
+import { LegalProvider } from "./context/LegalContext.jsx";
 import { GuideProvider } from "./context/GuideContext";
 import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import Contact from "./Components/Contact";
-import LegalSection from "./Components/LegalSection";
 
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
@@ -29,50 +28,40 @@ function SectionFallback() {
   );
 }
 
-function AppProviders({ children }) {
-  if (isGoogleSignInEnabled()) {
-    return (
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        {children}
-      </GoogleOAuthProvider>
-    );
-  }
-  return children;
-}
-
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppProviders>
-      <AuthProvider>
-        <GuideProvider>
-        <ModalProvider>
-          <div className="relative">
-            <Header />
-            <main className="bg-slate-50 text-slate-900">
-              <Home />
-              <Suspense fallback={<SectionFallback />}>
-                <BookingSection />
-                <ApprovedAds />
-                <AdvertiseSection />
-                <ReviewsSection />
-              </Suspense>
-              <LegalSection />
-              <Contact />
-            </main>
-            <Suspense fallback={null}>
-              <About />
-              <Login />
-              <Signup />
-              <ForgotPassword />
-              <WorkerModal />
-              <CompleteProfile />
-            </Suspense>
-          </div>
-        </ModalProvider>
-        </GuideProvider>
-      </AuthProvider>
-      </AppProviders>
+      <OAuthConfigProvider>
+        <AuthProvider>
+          <GuideProvider>
+            <ModalProvider>
+              <LegalProvider>
+                <div className="relative">
+                  <Header />
+                  <main className="bg-slate-50 text-slate-900">
+                    <Home />
+                    <Suspense fallback={<SectionFallback />}>
+                      <BookingSection />
+                      <ApprovedAds />
+                      <AdvertiseSection />
+                      <ReviewsSection />
+                    </Suspense>
+                    <Contact />
+                  </main>
+                  <Suspense fallback={null}>
+                    <About />
+                    <Login />
+                    <Signup />
+                    <ForgotPassword />
+                    <WorkerModal />
+                    <CompleteProfile />
+                  </Suspense>
+                </div>
+              </LegalProvider>
+            </ModalProvider>
+          </GuideProvider>
+        </AuthProvider>
+      </OAuthConfigProvider>
     </ErrorBoundary>
   );
 }
