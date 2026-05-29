@@ -4,6 +4,7 @@ import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
@@ -37,6 +38,7 @@ export default function Login({ onLoginSuccess }) {
   const [loginType, setLoginType] = useState(savedDraft.loginType ?? "customer");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(savedDraft.rememberMe ?? true);
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     if (activeModal !== "login") return;
@@ -295,9 +297,20 @@ export default function Login({ onLoginSuccess }) {
                 Admin approval is required before you can log in as a worker.
               </p>
             )}
+            <p className="text-xs text-slate-400 pt-1">
+              By signing in you agree to our{" "}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-orange-500 underline hover:text-orange-600"
+              >
+                Terms &amp; Conditions
+              </button>
+            </p>
           </div>
         </form>
       </div>
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
     </div>
   );
 }

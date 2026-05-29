@@ -27,6 +27,7 @@ import {
   getAdPrice,
 } from "../utils/adPricing.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import TermsModal, { TermsCheckbox } from "./shared/TermsModal.jsx";
 
 const AD_DRAFT_KEY = "fixitnow_draft_advertise";
 
@@ -48,6 +49,7 @@ export default function AdvertiseSection() {
   const [paymentReference, setPaymentReference] = useState(savedDraft.paymentReference ?? "");
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
+  const [showTerms, setShowTerms] = useState(false);
   const [guestContact, setGuestContact] = useState({
     name: savedDraft.guestContact?.name ?? "",
     email: savedDraft.guestContact?.email ?? "",
@@ -198,15 +200,7 @@ export default function AdvertiseSection() {
     setTermsAgreed(false);
   };
 
-  const scrollToTerms = (e) => {
-    e.preventDefault();
-    closeModal();
-    window.setTimeout(() => {
-      document
-        .getElementById("terms-of-service")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
-  };
+  const openTerms = () => setShowTerms(true);
 
   const submitAdvertisement = async () => {
     setError("");
@@ -800,27 +794,12 @@ export default function AdvertiseSection() {
                   )}
 
                   {/* Submit */}
-                  <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <input
-                      type="checkbox"
-                      checked={termsAgreed}
-                      onChange={(e) => {
-                        setTermsAgreed(e.target.checked);
-                        setError("");
-                      }}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span className="text-xs text-slate-600 leading-snug">
-                      I agree to the{" "}
-                      <button
-                        type="button"
-                        onClick={scrollToTerms}
-                        className="font-semibold text-orange-600 underline hover:text-orange-700"
-                      >
-                        terms and conditions
-                      </button>
-                    </span>
-                  </label>
+                  <TermsCheckbox
+                    checked={termsAgreed}
+                    onChange={(v) => { setTermsAgreed(v); setError(""); }}
+                    onOpenTerms={openTerms}
+                  />
+                  <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
                   <button
                     type="submit"

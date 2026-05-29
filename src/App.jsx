@@ -6,7 +6,6 @@ import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import Contact from "./Components/Contact";
-import LegalSection from "./Components/LegalSection";
 
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
@@ -43,7 +42,6 @@ export default function App() {
                 <AdvertiseSection />
                 <ReviewsSection />
               </Suspense>
-              <LegalSection />
               <Contact />
             </main>
             <Suspense fallback={null}>

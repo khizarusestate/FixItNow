@@ -508,9 +508,13 @@ export const advertisementService = {
 export const appReviewService = {
   getMy: () => apiRequestWithAuth("/app-reviews/my"),
   getActive: () => apiRequest("/app-reviews/active"),
-  submit: (payload) =>
-    apiRequestWithAuth("/app-reviews", {
+  // Works for both authenticated users and guests.
+  // For guests, pass { guestName, guestEmail, guestPhone, rating, comment }.
+  submit: (payload, { asGuest = false } = {}) => {
+    const fn = asGuest ? apiRequest : apiRequestWithAuth;
+    return fn("/app-reviews", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 };
