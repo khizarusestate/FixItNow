@@ -364,10 +364,21 @@ export function AuthProvider({ children }) {
     });
 
     const handleAccountApproved = (data) => {
-      setApprovalMessage(
-        data.message || "Your worker account has been approved!",
-      );
+      const msg = data.message || "Your worker account has been approved!";
+      setApprovalMessage(msg);
       setAccountApproved(true);
+      setBadgeCount((c) => Math.min(c + 1, 99));
+      playNotificationTone();
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-notification-new", {
+          detail: {
+            id: `worker-approved-${Date.now()}`,
+            title: "Account approved",
+            message: msg,
+            type: "success",
+          },
+        }),
+      );
     };
     socket.on("worker-account-approved", handleAccountApproved);
     socket.on("account-approved", handleAccountApproved);
@@ -540,22 +551,26 @@ export function AuthProvider({ children }) {
     const handleAdStatusUpdate = (data) => {
       const msg =
         data.message || `Your advertisement has been ${data.status}.`;
+      const detail = {
+        id: `ad-${data.adId || data.status}`,
+        title:
+          data.status === "approved"
+            ? "Advertisement approved"
+            : data.status === "rejected"
+              ? "Advertisement rejected"
+              : "Advertisement update",
+        message: msg,
+        type: data.status === "approved" ? "success" : "warning",
+        link: "#advertise",
+        dismissOnly: true,
+      };
+      setBadgeCount((c) => Math.min(c + 1, 99));
+      playNotificationTone();
       window.dispatchEvent(
-        new CustomEvent("fixitnow-live-alert", {
-          detail: {
-            id: `ad-${data.adId || data.status}`,
-            title:
-              data.status === "approved"
-                ? "Advertisement approved"
-                : data.status === "rejected"
-                  ? "Advertisement rejected"
-                  : "Advertisement update",
-            message: msg,
-            type: data.status === "approved" ? "success" : "warning",
-            link: "#advertise",
-            dismissOnly: true,
-          },
-        }),
+        new CustomEvent("fixitnow-notification-new", { detail }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-live-alert", { detail }),
       );
       window.dispatchEvent(
         new CustomEvent("fixitnow-ad-status-update", { detail: data }),
@@ -565,6 +580,29 @@ export function AuthProvider({ children }) {
     socket.on("ad-status-update", handleAdStatusUpdate);
 
     socket.on("app-review-status-update", (data) => {
+      const detail = {
+        id: `review-${data.reviewId || data.status}`,
+        title:
+          data.status === "approved"
+            ? "Review approved"
+            : data.status === "rejected"
+              ? "Review rejected"
+              : "Review update",
+        message:
+          data.message ||
+          `Your review has been ${data.status || "updated"}.`,
+        type: data.status === "approved" ? "success" : "warning",
+        link: "#reviews",
+        dismissOnly: true,
+      };
+      setBadgeCount((c) => Math.min(c + 1, 99));
+      playNotificationTone();
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-notification-new", { detail }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("fixitnow-live-alert", { detail }),
+      );
       window.dispatchEvent(
         new CustomEvent("fixitnow-review-status-update", { detail: data }),
       );

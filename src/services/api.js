@@ -379,6 +379,16 @@ export const authService = {
       customer: data.customer || data.data,
     })),
 
+  loginWithGoogleWorker: (credential, remember = true) =>
+    apiRequest("/auth/google/worker", {
+      method: "POST",
+      body: JSON.stringify({ credential, rememberMe: remember }),
+    }).then((data) => ({
+      ...data,
+      token: data.accessToken || data.token,
+      worker: data.worker || data.data,
+    })),
+
   loginWorker: (email, password, remember = true) =>
     apiRequest("/auth/worker/login", {
       method: "POST",
@@ -520,6 +530,11 @@ export const appReviewService = {
   getActive: () => apiRequest("/app-reviews/active"),
   submit: (payload) =>
     apiRequestWithAuth("/app-reviews", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  submitGuest: (payload) =>
+    apiRequest("/app-reviews/guest", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

@@ -34,7 +34,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
   const [error, setError] = useState('')
 
   const formatDate = (date) => {
-    if (!date) return 'N/A'
+    if (!date) return 'Add in Edit Profile'
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',

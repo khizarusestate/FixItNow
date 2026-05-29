@@ -32,6 +32,11 @@ export default function ReviewsSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingReviews, setPendingReviews] = useState([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [guestForm, setGuestForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
 
   const fetchPendingReviews = useCallback(async () => {
     if (!isAuthenticated) {
@@ -80,11 +85,6 @@ export default function ReviewsSection() {
     e.preventDefault();
     setError("");
 
-    if (!isAuthenticated) {
-      setError("Please login to submit a review.");
-      return;
-    }
-
     if (!comment.trim()) {
       setError("Please write a comment for your review.");
       return;
@@ -98,10 +98,30 @@ export default function ReviewsSection() {
     setLoading(true);
 
     try {
-      await appReviewService.submit({
-        rating,
-        comment: comment.trim(),
-      });
+      if (!isAuthenticated) {
+        if (!guestForm.name.trim() || guestForm.name.trim().length < 2) {
+          setError("Please enter your name.");
+          setLoading(false);
+          return;
+        }
+        if (!guestForm.email.trim()) {
+          setError("Please enter your email.");
+          setLoading(false);
+          return;
+        }
+        await appReviewService.submitGuest({
+          name: guestForm.name.trim(),
+          email: guestForm.email.trim(),
+          phone: guestForm.phone.trim(),
+          rating,
+          comment: comment.trim(),
+        });
+      } else {
+        await appReviewService.submit({
+          rating,
+          comment: comment.trim(),
+        });
+      }
 
       setSuccess(true);
       setComment("");
@@ -122,13 +142,10 @@ export default function ReviewsSection() {
     setComment("");
     setRating(5);
     setTermsAgreed(false);
+    setGuestForm({ name: "", email: "", phone: "" });
   };
 
   const openReviewModal = () => {
-    if (!isAuthenticated) {
-      modal?.openModal?.("login");
-      return;
-    }
     setShowModal(true);
   };
 
@@ -413,48 +430,98 @@ export default function ReviewsSection() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Your profile
-                    </p>
-                    <div className="grid grid-cols-1 gap-3">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-500">
-                          Name
-                        </label>
-                        <input
-                          type="text"
-                          value={user?.fullName || ""}
-                          disabled
-                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
+                  {isAuthenticated ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Your profile
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500">
-                            Email
-                          </label>
-                          <input
-                            type="email"
-                            value={user?.email || user?.emailAddress || ""}
-                            disabled
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-slate-500">
-                            Phone
+                            Name
                           </label>
                           <input
                             type="text"
-                            value={user?.phone || user?.phoneNumber || ""}
+                            value={user?.fullName || ""}
                             disabled
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                           />
                         </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-500">
+                              Email
+                            </label>
+                            <input
+                              type="email"
+                              value={user?.email || user?.emailAddress || ""}
+                              disabled
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-500">
+                              Phone
+                            </label>
+                            <input
+                              type="text"
+                              value={user?.phone || user?.phoneNumber || ""}
+                              disabled
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Your details
+                      </p>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={guestForm.name}
+                          onChange={(e) =>
+                            setGuestForm((f) => ({ ...f, name: e.target.value }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          placeholder="Your full name"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          value={guestForm.email}
+                          onChange={(e) =>
+                            setGuestForm((f) => ({ ...f, email: e.target.value }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          placeholder="you@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          Phone (optional)
+                        </label>
+                        <input
+                          type="tel"
+                          value={guestForm.phone}
+                          onChange={(e) =>
+                            setGuestForm((f) => ({ ...f, phone: e.target.value }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          placeholder="03XX XXXXXXX"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-900">

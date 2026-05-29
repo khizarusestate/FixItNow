@@ -19,6 +19,7 @@ import {
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
+import { jobLocationText, profileFieldText } from "../utils/profileFieldDisplay.js";
 
 const STATUS_CONFIG = {
   pending: {
@@ -383,7 +384,7 @@ export default function MyBookings({ isOpen, onClose }) {
                             )}
                           <p className="text-sm text-slate-700 mt-2 flex items-center gap-2">
                             <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
-                            {b.location || b.address || "N/A"}
+                            {jobLocationText(b)}
                           </p>
                         </div>
 
@@ -468,7 +469,7 @@ export default function MyBookings({ isOpen, onClose }) {
                                   Category
                                 </p>
                                 <p className="text-slate-900 font-bold mt-0.5">
-                                  {b.worker.primaryServiceCategory || "N/A"}
+                                  {profileFieldText(b.worker.primaryServiceCategory)}
                                 </p>
                               </div>
                               <div>
@@ -476,7 +477,7 @@ export default function MyBookings({ isOpen, onClose }) {
                                   <Phone size={12} /> Phone
                                 </p>
                                 <p className="text-slate-900 font-bold mt-0.5">
-                                  {b.worker.phoneNumber || "N/A"}
+                                  {profileFieldText(b.worker.phoneNumber)}
                                 </p>
                               </div>
                               <div>
@@ -499,7 +500,7 @@ export default function MyBookings({ isOpen, onClose }) {
                                   <Mail size={12} /> Email
                                 </p>
                                 <p className="text-slate-900 font-bold mt-0.5 break-all">
-                                  {b.worker.emailAddress || "N/A"}
+                                  {profileFieldText(b.worker.emailAddress)}
                                 </p>
                               </div>
                             </div>

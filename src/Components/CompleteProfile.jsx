@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Upload,
@@ -6,23 +6,38 @@ import {
   Camera,
   CheckCircle,
   ArrowRight,
+  Phone,
+  Shield,
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
-import { apiRequestWithAuth } from "../services/api.js";
+import { apiRequestWithAuth, servicesService } from "../services/api.js";
 import LocationPicker from "./LocationPicker";
+import SearchableSelect from "./SearchableSelect.jsx";
 import { geoFromUser } from "../utils/location.js";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
+import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
+import { getMissingProfileFields } from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
   const { activeModal, closeModal } = useModal();
   const { user, updateUser } = useAuth();
+  const isWorker = user?.type === "worker";
+  const missing = getMissingProfileFields(user);
+
   const [geo, setGeo] = useState(() => geoFromUser(user));
   const [form, setForm] = useState({
+    phone: user?.phone || user?.phoneNumber || "",
+    cnicNumber: user?.cnicNumber || "",
+    primaryServiceCategory:
+      user?.primaryServiceCategory && user.primaryServiceCategory !== "Unspecified"
+        ? user.primaryServiceCategory
+        : "",
     availability: user?.availability ?? true,
     profilePicture: null,
   });
+  const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
   const [previewImage, setPreviewImage] = useState(
     user?.profilePicture ? resolveUploadMediaUrl(user.profilePicture) : null,
   );
@@ -30,6 +45,23 @@ export default function CompleteProfile() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (activeModal !== "completeProfile" || !isWorker) return;
+    const load = async () => {
+      try {
+        const response = await servicesService.getAll();
+        const services = response?.data?.services || [];
+        const names = services.map((s) => s.name).filter(Boolean);
+        setTradeOptions(
+          [...new Set([...WORKER_TRADE_OPTIONS, ...names])].sort(),
+        );
+      } catch {
+        setTradeOptions(WORKER_TRADE_OPTIONS);
+      }
+    };
+    load();
+  }, [activeModal, isWorker]);
 
   if (activeModal !== "completeProfile") return null;
 
@@ -66,6 +98,28 @@ export default function CompleteProfile() {
         return;
       }
 
+      if (missing.includes("phone") && !String(form.phone).trim()) {
+        setMessage("Please enter your phone number.");
+        setIsError(true);
+        return;
+      }
+
+      if (isWorker) {
+        if (missing.includes("cnic") && !String(form.cnicNumber).trim()) {
+          setMessage("Please enter your CNIC (13 digits).");
+          setIsError(true);
+          return;
+        }
+        if (
+          missing.includes("trade") &&
+          !String(form.primaryServiceCategory).trim()
+        ) {
+          setMessage("Please select your trade / service category.");
+          setIsError(true);
+          return;
+        }
+      }
+
       const updateData = {
         location: geo.location.trim(),
         latitude: geo.latitude,
@@ -73,8 +127,15 @@ export default function CompleteProfile() {
         placeId: geo.placeId,
       };
 
-      if (user?.type === "worker") {
+      if (isWorker) {
         updateData.availability = form.availability;
+        if (form.phone.trim()) updateData.phoneNumber = form.phone.trim();
+        if (form.cnicNumber.trim()) updateData.cnicNumber = form.cnicNumber.trim();
+        if (form.primaryServiceCategory.trim()) {
+          updateData.primaryServiceCategory = form.primaryServiceCategory.trim();
+        }
+      } else if (form.phone.trim()) {
+        updateData.phone = form.phone.trim();
       }
 
       let uploadedPicturePath = null;
@@ -85,8 +146,9 @@ export default function CompleteProfile() {
         );
       }
 
-      const endpoint =
-        user?.type === "worker" ? "/worker/profile" : "/auth/customer/profile";
+      const endpoint = isWorker
+        ? "/worker/profile"
+        : "/auth/customer/profile";
       const response = await apiRequestWithAuth(endpoint, {
         method: "PUT",
         body: JSON.stringify(updateData),
@@ -100,6 +162,14 @@ export default function CompleteProfile() {
           latitude: updateData.latitude ?? response.data?.latitude,
           longitude: updateData.longitude ?? response.data?.longitude,
           address: updateData.location || response.data?.address,
+          phone: response.data?.phone ?? updateData.phone ?? user.phone,
+          phoneNumber:
+            response.data?.phoneNumber ??
+            updateData.phoneNumber ??
+            user.phoneNumber,
+          cnicNumber: response.data?.cnicNumber ?? user.cnicNumber,
+          primaryServiceCategory:
+            response.data?.primaryServiceCategory ?? user.primaryServiceCategory,
           availability:
             updateData.availability ??
             response.data?.availability ??
@@ -134,12 +204,14 @@ export default function CompleteProfile() {
     setMessage("");
   };
 
-  const inputCls =
-    "w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white";
+  const subtitle = isWorker
+    ? "Google sign-in does not include CNIC or trade — add the details below so we can verify your worker profile."
+    : "Add any missing details below so bookings and notifications work smoothly.";
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <button
+        type="button"
         onClick={handleClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
       />
@@ -152,11 +224,10 @@ export default function CompleteProfile() {
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
               Almost there!
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Add your photo and location for a complete profile
-            </p>
+            <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
           >
@@ -176,9 +247,10 @@ export default function CompleteProfile() {
                 Profile Completed!
               </h3>
               <p className="text-sm text-slate-600 mb-4">
-                Your profile is now complete and ready to use.
+                Your profile is ready to use.
               </p>
               <button
+                type="button"
                 onClick={handleClose}
                 className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-orange-600 transition-colors"
               >
@@ -211,19 +283,68 @@ export default function CompleteProfile() {
                   />
                 </label>
                 <p className="mt-2 text-xs text-slate-500">
-                  Optional — JPG/PNG/WebP, max 5MB
+                  Profile photo (optional)
                 </p>
               </div>
+
+              {(missing.includes("phone") || !isWorker) && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <Phone size={14} className="inline mr-1" />
+                    Phone number {missing.includes("phone") ? "*" : ""}
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => update("phone", e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+                    placeholder="03XX XXXXXXX"
+                  />
+                </div>
+              )}
+
+              {isWorker && missing.includes("cnic") && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <Shield size={14} className="inline mr-1" />
+                    CNIC *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.cnicNumber}
+                    onChange={(e) => update("cnicNumber", e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+                    placeholder="35201-1234567-8"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Required for worker verification (not provided by Google).
+                  </p>
+                </div>
+              )}
+
+              {isWorker && missing.includes("trade") && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Your trade / service *
+                  </label>
+                  <SearchableSelect
+                    options={tradeOptions}
+                    value={form.primaryServiceCategory}
+                    onChange={(val) => update("primaryServiceCategory", val)}
+                    placeholder="Search and select your trade"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   <MapPin size={14} className="inline mr-1" />
-                  Your Location *
+                  Your location *
                 </label>
                 <LocationPicker value={geo} onChange={setGeo} />
               </div>
 
-              {user?.type === "worker" && (
+              {isWorker && (
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <span className="text-sm font-medium text-slate-700">
                     Available for work
@@ -259,7 +380,7 @@ export default function CompleteProfile() {
                 disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors"
               >
-                {submitting ? "Saving..." : "Complete Profile"}
+                {submitting ? "Saving..." : "Save & Continue"}
                 {!submitting && <ArrowRight size={16} />}
               </button>
             </form>

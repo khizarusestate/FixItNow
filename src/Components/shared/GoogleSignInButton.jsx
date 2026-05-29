@@ -2,8 +2,10 @@ import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "../../services/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useModal } from "../../context/ModalContext.jsx";
+import { needsCompleteProfile } from "../../utils/profileCompletion.js";
 
 export default function GoogleSignInButton({
+  role = "customer",
   onSuccess,
   onError,
   disabled = false,
@@ -19,21 +21,27 @@ export default function GoogleSignInButton({
       return;
     }
     try {
-      const response = await authService.loginWithGoogle(credential, true);
+      const response =
+        role === "worker"
+          ? await authService.loginWithGoogleWorker(credential, true)
+          : await authService.loginWithGoogle(credential, true);
+
       const authToken = response.token || response.accessToken;
-      const userData = response.customer || response.data;
+      const userData =
+        role === "worker"
+          ? response.worker || response.data
+          : response.customer || response.data;
+
       if (!authToken || !userData) {
         throw new Error("Google sign-in failed. Please try again.");
       }
-      login(userData, "customer", authToken, true);
+
+      const userType = role === "worker" ? "worker" : "customer";
+      login(userData, userType, authToken, true);
       onSuccess?.(userData);
-      const needsLocation = !(
-        userData?.location ||
-        userData?.address ||
-        userData?.serviceArea
-      )?.trim();
-      const needsPhone = !String(userData?.phone || "").trim();
-      if (!userData.profilePicture || needsLocation || needsPhone) {
+
+      const profileUser = { ...userData, type: userType };
+      if (needsCompleteProfile(profileUser)) {
         setTimeout(() => openModal("completeProfile"), 500);
       }
     } catch (err) {

@@ -16,6 +16,11 @@ const VARIANT_STYLES = {
     action: "bg-white text-cyan-800 hover:bg-cyan-50",
     dismiss: "bg-white/20 hover:bg-white/30 text-white",
   },
+  worker: {
+    panel: "bg-slate-900 border-slate-700",
+    action: "bg-orange-500 text-white hover:bg-orange-600",
+    dismiss: "bg-white/20 hover:bg-white/30 text-white",
+  },
 };
 
 /**

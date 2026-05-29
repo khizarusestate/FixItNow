@@ -429,9 +429,10 @@ export default function Signup() {
                   prefix="By signing up, you agree to the"
                 />
 
-                {signupType === "customer" && isGoogleSignInEnabled && (
+                {isGoogleSignInEnabled && (
                   <>
                     <GoogleSignInButton
+                      role={signupType === "worker" ? "worker" : "customer"}
                       disabled={submitting || !termsAgreed}
                       onSuccess={() => {
                         clearFormDraft(SIGNUP_DRAFT_KEY);

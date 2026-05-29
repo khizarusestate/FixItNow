@@ -16,6 +16,7 @@ import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
 import { useAuth } from "../context/AuthContext";
 import { getUserData } from "../utils/jwt.js";
+import { jobLocationText } from "../utils/profileFieldDisplay.js";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -33,7 +34,7 @@ function formatDistance(km) {
 }
 
 function JobCard({ job, children }) {
-  const displayLocation = job?.location || job?.address || "N/A";
+  const displayLocation = jobLocationText(job);
   const distanceLabel = formatDistance(job?._distanceKm);
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 animate-fade-in">
@@ -555,7 +556,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                 className="mt-0.5 shrink-0 text-orange-500"
                               />
                               <span>
-                                {job.location || job.address || "N/A"}
+                                {jobLocationText(job)}
                               </span>
                             </div>
                           </div>

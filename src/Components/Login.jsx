@@ -281,7 +281,7 @@ export default function Login({ onLoginSuccess }) {
             </span>
           </button>
 
-          {loginType === "customer" && isGoogleSignInEnabled && (
+          {isGoogleSignInEnabled && (
             <>
               <div className="relative py-1">
                 <div className="absolute inset-0 flex items-center">
@@ -292,6 +292,7 @@ export default function Login({ onLoginSuccess }) {
                 </p>
               </div>
               <GoogleSignInButton
+                role={loginType === "worker" ? "worker" : "customer"}
                 disabled={submitting}
                 onSuccess={(userData) => {
                   setMessage("Login successful!");

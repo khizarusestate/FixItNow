@@ -16,6 +16,22 @@ import EditProfile from "./EditProfile";
 import ProfileSettings from "./ProfileSettings";
 import WorkerRatingBadge from "./WorkerRatingBadge";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
+import {
+  OWN_PROFILE_MISSING_HINT,
+  profileFieldText,
+  profileLocationText,
+} from "../utils/profileFieldDisplay.js";
+
+function ProfileFieldValue({ text }) {
+  const missing = text === OWN_PROFILE_MISSING_HINT;
+  return (
+    <p
+      className={`text-sm font-medium ${missing ? "text-amber-700 italic" : "text-slate-900"}`}
+    >
+      {text}
+    </p>
+  );
+}
 
 export default function ProfileModal({
   isOpen,
@@ -44,7 +60,7 @@ export default function ProfileModal({
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return OWN_PROFILE_MISSING_HINT;
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -155,9 +171,12 @@ export default function ProfileModal({
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Email Address</p>
-                    <p className="text-sm font-medium text-slate-900">
-                      {userData?.email || userData?.emailAddress || "N/A"}
-                    </p>
+                    <ProfileFieldValue
+                      text={profileFieldText(
+                        userData?.email || userData?.emailAddress,
+                        { ownProfile: true },
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -167,9 +186,12 @@ export default function ProfileModal({
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Phone Number</p>
-                    <p className="text-sm font-medium text-slate-900">
-                      {userData?.phone || userData?.phoneNumber || "N/A"}
-                    </p>
+                    <ProfileFieldValue
+                      text={profileFieldText(
+                        userData?.phone || userData?.phoneNumber,
+                        { ownProfile: true },
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -179,12 +201,9 @@ export default function ProfileModal({
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Location</p>
-                    <p className="text-sm font-medium text-slate-900">
-                      {userData?.location ||
-                        userData?.address ||
-                        userData?.serviceArea ||
-                        "N/A"}
-                    </p>
+                    <ProfileFieldValue
+                      text={profileLocationText(userData, { ownProfile: true })}
+                    />
                   </div>
                 </div>
 
@@ -196,9 +215,11 @@ export default function ProfileModal({
                       </div>
                       <div>
                         <p className="text-xs text-slate-500">CNIC</p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {userData?.cnicNumber || "N/A"}
-                        </p>
+                        <ProfileFieldValue
+                          text={profileFieldText(userData?.cnicNumber, {
+                            ownProfile: true,
+                          })}
+                        />
                       </div>
                     </div>
 
@@ -208,11 +229,13 @@ export default function ProfileModal({
                       </div>
                       <div>
                         <p className="text-xs text-slate-500">Selected Work</p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {userData?.primaryServiceCategory ||
-                            userData?.serviceCategory ||
-                            "N/A"}
-                        </p>
+                        <ProfileFieldValue
+                          text={profileFieldText(
+                            userData?.primaryServiceCategory ||
+                              userData?.serviceCategory,
+                            { ownProfile: true },
+                          )}
+                        />
                       </div>
                     </div>
 
