@@ -124,13 +124,11 @@ export const applySessionPolicy = (role, rememberMe) => {
 };
 
 export const getToken = (role) => {
-  if (USE_HTTPONLY_COOKIES) return null;
   if (role) {
     return localStorage.getItem(TOKEN_KEYS[role]);
   }
-  // Backward compatibility: prefer admin token, then worker, then customer
+  // Customer app: never pick admin token for API calls
   return (
-    localStorage.getItem(TOKEN_KEYS.admin) ||
     localStorage.getItem(TOKEN_KEYS.worker) ||
     localStorage.getItem(TOKEN_KEYS.customer)
   );
@@ -141,7 +139,6 @@ export const setToken = (token, role) => {
     console.warn("setToken requires a role parameter");
     return;
   }
-  if (USE_HTTPONLY_COOKIES) return;
   localStorage.setItem(TOKEN_KEYS[role], token);
 };
 
@@ -248,8 +245,13 @@ const roleHasRestorableSession = (role) => {
 
 export const getActiveSessionRole = () => {
   const lastRole = getCookieSessionRole();
-  if (lastRole && roleHasRestorableSession(lastRole)) return lastRole;
-  if (roleHasRestorableSession("admin")) return "admin";
+  if (
+    lastRole &&
+    (lastRole === "customer" || lastRole === "worker") &&
+    roleHasRestorableSession(lastRole)
+  ) {
+    return lastRole;
+  }
   if (roleHasRestorableSession("worker")) return "worker";
   if (roleHasRestorableSession("customer")) return "customer";
   return null;
@@ -301,12 +303,10 @@ export const isTokenExpiringSoon = (token, minutes = 5) => {
 };
 
 export const getRefreshToken = (role) => {
-  if (USE_HTTPONLY_COOKIES) return null;
   if (role) {
     return localStorage.getItem(REFRESH_TOKEN_KEYS[role]);
   }
   return (
-    localStorage.getItem(REFRESH_TOKEN_KEYS.admin) ||
     localStorage.getItem(REFRESH_TOKEN_KEYS.worker) ||
     localStorage.getItem(REFRESH_TOKEN_KEYS.customer)
   );
@@ -317,7 +317,6 @@ export const setRefreshToken = (token, role) => {
     console.warn("setRefreshToken requires a role parameter");
     return;
   }
-  if (USE_HTTPONLY_COOKIES) return;
   localStorage.setItem(REFRESH_TOKEN_KEYS[role], token);
 };
 

@@ -37,7 +37,7 @@ export default function GoogleSignInButton({
       }
 
       const userType = role === "worker" ? "worker" : "customer";
-      login(userData, userType, authToken, true);
+      login(userData, userType, authToken, true, response.refreshToken);
       onSuccess?.(userData);
 
       const profileUser = { ...userData, type: userType };

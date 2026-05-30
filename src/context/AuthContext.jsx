@@ -14,6 +14,7 @@ import {
   getActiveSessionRole,
   getUserData,
   setToken,
+  setRefreshToken,
   setUserData as saveUserData,
   logout as doLogout,
   isTokenExpired,
@@ -638,10 +639,13 @@ export function AuthProvider({ children }) {
     window.location.reload();
   };
 
-  const login = (userData, userType, token, rememberMe = true) => {
+  const login = (userData, userType, token, rememberMe = true, refreshToken) => {
     clearOtherRoleSessions(userType);
     const fullUser = { ...userData, type: userType };
     setToken(token, userType);
+    if (refreshToken) {
+      setRefreshToken(refreshToken, userType);
+    }
     saveUserData(fullUser, userType);
     markCookieSession(userType);
     if (userType === "customer" || userType === "worker") {
@@ -711,6 +715,7 @@ export function AuthProvider({ children }) {
       try {
         const res = await apiRequestWithAuth(
           `/notifications/badge-summary${since ? `?since=${encodeURIComponent(since)}` : ""}`,
+          { role },
         );
         const count = res?.data?.unread ?? res?.data?.jobs ?? 0;
         setBadgeCount(count);
@@ -767,7 +772,9 @@ export function AuthProvider({ children }) {
     }
     (async () => {
       try {
-        const res = await apiRequestWithAuth("/notifications?limit=1");
+        const res = await apiRequestWithAuth("/notifications?limit=1", {
+          role: user.type,
+        });
         const count = res.unreadCount ?? 0;
         setBadgeCount(count);
         if (count > 0) {

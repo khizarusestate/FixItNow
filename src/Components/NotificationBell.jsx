@@ -14,7 +14,9 @@ export default function NotificationBell() {
     if (!isAuthenticated || !user?.type) return;
     try {
       setLoading(true);
-      const res = await apiRequestWithAuth("/notifications?limit=20");
+      const res = await apiRequestWithAuth("/notifications?limit=20", {
+        role: user.type,
+      });
       setItems(res.data || []);
       setUnread(res.unreadCount ?? 0);
     } catch {
@@ -53,7 +55,10 @@ export default function NotificationBell() {
 
   const markAllRead = async () => {
     try {
-      await apiRequestWithAuth("/notifications/read-all", { method: "PATCH" });
+      await apiRequestWithAuth("/notifications/read-all", {
+        method: "PATCH",
+        role: user.type,
+      });
       setUnread(0);
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch {
@@ -63,7 +68,10 @@ export default function NotificationBell() {
 
   const markOneRead = async (id) => {
     try {
-      await apiRequestWithAuth(`/notifications/${id}/read`, { method: "PATCH" });
+      await apiRequestWithAuth(`/notifications/${id}/read`, {
+        method: "PATCH",
+        role: user.type,
+      });
       setItems((prev) =>
         prev.map((n) => (String(n._id) === String(id) ? { ...n, isRead: true } : n)),
       );

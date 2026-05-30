@@ -140,9 +140,9 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     try {
       const [jobsResult, myJobsResult, profileResult] =
         await Promise.allSettled([
-          apiRequestWithAuth("/worker-jobs/available"),
-          apiRequestWithAuth("/worker-jobs/my-jobs"),
-          apiRequestWithAuth("/worker/profile"),
+          apiRequestWithAuth("/worker-jobs/available", { role: "worker" }),
+          apiRequestWithAuth("/worker-jobs/my-jobs", { role: "worker" }),
+          apiRequestWithAuth("/worker/profile", { role: "worker" }),
         ]);
 
       const rejected = [jobsResult, myJobsResult, profileResult].filter(
@@ -253,6 +253,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     try {
       const res = await apiRequestWithAuth(`/worker-jobs/${jobId}/mark-done`, {
         method: "POST",
+        role: "worker",
       });
       await fetchData(true);
       if (res?.data?.finalized) {
@@ -281,6 +282,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     try {
       const response = await apiRequestWithAuth("/worker-jobs/claim", {
         method: "POST",
+        role: "worker",
         body: JSON.stringify({ bookingId: jobId }),
       });
 

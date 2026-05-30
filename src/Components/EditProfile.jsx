@@ -153,6 +153,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
       const response = await apiRequestWithAuth(endpoint, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
+        role: isWorker ? 'worker' : 'customer',
       })
 
       const apiProfile = response?.data || {}

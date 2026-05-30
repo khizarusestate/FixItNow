@@ -1,4 +1,9 @@
 import { apiRequest, apiRequestWithAuth } from "../services/api.js";
+import { getActiveSessionRole } from "../utils/jwt.js";
+
+function authRole() {
+  return getActiveSessionRole();
+}
 
 const DISMISS_KEY = "fixitnow_push_prompt_dismissed";
 
@@ -51,7 +56,7 @@ export function readCachedDevicePushPreference(userId) {
 }
 
 export async function fetchDevicePushPreference() {
-  const res = await apiRequestWithAuth("/push/preferences");
+  const res = await apiRequestWithAuth("/push/preferences", { role: authRole() });
   return res?.data?.devicePushEnabled !== false;
 }
 
@@ -59,6 +64,7 @@ export async function saveDevicePushPreference(enabled) {
   const res = await apiRequestWithAuth("/push/preferences", {
     method: "PATCH",
     body: JSON.stringify({ devicePushEnabled: enabled }),
+    role: authRole(),
   });
   return res?.data?.devicePushEnabled !== false;
 }
@@ -113,6 +119,7 @@ export async function registerWebPush() {
   await apiRequestWithAuth("/push/subscribe", {
     method: "POST",
     body: JSON.stringify({ subscription: subscription.toJSON() }),
+    role: authRole(),
   });
 
   localStorage.removeItem(DISMISS_KEY);
@@ -129,6 +136,7 @@ export async function unregisterWebPush() {
       await apiRequestWithAuth("/push/subscribe", {
         method: "DELETE",
         body: JSON.stringify({ endpoint: subscription.endpoint }),
+        role: authRole(),
       }).catch(() => {});
       await subscription.unsubscribe();
     }

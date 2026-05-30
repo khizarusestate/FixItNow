@@ -105,6 +105,7 @@ export async function uploadUserProfilePicture(fileOrDataUrl, userType) {
   const response = await apiRequestWithAuth(path, {
     method: "POST",
     body: formData,
+    role: userType === "worker" ? "worker" : "customer",
   });
 
   return (

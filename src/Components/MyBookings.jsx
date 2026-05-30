@@ -166,6 +166,7 @@ export default function MyBookings({ isOpen, onClose }) {
     try {
       const payload = await apiRequestWithAuth(`/bookings/${id}/complete`, {
         method: "POST",
+        role: "customer",
         body: JSON.stringify({ rating }),
       });
       const data = payload?.data || {};

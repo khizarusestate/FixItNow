@@ -99,17 +99,13 @@ export async function ensureAccessToken(role) {
     throw new Error("Your session has ended. Please login again.");
   }
 
-  if (USE_HTTPONLY_COOKIES) {
-    return null;
-  }
-
   const token = getToken(role);
   if (token && !isTokenExpired(token)) {
     return token;
   }
 
   const refreshToken = getRefreshToken(role);
-  if (!refreshToken) {
+  if (!refreshToken && !(USE_HTTPONLY_COOKIES && getCookieSessionRole() === role)) {
     if (!isClientSessionValid(role)) {
       clearAuthStorageIfSessionEnded(role);
     }
@@ -162,15 +158,16 @@ async function refreshAccessToken(role) {
     throw new Error(data.message || "Token refresh failed");
   }
 
-  if (!USE_HTTPONLY_COOKIES) {
-    setToken(data.accessToken || data.token, role);
-    if (data.refreshToken) {
-      setRefreshToken(data.refreshToken, role);
-    }
+  const accessToken = data.accessToken || data.token;
+  if (accessToken) {
+    setToken(accessToken, role);
+  }
+  if (data.refreshToken) {
+    setRefreshToken(data.refreshToken, role);
   }
 
   return {
-    accessToken: data.accessToken || data.token,
+    accessToken,
     refreshToken: data.refreshToken,
   };
 }
@@ -182,10 +179,9 @@ export async function apiRequest(
   isRetry = false,
 ) {
   const skipAuth = options.skipAuth === true;
-  const role = skipAuth ? null : getActiveSessionRole();
+  const role = skipAuth ? null : options.role || getActiveSessionRole();
   let token = role ? getToken(role) : null;
 
-  // Don't set Content-Type for FormData - let browser set it with boundary
   const isFormData = options.body instanceof FormData;
   const headers = isFormData
     ? { ...(options.headers || {}) }
@@ -194,35 +190,26 @@ export async function apiRequest(
         ...(options.headers || {}),
       };
 
-  if (role && USE_HTTPONLY_COOKIES) {
-    if (!isClientSessionValid(role)) {
-      clearAuthStorageIfSessionEnded(role);
-      throw new Error("Your session has ended. Please login again.");
-    }
-  } else if (token && role) {
+  if (role && !skipAuth) {
     if (!isClientSessionValid(role)) {
       clearAuthStorageIfSessionEnded(role);
       throw new Error("Your session has ended. Please login again.");
     }
 
-    if (isTokenExpired(token)) {
-      const refreshToken = getRefreshToken(role);
-      if (refreshToken) {
-        try {
-          await ensureAccessToken(role);
-          token = getToken(role);
-        } catch (err) {
-          throw err;
-        }
-      } else if (!isClientSessionValid(role)) {
-        clearAuthStorageIfSessionEnded(role);
-        throw new Error("Your session has expired. Please login again.");
+    try {
+      token = (await ensureAccessToken(role)) || getToken(role);
+    } catch (err) {
+      token = getToken(role);
+      if (!token || isTokenExpired(token)) {
+        throw err;
       }
     }
 
-    headers["Authorization"] = `Bearer ${token}`;
-  } else if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else if (!USE_HTTPONLY_COOKIES) {
+      throw new Error("Authentication required. Please login.");
+    }
   }
 
   try {
@@ -337,12 +324,12 @@ export async function apiRequest(
 }
 
 export async function apiRequestWithAuth(path, options = {}) {
-  const role = getActiveSessionRole();
+  const role = options.role || getActiveSessionRole();
   if (!role) {
     throw new Error("Authentication required. Please login.");
   }
   await ensureAccessToken(role);
-  return apiRequest(path, options);
+  return apiRequest(path, { ...options, role });
 }
 
 // Auth endpoints
@@ -373,21 +360,53 @@ export const authService = {
     apiRequest("/auth/google/customer", {
       method: "POST",
       body: JSON.stringify({ credential, rememberMe: remember }),
-    }).then((data) => ({
-      ...data,
-      token: data.accessToken || data.token,
-      customer: data.customer || data.data,
-    })),
+    }).then((data) => {
+      const token = data.accessToken || data.token;
+      if (data.success && token) {
+        clearOtherRoleSessions("customer");
+        setToken(token, "customer");
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken, "customer");
+        }
+        const userData = data.customer || data.data;
+        if (userData) {
+          setUserData(userData, "customer");
+        }
+        applySessionPolicy("customer", remember);
+        markCookieSession("customer");
+      }
+      return {
+        ...data,
+        token,
+        customer: data.customer || data.data,
+      };
+    }),
 
   loginWithGoogleWorker: (credential, remember = true) =>
     apiRequest("/auth/google/worker", {
       method: "POST",
       body: JSON.stringify({ credential, rememberMe: remember }),
-    }).then((data) => ({
-      ...data,
-      token: data.accessToken || data.token,
-      worker: data.worker || data.data,
-    })),
+    }).then((data) => {
+      const token = data.accessToken || data.token;
+      if (data.success && token) {
+        clearOtherRoleSessions("worker");
+        setToken(token, "worker");
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken, "worker");
+        }
+        const userData = data.worker || data.data;
+        if (userData) {
+          setUserData(userData, "worker");
+        }
+        applySessionPolicy("worker", remember);
+        markCookieSession("worker");
+      }
+      return {
+        ...data,
+        token,
+        worker: data.worker || data.data,
+      };
+    }),
 
   loginWorker: (email, password, remember = true) =>
     apiRequest("/auth/worker/login", {
@@ -478,26 +497,32 @@ export const authService = {
 // Booking endpoints
 export const bookingService = {
   createBooking: (data, { asGuest = false } = {}) => {
-    const role = asGuest ? null : getActiveSessionRole();
-    const request =
-      !asGuest && role === "customer" ? apiRequestWithAuth : apiRequest;
-    const opts = {
+    if (asGuest) {
+      const opts = {
+        method: "POST",
+        body: data,
+        skipAuth: true,
+        headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
+      };
+      if (!(data instanceof FormData)) {
+        opts.body = JSON.stringify(data);
+      }
+      return apiRequest("/bookings", opts);
+    }
+    return apiRequestWithAuth("/bookings", {
       method: "POST",
       body: data,
-      skipAuth: asGuest,
+      role: "customer",
       headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
-    };
-    if (!(data instanceof FormData)) {
-      opts.body = JSON.stringify(data);
-    }
-    return request("/bookings", opts);
+    });
   },
 
-  getMyBookings: () => apiRequestWithAuth("/bookings/my"),
+  getMyBookings: () => apiRequestWithAuth("/bookings/my", { role: "customer" }),
 
   cancelBooking: (id) =>
     apiRequestWithAuth(`/bookings/${id}`, {
       method: "DELETE",
+      role: "customer",
     }),
 };
 
@@ -513,12 +538,19 @@ export const servicesService = {
 export const advertisementService = {
   getMyAds: () => apiRequestWithAuth("/advertisements/my"),
   getActiveAds: () => apiRequest("/advertisements/active"),
-  submit: (formData) => {
-    const role = getActiveSessionRole();
-    const request = role === "customer" || role === "worker" ? apiRequestWithAuth : apiRequest;
-    return request("/advertisements", {
+  submit: (formData, role = getActiveSessionRole()) => {
+    if (role === "customer" || role === "worker") {
+      return apiRequestWithAuth("/advertisements", {
+        method: "POST",
+        body: formData,
+        role,
+        headers: {},
+      });
+    }
+    return apiRequest("/advertisements", {
       method: "POST",
       body: formData,
+      skipAuth: true,
       headers: {},
     });
   },
@@ -528,10 +560,11 @@ export const advertisementService = {
 export const appReviewService = {
   getMy: () => apiRequestWithAuth("/app-reviews/my"),
   getActive: () => apiRequest("/app-reviews/active"),
-  submit: (payload) =>
+  submit: (payload, role = getActiveSessionRole()) =>
     apiRequestWithAuth("/app-reviews", {
       method: "POST",
       body: JSON.stringify(payload),
+      role: role || "customer",
     }),
   submitGuest: (payload) =>
     apiRequest("/app-reviews/guest", {

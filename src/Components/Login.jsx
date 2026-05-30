@@ -111,7 +111,7 @@ export default function Login({ onLoginSuccess }) {
           phoneNumber: "",
           serviceArea: "",
         };
-        login(userData, "worker", authToken, rememberMe);
+        login(userData, "worker", authToken, rememberMe, response.refreshToken);
         window.dispatchEvent(new CustomEvent("fixitnow-show-worker-guide"));
       } else {
         userData = response.customer || {
@@ -120,7 +120,7 @@ export default function Login({ onLoginSuccess }) {
           phone: "",
           location: "",
         };
-        login(userData, "customer", authToken, rememberMe);
+        login(userData, "customer", authToken, rememberMe, response.refreshToken);
       }
 
       setMessage("Login successful!");

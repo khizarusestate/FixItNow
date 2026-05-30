@@ -152,6 +152,7 @@ export default function CompleteProfile() {
       const response = await apiRequestWithAuth(endpoint, {
         method: "PUT",
         body: JSON.stringify(updateData),
+        role: isWorker ? "worker" : "customer",
       });
 
       if (response.success) {
