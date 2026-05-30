@@ -11,7 +11,10 @@ import {
 import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
 import SearchableSelect from "./SearchableSelect.jsx";
-import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
+import {
+  buildServicePickerOptions,
+  findServiceOption,
+} from "../utils/servicePicker.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
@@ -26,6 +29,8 @@ const initialWorker = {
   emailAddress: "",
   password: "",
   primaryServiceCategory: "",
+  primaryServiceName: "",
+  primaryServiceId: "",
 };
 export default function Signup() {
   const { isGoogleSignInEnabled } = useOAuthConfig();
@@ -47,7 +52,7 @@ export default function Signup() {
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
+  const [tradeOptions, setTradeOptions] = useState([]);
 
   useEffect(() => {
     if (activeModal !== "signup") return;
@@ -68,13 +73,9 @@ export default function Signup() {
         try {
           const response = await servicesService.getAll();
           const services = response?.data?.services || [];
-          const names = services.map((service) => service.name).filter(Boolean);
-          const merged = [
-            ...new Set([...WORKER_TRADE_OPTIONS, ...names]),
-          ].sort();
-          setTradeOptions(merged);
+          setTradeOptions(buildServicePickerOptions(services));
         } catch {
-          setTradeOptions(WORKER_TRADE_OPTIONS);
+          setTradeOptions([]);
         }
       };
       loadServices();
@@ -115,7 +116,10 @@ export default function Signup() {
 
         if (response.success) {
           clearFormDraft(SIGNUP_DRAFT_KEY);
-          setDone(true);
+          closeModal();
+          switchModal("verifyEmail", {
+            email: customerForm.email.trim().toLowerCase(),
+          });
         }
       } else {
         if (
@@ -124,7 +128,7 @@ export default function Signup() {
           !workerForm.phoneNumber ||
           !workerForm.cnicNumber ||
           !workerForm.password ||
-          !workerForm.primaryServiceCategory
+          !workerForm.primaryServiceId
         ) {
           setMessage("Please fill all required fields.");
           setIsError(true);
@@ -143,7 +147,14 @@ export default function Signup() {
 
         // Merge service city and area into service area string
         const response = await authService.registerWorker({
-          ...workerForm,
+          fullName: workerForm.fullName,
+          emailAddress: workerForm.emailAddress,
+          phoneNumber: workerForm.phoneNumber,
+          cnicNumber: workerForm.cnicNumber,
+          password: workerForm.password,
+          primaryServiceId: workerForm.primaryServiceId,
+          primaryServiceName: workerForm.primaryServiceName,
+          primaryServiceCategory: workerForm.primaryServiceCategory,
           serviceCategories: [],
         });
 
@@ -215,7 +226,7 @@ export default function Signup() {
               <p className="text-sm text-slate-600 mb-5">
                 {signupType === "worker"
                   ? "Admin will review your application. You can log in after approval."
-                  : "Your account is ready. You can log in now."}
+                  : "Check your email for the 6-digit verification code."}
               </p>
               {signupType === "worker" ? (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-5">
@@ -398,11 +409,19 @@ export default function Signup() {
                       </label>
                       <SearchableSelect
                         options={tradeOptions}
-                        value={workerForm.primaryServiceCategory}
+                        value={workerForm.primaryServiceId}
                         onChange={(val) =>
-                          updateWorker("primaryServiceCategory", val)
+                          updateWorker("primaryServiceId", val)
                         }
-                        placeholder="Search and select your trade"
+                        onSelectOption={(opt) => {
+                          setWorkerForm((f) => ({
+                            ...f,
+                            primaryServiceId: opt.value,
+                            primaryServiceCategory: opt.category || "",
+                            primaryServiceName: opt.name || "",
+                          }));
+                        }}
+                        placeholder="Search and select your service"
                         required
                       />
                     </div>

@@ -3,6 +3,8 @@ import { X, Save, User, Mail, Phone, MapPin, Camera, Briefcase, ShieldCheck, Cal
 import { apiRequestWithAuth } from '../lib/api'
 import { resolveUploadMediaUrl } from '../utils/mediaUrl.js'
 import { servicesService } from '../services/api.js'
+import SearchableSelect from './SearchableSelect.jsx'
+import { buildServicePickerOptions } from '../utils/servicePicker.js'
 import { setUserData } from '../utils/jwt.js'
 import LocationPicker from './LocationPicker.jsx'
 import { geoFromUser } from '../utils/location.js'
@@ -11,7 +13,7 @@ import {
   isInlineImageValue,
 } from '../utils/profilePictureUpload.js'
 
-const FALLBACK_SERVICES = ['Cleaning', 'Home Repair', 'Electrical', 'Plumbing', 'Automotive', 'IT Support', 'Other'];
+const FALLBACK_SERVICES = [];
 
 export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate }) {
   const isWorker = userData?.type === 'worker'
@@ -23,6 +25,8 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
     phone: '',
     cnic: '',
     serviceCategory: '',
+    primaryServiceId: '',
+    primaryServiceName: '',
     availability: true,
     profilePicture: '',
   });
@@ -51,6 +55,8 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         phone: userData.phone || userData.phoneNumber || '',
         cnic: userData.cnicNumber || userData.cnic || '',
         serviceCategory: userData.serviceCategory || userData.primaryServiceCategory || '',
+        primaryServiceId: userData.primaryServiceId ? String(userData.primaryServiceId) : '',
+        primaryServiceName: userData.primaryServiceName || '',
         availability: userData.availability ?? true,
         profilePicture: userData.profilePicture || '',
       });
@@ -65,8 +71,28 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
       try {
         const response = await servicesService.getAll();
         const services = response?.data?.services || [];
-        const names = services.map(service => service.name).filter(Boolean);
-        setServiceOptions(names.length ? names : FALLBACK_SERVICES);
+        const options = buildServicePickerOptions(services);
+        setServiceOptions(options);
+        if (userData?.primaryServiceId) {
+          setForm((prev) => ({
+            ...prev,
+            primaryServiceId: String(userData.primaryServiceId),
+          }));
+        } else if (userData?.primaryServiceCategory && userData?.primaryServiceName) {
+          const match = options.find(
+            (o) =>
+              o.category === userData.primaryServiceCategory &&
+              o.name === userData.primaryServiceName,
+          );
+          if (match) {
+            setForm((prev) => ({
+              ...prev,
+              primaryServiceId: match.value,
+              serviceCategory: match.category,
+              primaryServiceName: match.name,
+            }));
+          }
+        }
       } catch {
         setServiceOptions(FALLBACK_SERVICES);
       }
@@ -107,7 +133,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!form.fullName || !form.phone || !geo.location?.trim() || (isWorker && !form.serviceCategory)) {
+    if (!form.fullName || !form.phone || !geo.location?.trim() || (isWorker && !form.primaryServiceId && !form.serviceCategory)) {
       setError(isWorker ? 'Full name, phone, service category and location are required' : 'Full name, phone and location are required')
       return
     }
@@ -138,7 +164,9 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         fullName: form.fullName,
         emailAddress: form.email,
         phoneNumber: form.phone,
-        primaryServiceCategory: form.serviceCategory,
+        primaryServiceId: form.primaryServiceId || undefined,
+        primaryServiceName: form.primaryServiceName || undefined,
+        primaryServiceCategory: form.serviceCategory || undefined,
         ...locationPayload,
         availability: form.availability,
         ...(uploadedPicturePath ? { profilePicture: uploadedPicturePath } : {}),
@@ -175,6 +203,8 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
         cnicNumber: form.cnic,
         ...(isWorker && {
           primaryServiceCategory: category,
+          primaryServiceName: apiProfile.primaryServiceName || form.primaryServiceName,
+          primaryServiceId: apiProfile.primaryServiceId || form.primaryServiceId,
           serviceCategory: category,
         }),
         ...locationPayload,
@@ -337,17 +367,23 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
                   <Briefcase size={16} className="inline mr-1" />
                   Select Work
                 </label>
-                <select
-                  value={form.serviceCategory}
-                  onChange={(e) => handleInputChange('serviceCategory', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 bg-white"
+                <SearchableSelect
+                  options={serviceOptions}
+                  value={form.primaryServiceId}
+                  onChange={(val) => handleInputChange('primaryServiceId', val)}
+                  onSelectOption={(opt) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      primaryServiceId: opt.value,
+                      serviceCategory: opt.category || '',
+                      primaryServiceName: opt.name || '',
+                    }));
+                    setMessage('');
+                    setError('');
+                  }}
+                  placeholder="Search and select your service"
                   required
-                >
-                  <option value="">Select work</option>
-                  {serviceOptions.map(service => (
-                    <option key={service} value={service}>{service}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <LocationPicker label="Location" required value={geo} onChange={setGeo} />

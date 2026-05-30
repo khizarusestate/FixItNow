@@ -26,6 +26,8 @@ const FRIENDLY_BY_CODE = {
     "Your admin account has been deactivated. Contact the super admin.",
   WRONG_LOGIN_PORTAL:
     "This account cannot use this login portal. Try the other login option.",
+  EMAIL_NOT_VERIFIED:
+    "Please verify your email before logging in. Check your inbox for the 6-digit code.",
   TOKEN_EXPIRED:
     "Your session has expired due to inactivity. Please sign in again.",
   INVALID_TOKEN: "Your session is invalid. Please sign in again.",

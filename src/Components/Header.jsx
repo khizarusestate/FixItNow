@@ -167,17 +167,31 @@ export default function Header() {
 
         {menuOpen && (
           <nav className="lg:hidden py-4 border-t border-slate-200 flex flex-col gap-2">
+            <div className="px-4">
+              <label className="text-xs font-semibold text-slate-500 mb-1 block">
+                {t('lang.en')} / {t('lang.ur')}
+              </label>
+              <select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-orange-400 focus:outline-none"
+                aria-label="Language"
+              >
+                <option value="en">{t('lang.en')}</option>
+                <option value="ur">{t('lang.ur')}</option>
+              </select>
+            </div>
             <button onClick={() => { scrollToSection('home'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
-              <Home size={16} /> Home
+              <Home size={16} /> {t('nav.home')}
             </button>
             <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
-              <Info size={16} /> About Us
+              <Info size={16} /> {t('nav.about')}
             </button>
             <button onClick={() => { scrollToSection('contact'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
-              <Mail size={16} /> Contact
+              <Mail size={16} /> {t('nav.contact')}
             </button>
             <button type="button" onClick={openHelp} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
-              <HelpCircle size={16} /> Help
+              <HelpCircle size={16} /> {t('nav.help')}
             </button>
             {isAuthenticated ? (
               <>
@@ -210,10 +224,10 @@ export default function Header() {
             ) : (
               <>
                 <button onClick={() => { openModal('signup'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-orange-500 text-white">
-                  <UserPlus size={16} /> Sign Up
+                  <UserPlus size={16} /> {t('nav.signup')}
                 </button>
                 <button onClick={() => { openModal('login'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-900 text-white">
-                  <LogIn size={16} /> Login
+                  <LogIn size={16} /> {t('nav.login')}
                 </button>
               </>
             )}

@@ -3,6 +3,7 @@ import { X, LogIn, User, Briefcase, Eye, EyeOff } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
+import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
@@ -142,6 +143,17 @@ export default function Login({ onLoginSuccess }) {
         }
       }, 800);
     } catch (err) {
+      if (isApiClientError(err) && err.code === "EMAIL_NOT_VERIFIED") {
+        const email =
+          err.details?.email || form.email.trim().toLowerCase();
+        setMessage(err.message);
+        setIsError(true);
+        setTimeout(() => {
+          closeModal();
+          switchModal("verifyEmail", { email });
+        }, 1200);
+        return;
+      }
       setMessage(err.message || "Login failed. Please check your credentials.");
       setIsError(true);
     } finally {

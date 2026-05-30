@@ -465,6 +465,18 @@ export const authService = {
       body: JSON.stringify(data),
     }),
 
+  verifyEmail: (email, code) =>
+    apiRequest("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
+  resendVerification: (email) =>
+    apiRequest("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
   requestPasswordReset: (email) =>
     apiRequest("/auth/password/forgot", {
       method: "POST",

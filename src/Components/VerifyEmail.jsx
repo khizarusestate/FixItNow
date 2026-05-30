@@ -1,71 +1,71 @@
 import { useState, useEffect } from "react";
-import { X, Mail, RefreshCcw, CheckCircle } from "lucide-react";
+import { X, Mail, ArrowRight } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
-import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
-const VERIFY_DRAFT_KEY = "fixitnow_draft_verify";
 const initialForm = { email: "", code: "" };
 
 export default function VerifyEmail() {
-  const { activeModal, closeModal, switchModal, modalPayload } = useModal();
-  const savedDraft = loadFormDraft(VERIFY_DRAFT_KEY, {});
-  const [form, setForm] = useState({
-    email: savedDraft.email ?? "",
-    code: savedDraft.code ?? "",
-  });
-  const [submitting, setSubmitting] = useState(false);
+  const { activeModal, modalPayload, closeModal, switchModal } = useModal();
+  const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
-  const [done, setDone] = useState(false);
-
-  const emailLocked = Boolean(modalPayload?.emailLocked && modalPayload?.email);
-  const accountRole = modalPayload?.accountRole || "customer";
-  const isWorkerAccount = accountRole === "worker";
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     if (activeModal !== "verifyEmail") return;
-    if (modalPayload?.email) {
-      setForm((prev) => ({
-        ...prev,
-        email: String(modalPayload.email).trim().toLowerCase(),
-      }));
+    const email = modalPayload?.email || "";
+    if (email) {
+      setForm((f) => ({ ...f, email: String(email).trim().toLowerCase() }));
     }
-  }, [activeModal, modalPayload?.email, modalPayload?.emailLocked]);
-
-  useEffect(() => {
-    if (activeModal !== "verifyEmail") return;
-    saveFormDraft(VERIFY_DRAFT_KEY, { email: form.email, code: form.code });
-  }, [activeModal, form.email, form.code]);
+    setMessage("");
+    setIsError(false);
+    setVerified(false);
+  }, [activeModal, modalPayload?.email]);
 
   if (activeModal !== "verifyEmail") return null;
 
   const update = (field, value) => {
-    if (field === "email" && emailLocked) return;
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((f) => ({ ...f, [field]: value }));
     setMessage("");
     setIsError(false);
   };
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (!form.email || !form.code) {
-      setMessage("Email and code are required.");
+  const handleResend = async () => {
+    if (!form.email) {
+      setMessage("Enter your email first.");
       setIsError(true);
       return;
     }
+    setResending(true);
+    try {
+      const res = await authService.resendVerification(form.email);
+      setMessage(res.message || "Verification code sent. Check your inbox.");
+      setIsError(false);
+    } catch (err) {
+      setMessage(err.message || "Could not resend code.");
+      setIsError(true);
+    } finally {
+      setResending(false);
+    }
+  };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.email || !form.code) {
+      setMessage("Enter your email and 6-digit code.");
+      setIsError(true);
+      return;
+    }
     setSubmitting(true);
     try {
-      const response = await authService.verifyEmail(form.email, form.code);
-      if (!response?.success) {
-        setMessage(response?.message || "Verification failed.");
-        setIsError(true);
-      } else {
-        setMessage(response.message || "Email verified successfully.");
+      const res = await authService.verifyEmail(form.email, form.code);
+      if (res.success) {
+        setVerified(true);
+        setMessage(res.message || "Email verified! You can log in now.");
         setIsError(false);
-        setDone(true);
-        clearFormDraft(VERIFY_DRAFT_KEY);
       }
     } catch (err) {
       setMessage(err.message || "Verification failed.");
@@ -75,177 +75,84 @@ export default function VerifyEmail() {
     }
   };
 
-  const handleResend = async () => {
-    if (!form.email) {
-      setMessage("Enter your email to resend the code.");
-      setIsError(true);
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const response = await authService.resendVerification(form.email);
-      if (!response?.success) {
-        setMessage(response?.message || "Could not resend verification code.");
-        setIsError(true);
-      } else {
-        setMessage(
-          response.message || "Verification code resent. Check your email.",
-        );
-        setIsError(false);
-      }
-    } catch (err) {
-      setMessage(err.message || "Could not resend verification code.");
-      setIsError(true);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleClose = () => {
-    saveFormDraft(VERIFY_DRAFT_KEY, { email: form.email, code: form.code });
-    closeModal();
-    setMessage("");
-    setDone(false);
-    setIsError(false);
-    setSubmitting(false);
-  };
-
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[75] flex items-center justify-center px-4">
       <button
-        onClick={handleClose}
+        onClick={closeModal}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
         aria-label="Close"
       />
-      <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl animate-[fadeScale_0.2s_ease-out]">
-        <div className="flex items-start justify-between p-6 pb-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
-              Verify Email
-            </p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Confirm your account
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {emailLocked
-                ? "Enter the 6-digit code sent to your email."
-                : "Enter your email and the 6-digit code we sent you."}
-            </p>
+      <div className="relative w-full max-w-md rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Mail className="text-orange-500" size={22} />
+            <h2 className="text-lg font-bold text-slate-900">Verify your email</h2>
           </div>
-          <button
-            onClick={handleClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
-          >
-            <X size={18} />
+          <button onClick={closeModal} className="rounded-lg p-1 hover:bg-slate-100">
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleVerify} className="px-6 pb-6 space-y-4">
-          {done ? (
-            <div className="text-center py-6">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                <CheckCircle className="h-8 w-8 text-emerald-600" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Email verified!
-              </h3>
-              <p className="text-sm text-slate-600 mb-5">
-                {isWorkerAccount
-                  ? "Email verified. Your application is pending admin approval — you can login once approved."
-                  : "You can now login with your credentials."}
-              </p>
+        <div className="px-6 py-5">
+          {verified ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-emerald-700 font-medium mb-4">{message}</p>
               <button
                 type="button"
-                onClick={() => {
-                  switchModal("login", {
-                    email: form.email,
-                    loginType: isWorkerAccount ? "worker" : "customer",
-                  });
-                  setDone(false);
-                  setForm((f) => ({ ...initialForm, email: f.email }));
-                }}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
+                onClick={() => switchModal("login", { email: form.email })}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
               >
-                Go to Login
+                Go to Login <ArrowRight size={16} />
               </button>
             </div>
           ) : (
             <>
-              <div className="space-y-3">
-                {emailLocked ? (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <p className="text-xs font-medium text-slate-500">Email</p>
-                    <p className="text-sm font-semibold text-slate-900 break-all">
-                      {form.email}
-                    </p>
-                  </div>
-                ) : (
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white"
-                  />
+              <p className="text-sm text-slate-600 mb-4">
+                We sent a 6-digit code to your email. Enter it below to activate your account.
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400"
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit code"
+                  value={form.code}
+                  onChange={(e) => update("code", e.target.value.replace(/\D/g, ""))}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm tracking-widest outline-none focus:border-orange-400"
+                />
+                {message && (
+                  <p className={`text-sm ${isError ? "text-red-600" : "text-emerald-600"}`}>
+                    {message}
+                  </p>
                 )}
-                <div className="relative">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="6-digit verification code"
-                    value={form.code}
-                    onChange={(e) =>
-                      update("code", e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    maxLength={6}
-                    required
-                    autoFocus={emailLocked}
-                    autoComplete="one-time-code"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white tracking-widest"
-                  />
-                  <Mail
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    size={16}
-                  />
-                </div>
-              </div>
-              {message && (
-                <p
-                  className={`rounded-lg px-3 py-2.5 text-sm font-medium ${isError ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
-                >
-                  {message}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors disabled:opacity-60"
-              >
-                {submitting ? "Verifying..." : "Verify Email"}
-              </button>
-              <div className="flex items-center justify-between text-sm text-slate-500">
                 <button
-                  type="button"
-                  onClick={handleResend}
+                  type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1 font-medium text-orange-500 hover:text-orange-600 disabled:opacity-60"
+                  className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
                 >
-                  <RefreshCcw size={14} />
-                  Resend code
+                  {submitting ? "Verifying…" : "Verify email"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => switchModal("login")}
-                  className="font-medium text-slate-500 hover:text-slate-700"
-                >
-                  Back to login
-                </button>
-              </div>
+              </form>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending}
+                className="mt-3 w-full text-sm font-medium text-orange-600 hover:text-orange-700 disabled:opacity-60"
+              >
+                {resending ? "Sending…" : "Resend code"}
+              </button>
             </>
           )}
-        </form>
+        </div>
       </div>
     </div>
   );

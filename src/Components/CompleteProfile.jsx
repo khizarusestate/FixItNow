@@ -14,10 +14,12 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequestWithAuth, servicesService } from "../services/api.js";
 import LocationPicker from "./LocationPicker";
 import SearchableSelect from "./SearchableSelect.jsx";
+import {
+  buildServicePickerOptions,
+} from "../utils/servicePicker.js";
 import { geoFromUser } from "../utils/location.js";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
-import { WORKER_TRADE_OPTIONS } from "../utils/workerTrades.js";
 import { getMissingProfileFields } from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
@@ -34,10 +36,12 @@ export default function CompleteProfile() {
       user?.primaryServiceCategory && user.primaryServiceCategory !== "Unspecified"
         ? user.primaryServiceCategory
         : "",
+    primaryServiceName: user?.primaryServiceName || "",
+    primaryServiceId: user?.primaryServiceId ? String(user.primaryServiceId) : "",
     availability: user?.availability ?? true,
     profilePicture: null,
   });
-  const [tradeOptions, setTradeOptions] = useState(WORKER_TRADE_OPTIONS);
+  const [tradeOptions, setTradeOptions] = useState([]);
   const [previewImage, setPreviewImage] = useState(
     user?.profilePicture ? resolveUploadMediaUrl(user.profilePicture) : null,
   );
@@ -52,12 +56,34 @@ export default function CompleteProfile() {
       try {
         const response = await servicesService.getAll();
         const services = response?.data?.services || [];
-        const names = services.map((s) => s.name).filter(Boolean);
-        setTradeOptions(
-          [...new Set([...WORKER_TRADE_OPTIONS, ...names])].sort(),
-        );
+        const options = buildServicePickerOptions(services);
+        setTradeOptions(options);
+        if (!form.primaryServiceId && user?.primaryServiceId) {
+          setForm((f) => ({
+            ...f,
+            primaryServiceId: String(user.primaryServiceId),
+          }));
+        } else if (
+          !form.primaryServiceId &&
+          user?.primaryServiceCategory &&
+          user?.primaryServiceName
+        ) {
+          const match = options.find(
+            (o) =>
+              o.category === user.primaryServiceCategory &&
+              o.name === user.primaryServiceName,
+          );
+          if (match) {
+            setForm((f) => ({
+              ...f,
+              primaryServiceId: match.value,
+              primaryServiceCategory: match.category,
+              primaryServiceName: match.name,
+            }));
+          }
+        }
       } catch {
-        setTradeOptions(WORKER_TRADE_OPTIONS);
+        setTradeOptions([]);
       }
     };
     load();
@@ -112,7 +138,7 @@ export default function CompleteProfile() {
         }
         if (
           missing.includes("trade") &&
-          !String(form.primaryServiceCategory).trim()
+          !String(form.primaryServiceId || form.primaryServiceCategory).trim()
         ) {
           setMessage("Please select your trade / service category.");
           setIsError(true);
@@ -131,8 +157,16 @@ export default function CompleteProfile() {
         updateData.availability = form.availability;
         if (form.phone.trim()) updateData.phoneNumber = form.phone.trim();
         if (form.cnicNumber.trim()) updateData.cnicNumber = form.cnicNumber.trim();
-        if (form.primaryServiceCategory.trim()) {
-          updateData.primaryServiceCategory = form.primaryServiceCategory.trim();
+        if (form.primaryServiceId || form.primaryServiceCategory.trim()) {
+          if (form.primaryServiceId) {
+            updateData.primaryServiceId = form.primaryServiceId;
+          }
+          if (form.primaryServiceName) {
+            updateData.primaryServiceName = form.primaryServiceName;
+          }
+          if (form.primaryServiceCategory.trim()) {
+            updateData.primaryServiceCategory = form.primaryServiceCategory.trim();
+          }
         }
       } else if (form.phone.trim()) {
         updateData.phone = form.phone.trim();
@@ -171,6 +205,10 @@ export default function CompleteProfile() {
           cnicNumber: response.data?.cnicNumber ?? user.cnicNumber,
           primaryServiceCategory:
             response.data?.primaryServiceCategory ?? user.primaryServiceCategory,
+          primaryServiceName:
+            response.data?.primaryServiceName ?? user.primaryServiceName,
+          primaryServiceId:
+            response.data?.primaryServiceId ?? user.primaryServiceId,
           availability:
             updateData.availability ??
             response.data?.availability ??
@@ -330,9 +368,18 @@ export default function CompleteProfile() {
                   </label>
                   <SearchableSelect
                     options={tradeOptions}
-                    value={form.primaryServiceCategory}
-                    onChange={(val) => update("primaryServiceCategory", val)}
-                    placeholder="Search and select your trade"
+                    value={form.primaryServiceId}
+                    onChange={(val) => update("primaryServiceId", val)}
+                    onSelectOption={(opt) => {
+                      setForm((f) => ({
+                        ...f,
+                        primaryServiceId: opt.value,
+                        primaryServiceCategory: opt.category || "",
+                        primaryServiceName: opt.name || "",
+                      }));
+                      setMessage("");
+                    }}
+                    placeholder="Search and select your service"
                   />
                 </div>
               )}

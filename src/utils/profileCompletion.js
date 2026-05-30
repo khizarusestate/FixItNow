@@ -19,7 +19,8 @@ export function getMissingProfileFields(user) {
     }
     if (!String(user.cnicNumber || "").trim()) missing.push("cnic");
     if (
-      !String(user.primaryServiceCategory || user.serviceCategory || "").trim() ||
+      (!String(user.primaryServiceId || "").trim() &&
+        !String(user.primaryServiceCategory || user.serviceCategory || "").trim()) ||
       user.primaryServiceCategory === "Unspecified"
     ) {
       missing.push("trade");
