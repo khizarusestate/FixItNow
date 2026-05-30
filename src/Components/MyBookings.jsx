@@ -20,6 +20,7 @@ import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
 import { jobLocationText, profileFieldText } from "../utils/profileFieldDisplay.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const STATUS_CONFIG = {
   pending: {
@@ -89,6 +90,7 @@ const STATUS_CONFIG = {
 };
 
 export default function MyBookings({ isOpen, onClose }) {
+  const { t } = useI18n();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -360,7 +362,7 @@ export default function MyBookings({ isOpen, onClose }) {
                                     : ""
                                 }
                               />
-                              {cfg.label}
+                              {b.status === "cancelled" ? t("booking.cancelled") : cfg.label}
                               <CompletionTicks
                                 customerMarkedDone={b.customerMarkedDone}
                                 workerMarkedDone={b.workerMarkedDone}

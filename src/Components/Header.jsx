@@ -150,6 +150,15 @@ export default function Header() {
           </nav>
 
           <div className="flex lg:hidden items-center gap-1">
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+              className="rounded-lg border border-orange-200 bg-orange-50 px-2 py-1.5 text-xs font-bold text-orange-700 focus:border-orange-400 focus:outline-none max-w-[5.5rem]"
+              aria-label="Language"
+            >
+              <option value="en">EN</option>
+              <option value="ur">UR</option>
+            </select>
             <button
               type="button"
               onClick={openHelp}
