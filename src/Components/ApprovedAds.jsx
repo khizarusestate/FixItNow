@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Megaphone, ChevronLeft, ChevronRight, Phone, Clock } from "lucide-react";
 import { apiRequest, advertisementService } from "../services/api.js";
-import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
+import { resolveUploadMediaUrl, optimizeMediaUrl } from "../utils/mediaUrl.js";
+import LazyImage from "./shared/LazyImage.jsx";
 import { useAuth } from "../context/AuthContext";
 
-const getImageUrl = (url) => resolveUploadMediaUrl(url);
+const getImageUrl = (url) => optimizeMediaUrl(resolveUploadMediaUrl(url), { width: 800 });
 
 const ADS_PER_PAGE = 3;
 
@@ -19,10 +20,10 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
       <div className="relative aspect-[4/3] bg-slate-100">
         {url ? (
           ad?.adType === "image" ? (
-            <img
+            <LazyImage
               src={getImageUrl(url)}
               alt={ad?.purpose || "Advertisement"}
-              className="h-full w-full object-cover"
+              className="h-full w-full"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-slate-900">

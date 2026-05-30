@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { OAuthConfigProvider } from "./context/OAuthConfigContext.jsx";
 import { LegalProvider } from "./context/LegalContext.jsx";
+import { I18nProvider } from "./context/I18nContext.jsx";
 import { GuideProvider } from "./context/GuideContext";
 import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
@@ -31,6 +32,7 @@ function SectionFallback() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <I18nProvider>
       <OAuthConfigProvider>
         <AuthProvider>
           <GuideProvider>
@@ -62,6 +64,7 @@ export default function App() {
           </GuideProvider>
         </AuthProvider>
       </OAuthConfigProvider>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

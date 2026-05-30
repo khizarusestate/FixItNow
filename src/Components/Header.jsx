@@ -9,9 +9,11 @@ import WorkerDashboard from './WorkerDashboard';
 import ProfileModal from './ProfileModal';
 import NotificationBell from './NotificationBell';
 import { useGuide } from '../context/GuideContext';
+import { useI18n } from '../context/I18nContext.jsx';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { t, locale, setLocale } = useI18n();
   const [bookingsOpen, setBookingsOpen] = useState(false);
   const [workerDashOpen, setWorkerDashOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -60,17 +62,26 @@ export default function Header() {
 
           <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
             <button onClick={() => scrollToSection('home')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 whitespace-nowrap">
-              <Home size={16} /> <span className="truncate">Home</span>
+              <Home size={16} /> <span className="truncate">{t('nav.home')}</span>
             </button>
             <button onClick={() => openModal('about')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 whitespace-nowrap">
-              <Info size={16} /> <span className="truncate">About Us</span>
+              <Info size={16} /> <span className="truncate">{t('nav.about')}</span>
             </button>
             <button onClick={() => scrollToSection('contact')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 whitespace-nowrap">
-              <Mail size={16} /> <span className="truncate">Contact</span>
+              <Mail size={16} /> <span className="truncate">{t('nav.contact')}</span>
             </button>
           </nav>
 
           <nav className="hidden lg:flex items-center gap-2 justify-end">
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-orange-400 focus:outline-none"
+              aria-label="Language"
+            >
+              <option value="en">{t('lang.en')}</option>
+              <option value="ur">{t('lang.ur')}</option>
+            </select>
             <button
               type="button"
               onClick={openHelp}
@@ -78,7 +89,7 @@ export default function Header() {
               aria-label="Help"
             >
               <HelpCircle size={16} />
-              <span className="truncate">Help</span>
+              <span className="truncate">{t('nav.help')}</span>
             </button>
             {isAuthenticated ? (
               <>
@@ -91,7 +102,7 @@ export default function Header() {
                     }}
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"
                   >
-                    <ClipboardList size={14} /> <span className="truncate">Dashboard</span>
+                    <ClipboardList size={14} /> <span className="truncate">{t('nav.dashboard')}</span>
                     {displayBadge && (
                       <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                         {displayBadge}
@@ -106,7 +117,7 @@ export default function Header() {
                     }}
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"
                   >
-                    <ClipboardList size={14} /> <span className="truncate">My Bookings</span>
+                    <ClipboardList size={14} /> <span className="truncate">{t('nav.bookings')}</span>
                     {displayBadge && (
                       <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                         {displayBadge}
@@ -129,10 +140,10 @@ export default function Header() {
             ) : (
               <>
                 <button onClick={() => openModal('signup')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
-                  <UserPlus size={14} /> <span className="truncate">Sign Up</span>
+                  <UserPlus size={14} /> <span className="truncate">{t('nav.signup')}</span>
                 </button>
                 <button onClick={() => openModal('login')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
-                  <LogIn size={14} /> <span className="truncate">Login</span>
+                  <LogIn size={14} /> <span className="truncate">{t('nav.login')}</span>
                 </button>
               </>
             )}

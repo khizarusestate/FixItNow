@@ -1,7 +1,19 @@
 import { API_ORIGIN } from "../config/env.js";
 
+const CDN_BASE = String(import.meta.env.VITE_CDN_BASE_URL || "").replace(/\/$/, "");
+
 export function getApiOriginForAssets() {
-  return API_ORIGIN;
+  return CDN_BASE || API_ORIGIN;
+}
+
+/** Optional CDN transform params (Cloudinary-style path or query). */
+export function optimizeMediaUrl(url, { width, quality = 80 } = {}) {
+  const resolved = resolveUploadMediaUrl(url);
+  if (!resolved || !CDN_BASE) return resolved;
+  if (resolved.includes("cloudinary.com") && width) {
+    return resolved.replace("/upload/", `/upload/w_${width},q_${quality},f_auto/`);
+  }
+  return resolved;
 }
 
 /** Resolve stored upload paths to a fetchable URL (backend serves /uploads, not /api/uploads). */

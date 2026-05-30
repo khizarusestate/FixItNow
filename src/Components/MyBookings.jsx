@@ -142,7 +142,9 @@ export default function MyBookings({ isOpen, onClose }) {
     setError("");
     try {
       await bookingService.cancelBooking(id);
-      setBookings((prev) => prev.filter((b) => b.id !== id));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: "cancelled" } : b)),
+      );
       setStatusNotice("Booking cancelled successfully.");
     } catch (err) {
       if (shouldRefreshBookings(err)) {
