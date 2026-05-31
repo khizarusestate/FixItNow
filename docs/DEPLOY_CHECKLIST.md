@@ -9,4 +9,6 @@ Verified bundle includes:
 - Worker service picker from DB (`Category - Service Name`)
 - Code-split sections (lazy routes) + Vercel cache headers
 
-**Vercel env:** `VITE_API_URL`, optional `VITE_CDN_BASE_URL`, `VITE_GOOGLE_CLIENT_ID`
+**Vercel env:** `VITE_API_BASE_URL`, optional `VITE_CDN_BASE_URL`, `VITE_GOOGLE_CLIENT_ID`
+
+**Vercel project settings:** Production branch = `main`, Framework = Vite, Build = `npm run build`, Output = `dist`. After GitHub push, open Deployments and confirm latest commit hash matches GitHub `main`.
