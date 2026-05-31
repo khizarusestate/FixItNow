@@ -206,7 +206,7 @@ export default function Header() {
               <>
                 {user?.type === 'worker' ? (
                   <button onClick={() => { setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50 relative">
-                    <ClipboardList size={16} /> Dashboard
+                    <ClipboardList size={16} /> {t('nav.dashboard')}
                     {user?.jobCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                         {user.jobCount > 9 ? '9+' : user.jobCount}
@@ -215,7 +215,7 @@ export default function Header() {
                   </button>
                 ) : (
                   <button type="button" onClick={() => { setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-orange-50">
-                    <ClipboardList size={16} /> My Bookings
+                    <ClipboardList size={16} /> {t('nav.bookings')}
                   </button>
                 )}
                 <button onClick={() => { setProfileOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200">
