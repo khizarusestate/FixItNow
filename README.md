@@ -92,7 +92,7 @@ The app uses environment variables for API configuration:
 
 - `VITE_API_BASE_URL` - Base URL for API requests
 
-Default fallback is `http://localhost:5000/api` for development.
+Default production fallback is `https://fixitnow-backand-production.up.railway.app/api` when `VITE_API_BASE_URL` is unset in prod builds. Local dev uses `http://localhost:5000/api` or `/api` via Vite proxy.
 
 ## Browser Support
 

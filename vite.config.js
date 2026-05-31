@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   if (mode === 'production' && !process.env.VITE_API_BASE_URL) {
     console.warn(
-      '[FixItNow] VITE_API_BASE_URL is unset — build will use localhost:5000. Set it in CI before npm run build.',
+      '[FixItNow] VITE_API_BASE_URL is unset — production build will use https://fixitnow-backand-production.up.railway.app/api',
     )
   }
   return {
