@@ -806,17 +806,17 @@ export function AuthProvider({ children }) {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gradient-to-b from-slate-50 to-orange-50/30 text-slate-900">
-        <div className="rounded-3xl border border-slate-200 bg-white px-8 py-10 text-center shadow-xl max-w-sm w-full mx-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-orange-50/30">
+        <div className="flex flex-col items-center gap-6">
           <img
             src="/Assets/Logo.png"
-            alt=""
-            className="mx-auto h-14 w-auto mb-5 animate-pulse"
+            alt="Fix It Now"
+            className="h-20 w-auto animate-pulse"
           />
-          <h2 className="text-xl font-bold text-slate-900">Getting things ready</h2>
-          <p className="mt-2 text-sm text-slate-500">{bootstrapStep}</p>
-          <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="bootstrap-progress-bar h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
+          <div className="flex gap-1">
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
         </div>
       </div>

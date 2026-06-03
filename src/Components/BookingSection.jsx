@@ -1013,14 +1013,16 @@ export default function BookingSection() {
 
         {/* LOADING */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="relative w-16 h-16 mb-4">
-              <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500 animate-spin"></div>
+          <div className="py-8 sm:py-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                  <div className="w-12 h-12 bg-slate-200 rounded-xl mb-3 animate-pulse" />
+                  <div className="h-4 bg-slate-200 rounded animate-pulse mb-2" />
+                  <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
+                </div>
+              ))}
             </div>
-
-            <p className="text-slate-600 font-medium">Loading services...</p>
           </div>
         )}
 
@@ -1037,7 +1039,7 @@ export default function BookingSection() {
             {!browsingServices ? (
               <div className="py-2 sm:py-4">
                 <div className="mb-8 text-center sm:text-left">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-blue-900">
                     Choose a category
                   </h3>
                 </div>
@@ -1060,7 +1062,7 @@ export default function BookingSection() {
                         >
                           <CategoryIcon size={28} strokeWidth={2.25} />
                         </div>
-                        <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug pr-6">
+                        <h4 className="font-bold text-blue-900 text-base sm:text-lg leading-snug pr-6">
                           {category}
                         </h4>
                         <ChevronRight
@@ -1102,7 +1104,7 @@ export default function BookingSection() {
                           ? "Search results"
                           : "Services"}
                       </p>
-                      <h3 className="font-bold text-slate-900 text-lg sm:text-xl truncate">
+                      <h3 className="font-bold text-blue-900 text-lg sm:text-xl truncate">
                         {selectedCategory ||
                           (search.trim() ? `“${search.trim()}”` : "All services")}
                       </h3>
@@ -1137,7 +1139,7 @@ export default function BookingSection() {
                                   <ServiceIcon size={24} strokeWidth={2.25} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-snug">
+                                  <h4 className="font-bold text-blue-900 text-base sm:text-lg leading-snug">
                                     {service?.name}
                                   </h4>
                                   {service?.price > 0 && (

@@ -309,8 +309,28 @@ export default function ReviewsSection() {
               </div>
 
               {reviewsLoading ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 size={32} className="animate-spin text-slate-400" />
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-start gap-3">
+                        <div className="h-12 w-12 shrink-0 rounded-full bg-slate-200 animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4" />
+                          <div className="flex gap-1">
+                            {[...Array(5)].map((_, j) => (
+                              <div key={j} className="w-4 h-4 bg-slate-200 rounded animate-pulse" />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-3 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-3 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-3 bg-slate-200 rounded animate-pulse w-2/3" />
+                      </div>
+                      <div className="mt-4 h-3 bg-slate-100 rounded animate-pulse w-1/2" />
+                    </div>
+                  ))}
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white py-16 text-center">
