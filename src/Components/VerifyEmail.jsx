@@ -7,6 +7,7 @@ const initialForm = { email: "", code: "" };
 
 export default function VerifyEmail() {
   const { activeModal, modalPayload, closeModal, switchModal } = useModal();
+  const isWorker = modalPayload?.role === "worker";
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -41,7 +42,10 @@ export default function VerifyEmail() {
     }
     setResending(true);
     try {
-      const res = await authService.resendVerification(form.email);
+      const res = await authService.resendVerification(
+        form.email,
+        isWorker ? "worker" : undefined,
+      );
       setMessage(res.message || "Verification code sent. Check your inbox.");
       setIsError(false);
     } catch (err) {
@@ -61,10 +65,19 @@ export default function VerifyEmail() {
     }
     setSubmitting(true);
     try {
-      const res = await authService.verifyEmail(form.email, form.code);
+      const res = await authService.verifyEmail(
+        form.email,
+        form.code,
+        isWorker ? "worker" : undefined,
+      );
       if (res.success) {
         setVerified(true);
-        setMessage(res.message || "Email verified! You can log in now.");
+        setMessage(
+          res.message ||
+            (isWorker
+              ? "Email verified. Complete your professional details next."
+              : "Email verified! You can log in now."),
+        );
         setIsError(false);
       }
     } catch (err) {
@@ -73,6 +86,18 @@ export default function VerifyEmail() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const goNext = () => {
+    if (isWorker) {
+      closeModal();
+      switchModal("workerProfessional", {
+        email: form.email,
+        password: modalPayload?.password || "",
+      });
+      return;
+    }
+    switchModal("login", { email: form.email });
   };
 
   return (
@@ -99,16 +124,19 @@ export default function VerifyEmail() {
               <p className="text-sm text-emerald-700 font-medium mb-4">{message}</p>
               <button
                 type="button"
-                onClick={() => switchModal("login", { email: form.email })}
+                onClick={goNext}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
               >
-                Go to Login <ArrowRight size={16} />
+                {isWorker ? "Continue to Step 2" : "Go to Login"}
+                <ArrowRight size={16} />
               </button>
             </div>
           ) : (
             <>
               <p className="text-sm text-slate-600 mb-4">
-                We sent a 6-digit code to your email. Enter it below to activate your account.
+                {isWorker
+                  ? "Step 1 complete. Enter the 6-digit code we sent to your email to continue worker signup."
+                  : "We sent a 6-digit code to your email. Enter it below to activate your account."}
               </p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input

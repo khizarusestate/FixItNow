@@ -2,7 +2,10 @@ import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "../../services/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useModal } from "../../context/ModalContext.jsx";
-import { needsCompleteProfile } from "../../utils/profileCompletion.js";
+import {
+  needsCompleteProfile,
+  workerNeedsProfessionalSignup,
+} from "../../utils/profileCompletion.js";
 
 export default function GoogleSignInButton({
   role = "customer",
@@ -41,7 +44,15 @@ export default function GoogleSignInButton({
       onSuccess?.(userData);
 
       const profileUser = { ...userData, type: userType };
-      if (needsCompleteProfile(profileUser)) {
+      if (workerNeedsProfessionalSignup(profileUser)) {
+        setTimeout(
+          () =>
+            openModal("workerProfessional", {
+              email: profileUser.emailAddress || profileUser.email,
+            }),
+          500,
+        );
+      } else if (needsCompleteProfile(profileUser)) {
         setTimeout(() => openModal("completeProfile"), 500);
       }
     } catch (err) {

@@ -1,5 +1,12 @@
 import { geoFromUser, hasLocation } from "./location.js";
 
+export function workerNeedsProfessionalSignup(user) {
+  if (!user || user.type !== "worker") return false;
+  if (user.needsProfessionalProfile === true) return true;
+  if (user.signupStep && user.signupStep !== "complete") return true;
+  return false;
+}
+
 export function getMissingProfileFields(user) {
   if (!user) return [];
 
@@ -13,17 +20,12 @@ export function getMissingProfileFields(user) {
   }
 
   if (user.type === "worker") {
+    if (workerNeedsProfessionalSignup(user)) {
+      return ["professional_signup"];
+    }
     const missing = [];
     if (!String(user.phoneNumber || user.phone || "").trim()) {
       missing.push("phone");
-    }
-    if (!String(user.cnicNumber || "").trim()) missing.push("cnic");
-    if (
-      (!String(user.primaryServiceId || "").trim() &&
-        !String(user.primaryServiceCategory || user.serviceCategory || "").trim()) ||
-      user.primaryServiceCategory === "Unspecified"
-    ) {
-      missing.push("trade");
     }
     if (!hasLocation(user) && !geoFromUser(user).location?.trim()) {
       missing.push("location");

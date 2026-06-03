@@ -20,10 +20,13 @@ import {
 import { geoFromUser } from "../utils/location.js";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
-import { getMissingProfileFields } from "../utils/profileCompletion.js";
+import {
+  getMissingProfileFields,
+  workerNeedsProfessionalSignup,
+} from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
-  const { activeModal, closeModal } = useModal();
+  const { activeModal, closeModal, openModal } = useModal();
   const { user, updateUser } = useAuth();
   const isWorker = user?.type === "worker";
   const missing = getMissingProfileFields(user);
@@ -91,6 +94,14 @@ export default function CompleteProfile() {
 
   if (activeModal !== "completeProfile") return null;
 
+  if (isWorker && workerNeedsProfessionalSignup(user)) {
+    closeModal();
+    openModal("workerProfessional", {
+      email: user?.emailAddress || user?.email,
+    });
+    return null;
+  }
+
   const update = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
     setMessage("");
@@ -130,21 +141,6 @@ export default function CompleteProfile() {
         return;
       }
 
-      if (isWorker) {
-        if (missing.includes("cnic") && !String(form.cnicNumber).trim()) {
-          setMessage("Please enter your CNIC (13 digits).");
-          setIsError(true);
-          return;
-        }
-        if (
-          missing.includes("trade") &&
-          !String(form.primaryServiceId || form.primaryServiceCategory).trim()
-        ) {
-          setMessage("Please select your trade / service category.");
-          setIsError(true);
-          return;
-        }
-      }
 
       const updateData = {
         location: geo.location.trim(),
@@ -156,18 +152,6 @@ export default function CompleteProfile() {
       if (isWorker) {
         updateData.availability = form.availability;
         if (form.phone.trim()) updateData.phoneNumber = form.phone.trim();
-        if (form.cnicNumber.trim()) updateData.cnicNumber = form.cnicNumber.trim();
-        if (form.primaryServiceId || form.primaryServiceCategory.trim()) {
-          if (form.primaryServiceId) {
-            updateData.primaryServiceId = form.primaryServiceId;
-          }
-          if (form.primaryServiceName) {
-            updateData.primaryServiceName = form.primaryServiceName;
-          }
-          if (form.primaryServiceCategory.trim()) {
-            updateData.primaryServiceCategory = form.primaryServiceCategory.trim();
-          }
-        }
       } else if (form.phone.trim()) {
         updateData.phone = form.phone.trim();
       }

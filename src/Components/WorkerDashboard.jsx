@@ -9,6 +9,9 @@ import {
   Phone,
   Search,
   User,
+  Upload,
+  Banknote,
+  Smartphone,
 } from "lucide-react";
 
 import { apiRequestWithAuth } from "../services/api.js";
@@ -17,6 +20,12 @@ import CompletionTicks from "./CompletionTicks";
 import { useAuth } from "../context/AuthContext";
 import { getUserData } from "../utils/jwt.js";
 import { jobLocationText } from "../utils/profileFieldDisplay.js";
+import BankTransferInfo from "./shared/BankTransferInfo.jsx";
+import {
+  getJazzcashMsisdn,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHOD_VALUES,
+} from "../utils/platformPayment.js";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -31,6 +40,34 @@ function formatDistance(km) {
   const n = Number(km);
   if (n < 1) return `${Math.round(n * 1000)} m away`;
   return `${n.toFixed(1)} km away`;
+}
+
+function AvailableJobPreview({ job }) {
+  const area = job?.area || job?.location || job?.address || "Area not specified";
+  const price = Number(job?.price || 0);
+  const commission =
+    job?.commissionAmount ?? Math.round(price * 0.2);
+  return (
+    <div className="mt-3 space-y-2 text-sm text-slate-600">
+      {jobCustomerName(job) ? (
+        <div className="flex items-start gap-2">
+          <User size={16} className="mt-0.5 shrink-0 text-orange-500" />
+          <span className="font-medium text-slate-800">{jobCustomerName(job)}</span>
+        </div>
+      ) : null}
+      <div className="flex items-start gap-2">
+        <MapPin size={16} className="mt-0.5 shrink-0 text-orange-500" />
+        <span>{area}</span>
+      </div>
+      <div className="flex items-start gap-2">
+        <Banknote size={16} className="mt-0.5 shrink-0 text-orange-500" />
+        <span>
+          Booking: ₨{price.toLocaleString()} · Commission: ₨
+          {commission.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function JobCard({ job, children }) {
@@ -103,6 +140,10 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(null);
+  const [claimJob, setClaimJob] = useState(null);
+  const [claimPaymentMethod, setClaimPaymentMethod] = useState("");
+  const [claimTransactionId, setClaimTransactionId] = useState("");
+  const [claimReceipt, setClaimReceipt] = useState(null);
   const [completing, setCompleting] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const fetchInFlightRef = useRef(false);
@@ -124,7 +165,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           job.address?.toLowerCase().includes(q) ||
           job.location?.toLowerCase().includes(q) ||
           jobCustomerName(job).toLowerCase().includes(q) ||
-          jobPhone(job).toLowerCase().includes(q),
+          String(job.area || "").toLowerCase().includes(q),
       ),
     );
   }, [searchTerm, allAvailableJobs]);
@@ -269,45 +310,60 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     }
   };
 
-  const handleClaimJob = async (jobId) => {
-    const jobToClaim = availableJobs.find((j) => j.id === jobId);
-    if (!jobToClaim) {
-      setError("Job not found.");
+  const openClaimModal = (job) => {
+    setClaimJob(job);
+    setClaimPaymentMethod("");
+    setClaimTransactionId("");
+    setClaimReceipt(null);
+    setError("");
+  };
+
+  const submitClaim = async (e) => {
+    e.preventDefault();
+    if (!claimJob?.id) return;
+    if (!claimPaymentMethod) {
+      setError("Select a payment method.");
+      return;
+    }
+    if (!claimTransactionId.trim()) {
+      setError("Transaction ID is required.");
+      return;
+    }
+    if (!claimReceipt) {
+      setError("Commission payment receipt is required.");
       return;
     }
 
-    setClaiming(jobId);
+    setClaiming(claimJob.id);
     setError("");
-
     try {
+      const body = new FormData();
+      body.append("bookingId", claimJob.id);
+      body.append("transactionId", claimTransactionId.trim());
+      body.append("paymentMethod", claimPaymentMethod);
+      body.append("commissionReceipt", claimReceipt);
+
       const response = await apiRequestWithAuth("/worker-jobs/claim", {
         method: "POST",
         role: "worker",
-        body: JSON.stringify({ bookingId: jobId }),
+        body,
       });
 
       if (response.success) {
-        const claimedJob = {
-          ...jobToClaim,
-          status: "assigned",
-          assignedAt: new Date().toISOString(),
-        };
-
-        setAvailableJobs((prev) => {
-          const next = prev.filter((j) => j.id !== jobId);
-          updateJobCountRef.current?.(next.length);
-          return next;
-        });
-        setAllAvailableJobs((prev) => prev.filter((j) => j.id !== jobId));
-        setMyJobs((prev) => [claimedJob, ...prev]);
-        setActiveTab("my-jobs");
-        fetchData(true);
+        setClaimJob(null);
+        setAvailableJobs((prev) => prev.filter((j) => j.id !== claimJob.id));
+        setAllAvailableJobs((prev) => prev.filter((j) => j.id !== claimJob.id));
+        updateJobCountRef.current?.(
+          availableJobs.filter((j) => j.id !== claimJob.id).length,
+        );
+        await fetchData(true);
+        setError("");
       }
     } catch (err) {
       if (shouldRefreshBookings(err)) {
         await fetchData(true);
       }
-      setError(err.message || "Failed to claim job.");
+      setError(err.message || "Failed to submit claim.");
     } finally {
       setClaiming(null);
     }
@@ -457,7 +513,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search by job title, customer, phone, or location..."
+                      placeholder="Search by job title, customer, or area..."
                       className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                     {searchTerm && (
@@ -493,7 +549,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                       </p>
                       <p className="text-sm text-slate-400 mt-2">
                         {searchTerm
-                          ? "Try a different title, phone, or location"
+                          ? "Try a different title or area"
                           : "Check back later for new opportunities"}
                       </p>
                       {searchTerm && (
@@ -533,49 +589,14 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                             ) : null}
                             </div>
                           </div>
-                          <div className="mt-3 space-y-2 text-sm text-slate-600">
-                            {jobCustomerName(job) ? (
-                              <div className="flex items-start gap-2">
-                                <User
-                                  size={16}
-                                  className="mt-0.5 shrink-0 text-orange-500"
-                                />
-                                <span className="font-medium text-slate-800">
-                                  {jobCustomerName(job)}
-                                </span>
-                              </div>
-                            ) : null}
-                            <div className="flex items-start gap-2">
-                              <Phone
-                                size={16}
-                                className="mt-0.5 shrink-0 text-orange-500"
-                              />
-                              <span className="break-all">{jobPhone(job)}</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <MapPin
-                                size={16}
-                                className="mt-0.5 shrink-0 text-orange-500"
-                              />
-                              <span>
-                                {jobLocationText(job)}
-                              </span>
-                            </div>
-                          </div>
+                          <AvailableJobPreview job={job} />
                           <div className="mt-4 flex gap-2">
                             <button
-                              onClick={() => handleClaimJob(job.id)}
+                              onClick={() => openClaimModal(job)}
                               disabled={claiming === job.id}
                               className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {claiming === job.id ? (
-                                <div className="flex items-center justify-center gap-2">
-                                  <Loader2 size={16} className="animate-spin" />
-                                  Claiming...
-                                </div>
-                              ) : (
-                                "Claim Job"
-                              )}
+                              Claim Job
                             </button>
                           </div>
                         </div>
@@ -616,7 +637,11 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                         const canMarkDone =
                           job.status !== "completed" &&
                           !job.workerMarkedDone &&
-                          ["assigned", "in-progress"].includes(job.status);
+                          [
+                            "assigned",
+                            "worker-assigned",
+                            "in-progress",
+                          ].includes(job.status);
                         const isGuestJob = Boolean(job.isGuest);
                         const waitingCustomer =
                           !isGuestJob &&
@@ -641,7 +666,8 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                 ) : (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
                                     <Briefcase size={12} />
-                                    {job.status === "assigned"
+                                    {job.status === "assigned" ||
+                                    job.status === "worker-assigned"
                                       ? "Assigned"
                                       : job.status === "in-progress"
                                         ? "In progress"
@@ -688,6 +714,111 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           )}
         </div>
       </div>
+
+      {claimJob && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setClaimJob(null)}
+          />
+          <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">Claim job</h3>
+              <button
+                type="button"
+                onClick={() => setClaimJob(null)}
+                className="rounded-full border border-slate-200 p-2"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-2">
+              {claimJob.serviceTitle} — pay{" "}
+              <strong>
+                ₨
+                {(
+                  claimJob.commissionAmount ??
+                  Math.round((claimJob.price || 0) * 0.2)
+                ).toLocaleString()}
+              </strong>{" "}
+              commission (20% of ₨{Number(claimJob.price || 0).toLocaleString()}).
+            </p>
+            <AvailableJobPreview job={claimJob} />
+            <form onSubmit={submitClaim} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Payment method *
+                </label>
+                <select
+                  value={claimPaymentMethod}
+                  onChange={(e) => setClaimPaymentMethod(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Select method</option>
+                  <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
+                    {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
+                  </option>
+                  <option value={PAYMENT_METHOD_VALUES.BANK_TRANSFER}>
+                    {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.BANK_TRANSFER]}
+                  </option>
+                </select>
+              </div>
+              {claimPaymentMethod === PAYMENT_METHOD_VALUES.BANK_TRANSFER && (
+                <BankTransferInfo />
+              )}
+              {claimPaymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
+                <p className="text-sm text-sky-800 rounded-lg bg-sky-50 px-3 py-2">
+                  Send JazzCash payment to{" "}
+                  <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
+                </p>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Transaction ID *
+                </label>
+                <input
+                  value={claimTransactionId}
+                  onChange={(e) => setClaimTransactionId(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="e.g. T123456789"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Commission receipt *
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-800">
+                  <Upload size={16} />
+                  {claimReceipt ? claimReceipt.name : "Upload receipt"}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="sr-only"
+                    onChange={(e) => setClaimReceipt(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+              <button
+                type="submit"
+                disabled={claiming === claimJob.id}
+                className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {claiming === claimJob.id ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Submitting…
+                  </>
+                ) : (
+                  "Submit claim for review"
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,9 @@ const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
+const WorkerProfessionalSignup = lazy(
+  () => import("./Components/WorkerProfessionalSignup"),
+);
 
 function SectionFallback() {
   return (
@@ -58,6 +61,7 @@ export default function App() {
                     <ForgotPassword />
                     <VerifyEmail />
                     <WorkerModal />
+                    <WorkerProfessionalSignup />
                     <CompleteProfile />
                   </Suspense>
                 </div>

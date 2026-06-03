@@ -7,6 +7,10 @@ import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
+import {
+  needsCompleteProfile,
+  workerNeedsProfessionalSignup,
+} from "../utils/profileCompletion.js";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
@@ -132,13 +136,17 @@ export default function Login({ onLoginSuccess }) {
         handleClose();
         setForm(initialForm);
         setMessage("");
-        // Show complete profile modal if user hasn't completed profile
-        const needsLocation = !(
-          userData?.location ||
-          userData?.address ||
-          userData?.serviceArea
-        )?.trim();
-        if (!userData.profilePicture || needsLocation) {
+        const profileUser = { ...userData, type: loginType };
+        if (workerNeedsProfessionalSignup(profileUser)) {
+          setTimeout(
+            () =>
+              openModal("workerProfessional", {
+                email: profileUser.emailAddress || profileUser.email,
+                password: form.password,
+              }),
+            500,
+          );
+        } else if (needsCompleteProfile(profileUser)) {
           setTimeout(() => openModal("completeProfile"), 500);
         }
       }, 800);
@@ -150,7 +158,11 @@ export default function Login({ onLoginSuccess }) {
         setIsError(true);
         setTimeout(() => {
           closeModal();
-          switchModal("verifyEmail", { email });
+          switchModal("verifyEmail", {
+            email,
+            role: loginType === "worker" ? "worker" : undefined,
+            password: form.password,
+          });
         }, 1200);
         return;
       }

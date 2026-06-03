@@ -21,12 +21,9 @@ import {
   Phone,
   Mail,
   User,
-  Banknote,
-  Smartphone,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Upload,
   Clock,
 } from "lucide-react";
 
@@ -38,16 +35,7 @@ import { bookingService, servicesService } from "../services/api.js";
 import { getActiveSessionRole } from "../utils/jwt.js";
 import LocationPicker from "./LocationPicker.jsx";
 import { geoFromUser, hasLocation } from "../utils/location.js";
-import {
-  buildPayToSummary,
-  getJazzcashMsisdn,
-  PAYMENT_METHOD_LABELS,
-  PAYMENT_METHOD_VALUES,
-  requiresPaymentReceipt,
-} from "../utils/platformPayment.js";
-import BankTransferInfo from "./shared/BankTransferInfo.jsx";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import PayAfterWorkAckModal from "./shared/PayAfterWorkAckModal.jsx";
 import MenuPagination, { MENU_PAGE_SIZE } from "./shared/MenuPagination.jsx";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
 
@@ -112,7 +100,6 @@ const getIconComponent = (iconName) => {
 
 function BookingForm({ service, onClose, onSuccess }) {
   const { user, isAuthenticated } = useAuth();
-  const receiptInputRef = useRef(null);
   const draftKey = `fixitnow_draft_booking_${service?.id || "service"}`;
   const savedDraft = loadFormDraft(draftKey, {});
   const hadDraft = Boolean(savedDraft.name || savedDraft.email || savedDraft.phone);
@@ -126,16 +113,11 @@ function BookingForm({ service, onClose, onSuccess }) {
     email: savedDraft.email ?? user?.email ?? "",
     notes: savedDraft.notes ?? "",
     serviceCategory: service?.category || "",
-    paymentReceipt: null,
-    paymentMethod: savedDraft.paymentMethod ?? "",
-    payAfterWork: savedDraft.payAfterWork ?? false,
   });
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [showPayAck, setShowPayAck] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [receiptPreview, setReceiptPreview] = useState(null);
 
   useEffect(() => {
     if (!user || hadDraft) return;
@@ -154,8 +136,6 @@ function BookingForm({ service, onClose, onSuccess }) {
       phone: form.phone,
       email: form.email,
       notes: form.notes,
-      paymentMethod: form.paymentMethod,
-      payAfterWork: form.payAfterWork,
       geo,
       termsAgreed,
     });
@@ -167,57 +147,17 @@ function BookingForm({ service, onClose, onSuccess }) {
       phone: form.phone,
       email: form.email,
       notes: form.notes,
-      paymentMethod: form.paymentMethod,
-      payAfterWork: form.payAfterWork,
       geo,
       termsAgreed,
     });
     onClose();
   };
 
-  useEffect(() => {
-    return () => {
-      if (receiptPreview) {
-        URL.revokeObjectURL(receiptPreview);
-      }
-    };
-  }, [receiptPreview]);
-
   const update = (key, value) => {
     setForm((prev) => ({
       ...prev,
       [key]: value,
     }));
-  };
-
-  const handleReceiptChange = (e) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Please upload an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size must be less than 5MB");
-      return;
-    }
-
-    if (receiptPreview) {
-      URL.revokeObjectURL(receiptPreview);
-    }
-
-    const preview = URL.createObjectURL(file);
-
-    setForm((prev) => ({
-      ...prev,
-      paymentReceipt: file,
-    }));
-
-    setReceiptPreview(preview);
-    setError("");
   };
 
   const submitBooking = async () => {
@@ -236,52 +176,28 @@ function BookingForm({ service, onClose, onSuccess }) {
       return;
     }
 
-    if (!form.payAfterWork && !form.paymentMethod) {
-      setError("Please select a payment method.");
-      return;
-    }
-
-    if (
-      requiresPaymentReceipt(form.paymentMethod, form.payAfterWork) &&
-      !form.paymentReceipt
-    ) {
-      setError("Please upload payment receipt");
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError("");
 
-      const formData = new FormData();
-
-      formData.append("serviceId", service?.id);
-      formData.append("serviceTitle", service?.title);
-      formData.append("serviceCategory", service?.category);
-
-      formData.append("name", form.name.trim());
-      formData.append("phone", form.phone.trim());
-      formData.append("email", form.email.trim());
+      const payload = {
+        serviceId: service?.id,
+        serviceTitle: service?.title,
+        serviceCategory: service?.category,
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        notes: form.notes.trim(),
+      };
       if (geo.location?.trim()) {
-        formData.append("location", geo.location.trim());
-        formData.append("address", geo.location.trim());
-        if (geo.latitude != null) formData.append("latitude", String(geo.latitude));
-        if (geo.longitude != null) formData.append("longitude", String(geo.longitude));
-        if (geo.placeId) formData.append("placeId", geo.placeId);
-      }
-      formData.append("notes", form.notes.trim());
-      formData.append("payAfterWork", form.payAfterWork ? "true" : "false");
-      const methodForApi = form.payAfterWork
-        ? PAYMENT_METHOD_VALUES.PAY_AFTER_WORK
-        : form.paymentMethod;
-      formData.append("paymentMethod", methodForApi);
-      formData.append("payToSummary", buildPayToSummary(methodForApi));
-
-      if (form.paymentReceipt) {
-        formData.append("paymentReceipt", form.paymentReceipt);
+        payload.location = geo.location.trim();
+        payload.address = geo.location.trim();
+        if (geo.latitude != null) payload.latitude = geo.latitude;
+        if (geo.longitude != null) payload.longitude = geo.longitude;
+        if (geo.placeId) payload.placeId = geo.placeId;
       }
 
-      await bookingService.createBooking(formData, {
+      await bookingService.createBooking(payload, {
         asGuest: !(isAuthenticated && user?.type === "customer"),
       });
 
@@ -305,11 +221,6 @@ function BookingForm({ service, onClose, onSuccess }) {
 
     if (!termsAgreed) {
       setError("Please agree to the terms and conditions.");
-      return;
-    }
-
-    if (form.payAfterWork) {
-      setShowPayAck(true);
       return;
     }
 
@@ -454,158 +365,10 @@ function BookingForm({ service, onClose, onSuccess }) {
             />
           </div>
 
-          {/* PAY AFTER WORK */}
-          <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.payAfterWork}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setForm((prev) => ({
-                  ...prev,
-                  payAfterWork: checked,
-                  ...(checked
-                    ? {
-                        paymentMethod: "",
-                        paymentReceipt: null,
-                      }
-                    : {}),
-                }));
-                if (checked && receiptPreview) {
-                  URL.revokeObjectURL(receiptPreview);
-                  setReceiptPreview(null);
-                  if (receiptInputRef.current) receiptInputRef.current.value = "";
-                }
-                setError("");
-              }}
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-            />
-            <span className="text-sm text-amber-950 font-medium">
-              Pay after work is completed
-            </span>
-          </label>
-
-          {/* PAYMENT METHOD */}
-          <div
-            className={
-              form.payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
-            }
-          >
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Payment method {!form.payAfterWork && <span className="text-red-500">*</span>}
-            </label>
-            <select
-              value={form.paymentMethod}
-              onChange={(e) => update("paymentMethod", e.target.value)}
-              className={inputCls}
-              required={!form.payAfterWork}
-              disabled={form.payAfterWork}
-            >
-              <option value="">Select payment method</option>
-              <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
-              </option>
-              <option value={PAYMENT_METHOD_VALUES.BANK_TRANSFER}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.BANK_TRANSFER]}
-              </option>
-            </select>
-          </div>
-
-          {!form.payAfterWork &&
-            form.paymentMethod === PAYMENT_METHOD_VALUES.BANK_TRANSFER && (
-              <BankTransferInfo />
-            )}
-
-          {!form.payAfterWork && form.paymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
-            <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 flex gap-3">
-              <Smartphone className="shrink-0 text-sky-700 mt-0.5" size={20} />
-              <div className="text-sm text-sky-900">
-                <p className="font-semibold">Pay via JazzCash</p>
-                <p className="mt-1 text-sky-800">
-                  Send payment to this number:{" "}
-                  <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* RECEIPT */}
-          <div
-            className={
-              form.payAfterWork ? "opacity-50 pointer-events-none select-none" : ""
-            }
-          >
-            <label className="block text-xs font-semibold text-slate-700 mb-2">
-              Payment receipt{" "}
-              {requiresPaymentReceipt(form.paymentMethod, form.payAfterWork) && (
-                <span className="text-red-500">*</span>
-              )}
-            </label>
-
-            <input
-              ref={receiptInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleReceiptChange}
-              className="sr-only"
-              aria-hidden
-              disabled={form.payAfterWork}
-            />
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => receiptInputRef.current?.click()}
-                disabled={form.payAfterWork}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800 shadow-sm transition-all hover:bg-orange-100 hover:border-orange-300 disabled:opacity-60"
-              >
-                <Upload size={18} />
-                {form.paymentReceipt ? "Change receipt" : "Upload receipt"}
-              </button>
-
-              {form.paymentReceipt && (
-                <span className="text-xs font-medium text-slate-600 truncate max-w-[200px]">
-                  {form.paymentReceipt.name}
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-slate-500 mt-2">
-              JPG or PNG, up to 5MB
-            </p>
-
-            {receiptPreview && (
-              <div className="relative inline-block mt-3">
-                <img
-                  src={receiptPreview}
-                  alt="Receipt preview"
-                  className="w-28 h-28 object-cover rounded-lg border-2 border-orange-300 shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (receiptPreview) {
-                      URL.revokeObjectURL(receiptPreview);
-                    }
-
-                    setForm((prev) => ({
-                      ...prev,
-                      paymentReceipt: null,
-                    }));
-
-                    setReceiptPreview(null);
-                    if (receiptInputRef.current) {
-                      receiptInputRef.current.value = "";
-                    }
-                  }}
-                  className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-md"
-                  title="Remove receipt"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-          </div>
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+            No payment is required when booking. A worker will be assigned after
+            they submit commission payment for admin approval.
+          </p>
 
           {/* ERROR */}
           {error && (
@@ -644,15 +407,6 @@ function BookingForm({ service, onClose, onSuccess }) {
         </form>
       </div>
 
-      {showPayAck && (
-        <PayAfterWorkAckModal
-          onClose={() => setShowPayAck(false)}
-          onConfirm={async () => {
-            setShowPayAck(false);
-            await submitBooking();
-          }}
-        />
-      )}
     </div>
   );
 }

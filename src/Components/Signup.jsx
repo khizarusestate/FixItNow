@@ -23,14 +23,10 @@ import TermsAgreement from "./shared/TermsAgreement.jsx";
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
 const initialWorker = {
-  fullName: "",
-  phoneNumber: "",
-  cnicNumber: "",
+  firstName: "",
+  lastName: "",
   emailAddress: "",
   password: "",
-  primaryServiceCategory: "",
-  primaryServiceName: "",
-  primaryServiceId: "",
 };
 export default function Signup() {
   const { isGoogleSignInEnabled } = useOAuthConfig();
@@ -123,44 +119,32 @@ export default function Signup() {
         }
       } else {
         if (
-          !workerForm.fullName ||
+          !workerForm.firstName?.trim() ||
+          !workerForm.lastName?.trim() ||
           !workerForm.emailAddress ||
-          !workerForm.phoneNumber ||
-          !workerForm.cnicNumber ||
-          !workerForm.password ||
-          !workerForm.primaryServiceId
+          !workerForm.password
         ) {
-          setMessage("Please fill all required fields.");
+          setMessage("First name, last name, email, and password are required.");
           setIsError(true);
           setSubmitting(false);
           return;
         }
 
-        // Validate CNIC format (13 digits, optionally with dashes)
-        const cnicClean = workerForm.cnicNumber.replace(/-/g, "");
-        if (!/^\d{13}$/.test(cnicClean)) {
-          setMessage("CNIC must be 13 digits (e.g. 35201-1234567-8).");
-          setIsError(true);
-          setSubmitting(false);
-          return;
-        }
-
-        // Merge service city and area into service area string
         const response = await authService.registerWorker({
-          fullName: workerForm.fullName,
+          firstName: workerForm.firstName.trim(),
+          lastName: workerForm.lastName.trim(),
           emailAddress: workerForm.emailAddress,
-          phoneNumber: workerForm.phoneNumber,
-          cnicNumber: workerForm.cnicNumber,
           password: workerForm.password,
-          primaryServiceId: workerForm.primaryServiceId,
-          primaryServiceName: workerForm.primaryServiceName,
-          primaryServiceCategory: workerForm.primaryServiceCategory,
-          serviceCategories: [],
         });
 
         if (response.success) {
           clearFormDraft(SIGNUP_DRAFT_KEY);
-          setDone(true);
+          closeModal();
+          switchModal("verifyEmail", {
+            email: workerForm.emailAddress.trim().toLowerCase(),
+            role: "worker",
+            password: workerForm.password,
+          });
         }
       }
     } catch (err) {
@@ -216,26 +200,11 @@ export default function Signup() {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">
-                {signupType === "worker"
-                  ? "Application Submitted!"
-                  : "Account created successfully!"}
+                Account created successfully!
               </h3>
               <p className="text-sm text-slate-600 mb-5">
-                {signupType === "worker"
-                  ? "Admin will review your application. You can log in after approval."
-                  : "Check your email for the 6-digit verification code."}
+                Check your email for the 6-digit verification code.
               </p>
-              {signupType === "worker" ? (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-5">
-                  <p className="text-sm text-orange-700 font-medium">
-                    Application received
-                  </p>
-                  <p className="text-xs text-orange-600 mt-1">
-                    You will be notified by email when your worker account is
-                    approved.
-                  </p>
-                </div>
-              ) : null}
               <button
                 onClick={() => switchModal("login")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
@@ -330,23 +299,27 @@ export default function Signup() {
                   </>
                 ) : (
                   <>
+                    <p className="text-xs text-slate-500 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+                      Step 1 of 2: Basic details. After email verification you will
+                      add trade, CNIC, and verification photo.
+                    </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input
                         type="text"
-                        placeholder="Full Name"
-                        value={workerForm.fullName}
+                        placeholder="First Name"
+                        value={workerForm.firstName}
                         onChange={(e) =>
-                          updateWorker("fullName", e.target.value)
+                          updateWorker("firstName", e.target.value)
                         }
                         required
                         className={inputCls}
                       />
                       <input
-                        type="tel"
-                        placeholder="Phone Number"
-                        value={workerForm.phoneNumber}
+                        type="text"
+                        placeholder="Last Name"
+                        value={workerForm.lastName}
                         onChange={(e) =>
-                          updateWorker("phoneNumber", e.target.value)
+                          updateWorker("lastName", e.target.value)
                         }
                         required
                         className={inputCls}
@@ -362,16 +335,6 @@ export default function Signup() {
                       required
                       className={inputCls}
                     />
-                    <input
-                      type="text"
-                      placeholder="CNIC Number (e.g. 12345-1234567-1)"
-                      value={workerForm.cnicNumber}
-                      onChange={(e) =>
-                        updateWorker("cnicNumber", e.target.value)
-                      }
-                      required
-                      className={inputCls}
-                    />
                     <div className="relative">
                       <input
                         type={showWorkerPw ? "text" : "password"}
@@ -381,7 +344,7 @@ export default function Signup() {
                           updateWorker("password", e.target.value)
                         }
                         required
-                        minLength="6"
+                        minLength={6}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-10 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
                       />
                       <button
@@ -399,32 +362,6 @@ export default function Signup() {
                         )}
                       </button>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-700 mb-1.5 block">
-                        Primary work / trade{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <SearchableSelect
-                        options={tradeOptions}
-                        value={workerForm.primaryServiceId}
-                        onChange={(val) =>
-                          updateWorker("primaryServiceId", val)
-                        }
-                        onSelectOption={(opt) => {
-                          setWorkerForm((f) => ({
-                            ...f,
-                            primaryServiceId: opt.value,
-                            primaryServiceCategory: opt.category || "",
-                            primaryServiceName: opt.name || "",
-                          }));
-                        }}
-                        placeholder="Search and select your service"
-                        required
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                      After approval, log in and add your work location in Complete Profile.
-                    </p>
                   </>
                 )}
 
@@ -450,11 +387,22 @@ export default function Signup() {
                     <GoogleSignInButton
                       role={signupType === "worker" ? "worker" : "customer"}
                       disabled={submitting || !termsAgreed}
-                      onSuccess={() => {
+                      onSuccess={(userData) => {
                         clearFormDraft(SIGNUP_DRAFT_KEY);
-                        setDone(true);
-                        setMessage("");
-                        setIsError(false);
+                        if (
+                          signupType === "worker" &&
+                          (userData?.needsProfessionalProfile ||
+                            userData?.signupStep !== "complete")
+                        ) {
+                          closeModal();
+                          switchModal("workerProfessional", {
+                            email: userData?.emailAddress || userData?.email,
+                          });
+                        } else {
+                          setDone(true);
+                          setMessage("");
+                          setIsError(false);
+                        }
                       }}
                       onError={(msg) => {
                         setMessage(msg);

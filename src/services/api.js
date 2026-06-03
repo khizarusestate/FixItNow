@@ -359,6 +359,8 @@ export const authService = {
   loginWithGoogle: (credential, remember = true) =>
     apiRequest("/auth/google/customer", {
       method: "POST",
+      skipAuth: true,
+      skipAuthRefresh: true,
       body: JSON.stringify({ credential, rememberMe: remember }),
     }).then((data) => {
       const token = data.accessToken || data.token;
@@ -385,6 +387,8 @@ export const authService = {
   loginWithGoogleWorker: (credential, remember = true) =>
     apiRequest("/auth/google/worker", {
       method: "POST",
+      skipAuth: true,
+      skipAuthRefresh: true,
       body: JSON.stringify({ credential, rememberMe: remember }),
     }).then((data) => {
       const token = data.accessToken || data.token;
@@ -462,19 +466,33 @@ export const authService = {
   registerWorker: (data) =>
     apiRequest("/auth/worker/register", {
       method: "POST",
+      skipAuth: true,
+      skipAuthRefresh: true,
       body: JSON.stringify(data),
     }),
 
-  verifyEmail: (email, code) =>
-    apiRequest("/auth/verify-email", {
+  registerWorkerProfessional: (formData) =>
+    apiRequest("/auth/worker/register/professional", {
       method: "POST",
-      body: JSON.stringify({ email, code }),
+      skipAuth: true,
+      skipAuthRefresh: true,
+      body: formData,
     }),
 
-  resendVerification: (email) =>
+  verifyEmail: (email, code, role) =>
+    apiRequest("/auth/verify-email", {
+      method: "POST",
+      skipAuth: true,
+      skipAuthRefresh: true,
+      body: JSON.stringify({ email, code, ...(role ? { role } : {}) }),
+    }),
+
+  resendVerification: (email, role) =>
     apiRequest("/auth/resend-verification", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      skipAuth: true,
+      skipAuthRefresh: true,
+      body: JSON.stringify({ email, ...(role ? { role } : {}) }),
     }),
 
   requestPasswordReset: (email) =>
