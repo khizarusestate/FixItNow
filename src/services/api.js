@@ -214,8 +214,19 @@ export async function apiRequest(
 
   try {
     const { skipAuth: _skipAuth, ...fetchOptions } = options;
+    let requestBody = fetchOptions.body;
+    if (
+      requestBody &&
+      typeof requestBody === "object" &&
+      !(requestBody instanceof FormData) &&
+      !(requestBody instanceof Blob) &&
+      !(requestBody instanceof ArrayBuffer)
+    ) {
+      requestBody = JSON.stringify(requestBody);
+    }
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       ...fetchOptions,
+      body: requestBody,
       headers,
     });
 
@@ -527,23 +538,23 @@ export const authService = {
 // Booking endpoints
 export const bookingService = {
   createBooking: (data, { asGuest = false } = {}) => {
+    const isFormData = data instanceof FormData;
+    const body = isFormData ? data : JSON.stringify(data);
+    const headers = isFormData ? {} : { "Content-Type": "application/json" };
+
     if (asGuest) {
-      const opts = {
+      return apiRequest("/bookings", {
         method: "POST",
-        body: data,
+        body,
         skipAuth: true,
-        headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
-      };
-      if (!(data instanceof FormData)) {
-        opts.body = JSON.stringify(data);
-      }
-      return apiRequest("/bookings", opts);
+        headers,
+      });
     }
     return apiRequestWithAuth("/bookings", {
       method: "POST",
-      body: data,
+      body,
       role: "customer",
-      headers: data instanceof FormData ? {} : { "Content-Type": "application/json" },
+      headers,
     });
   },
 
