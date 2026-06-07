@@ -95,9 +95,10 @@ export default function Signup() {
       return;
     }
     setSubmitting(true);
+    const currentType = signupType;
 
     try {
-      if (signupType === "customer") {
+      if (currentType === "customer") {
         if (
           !customerForm.name ||
           !customerForm.email ||
@@ -238,7 +239,7 @@ export default function Signup() {
                 <button
                   type="button"
                   data-signup-type="customer"
-                  onClick={() => setSignupType("customer")}
+                  onClick={() => { setSignupType("customer"); setMessage(""); setIsError(false); }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     signupType === "customer"
                       ? "bg-orange-500 text-white"
@@ -251,7 +252,7 @@ export default function Signup() {
                 <button
                   type="button"
                   data-signup-type="worker"
-                  onClick={() => setSignupType("worker")}
+                  onClick={() => { setSignupType("worker"); setMessage(""); setIsError(false); }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     signupType === "worker"
                       ? "bg-blue-900 text-white"
