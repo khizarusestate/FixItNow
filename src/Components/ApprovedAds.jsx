@@ -46,7 +46,7 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
             <button
               type="button"
               onClick={onPrevFile}
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-black/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-blue-900/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-blue-900/60"
               aria-label="Previous image"
             >
               <ChevronLeft size={18} />
@@ -54,12 +54,12 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
             <button
               type="button"
               onClick={onNextFile}
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-black/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-blue-900/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-blue-900/60"
               aria-label="Next image"
             >
               <ChevronRight size={18} />
             </button>
-            <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white">
+            <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-blue-900/50 px-2 py-0.5 text-xs text-white">
               {safeIndex + 1} / {files.length}
             </div>
           </>

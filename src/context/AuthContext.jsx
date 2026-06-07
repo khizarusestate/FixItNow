@@ -856,7 +856,7 @@ export function AuthProvider({ children }) {
       <PushNotificationPrompt />
       {/* Account Deleted Modal */}
       {accountDeleted && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl animate-fadeIn">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <svg
@@ -885,7 +885,7 @@ export function AuthProvider({ children }) {
       )}
       {/* Account Approved Modal */}
       {accountApproved && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl animate-fadeIn">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <svg
@@ -918,7 +918,7 @@ export function AuthProvider({ children }) {
 
       {/* Account Rejected Modal */}
       {accountRejected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl animate-fadeIn">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <svg
@@ -960,7 +960,7 @@ export function AuthProvider({ children }) {
 
       {/* Session Expired Modal */}
       {sessionExpired && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl animate-fadeIn">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <svg

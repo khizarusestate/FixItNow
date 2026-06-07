@@ -8,7 +8,7 @@ export default function About() {
 
   return (
     <div className="fixed inset-0 z-[70] overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
+      <div className="fixed inset-0 bg-blue-900/50 backdrop-blur-sm" onClick={closeModal} />
       <div className="relative min-h-screen bg-white scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-slate-200">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl" />

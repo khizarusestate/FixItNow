@@ -26,6 +26,7 @@ const initialWorker = {
   firstName: "",
   lastName: "",
   emailAddress: "",
+  phoneNumber: "",
   password: "",
 };
 export default function Signup() {
@@ -122,9 +123,10 @@ export default function Signup() {
           !workerForm.firstName?.trim() ||
           !workerForm.lastName?.trim() ||
           !workerForm.emailAddress ||
+          !workerForm.phoneNumber?.trim() ||
           !workerForm.password
         ) {
-          setMessage("First name, last name, email, and password are required.");
+          setMessage("First name, last name, email, phone, and password are required.");
           setIsError(true);
           setSubmitting(false);
           return;
@@ -134,6 +136,7 @@ export default function Signup() {
           firstName: workerForm.firstName.trim(),
           lastName: workerForm.lastName.trim(),
           emailAddress: workerForm.emailAddress,
+          phoneNumber: workerForm.phoneNumber.trim(),
           password: workerForm.password,
         });
 
@@ -299,10 +302,6 @@ export default function Signup() {
                   </>
                 ) : (
                   <>
-                    <p className="text-xs text-slate-500 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-                      Step 1 of 2: Basic details. After email verification you will
-                      add trade, CNIC, and verification photo.
-                    </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input
                         type="text"
@@ -327,10 +326,20 @@ export default function Signup() {
                     </div>
                     <input
                       type="email"
-                      placeholder="Email Address"
+                      placeholder="Email Address *"
                       value={workerForm.emailAddress}
                       onChange={(e) =>
                         updateWorker("emailAddress", e.target.value)
+                      }
+                      required
+                      className={inputCls}
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone Number *"
+                      value={workerForm.phoneNumber}
+                      onChange={(e) =>
+                        updateWorker("phoneNumber", e.target.value)
                       }
                       required
                       className={inputCls}

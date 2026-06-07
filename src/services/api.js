@@ -495,7 +495,18 @@ export const authService = {
       method: "POST",
       skipAuth: true,
       skipAuthRefresh: true,
-      body: JSON.stringify({ email, code, ...(role ? { role } : {}) }),
+      body: JSON.stringify({ email, code, rememberMe: true, ...(role ? { role } : {}) }),
+    }).then((data) => {
+      const token = data.accessToken || data.token;
+      if (token && data.customer) {
+        clearOtherRoleSessions("customer");
+        setToken(token, "customer");
+        if (data.refreshToken) setRefreshToken(data.refreshToken, "customer");
+        setUserData(data.customer, "customer");
+        applySessionPolicy("customer", true);
+        markCookieSession("customer");
+      }
+      return { ...data, token };
     }),
 
   resendVerification: (email, role) =>

@@ -7,10 +7,7 @@ import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
-import {
-  needsCompleteProfile,
-  workerNeedsProfessionalSignup,
-} from "../utils/profileCompletion.js";
+import { runPostLoginFlow } from "../utils/postLoginFlow.js";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
@@ -131,25 +128,13 @@ export default function Login({ onLoginSuccess }) {
       setMessage("Login successful!");
       setIsError(false);
       if (onLoginSuccess) onLoginSuccess(userData);
-      setTimeout(() => {
-        clearFormDraft(LOGIN_DRAFT_KEY);
-        handleClose();
-        setForm(initialForm);
-        setMessage("");
-        const profileUser = { ...userData, type: loginType };
-        if (workerNeedsProfessionalSignup(profileUser)) {
-          setTimeout(
-            () =>
-              openModal("workerProfessional", {
-                email: profileUser.emailAddress || profileUser.email,
-                password: form.password,
-              }),
-            500,
-          );
-        } else if (needsCompleteProfile(profileUser)) {
-          setTimeout(() => openModal("completeProfile"), 500);
-        }
-      }, 800);
+      runPostLoginFlow({
+        userData,
+        userType: loginType,
+        password: form.password,
+        switchModal,
+        closeModal: handleClose,
+      });
     } catch (err) {
       if (isApiClientError(err) && err.code === "EMAIL_NOT_VERIFIED") {
         const email =
@@ -312,16 +297,12 @@ export default function Login({ onLoginSuccess }) {
               <GoogleSignInButton
                 role={loginType === "worker" ? "worker" : "customer"}
                 disabled={submitting}
+                loginType={loginType}
                 onSuccess={(userData) => {
-                  setMessage("Login successful!");
-                  setIsError(false);
+                  clearFormDraft(LOGIN_DRAFT_KEY);
+                  setForm(initialForm);
+                  setMessage("");
                   if (onLoginSuccess) onLoginSuccess(userData);
-                  setTimeout(() => {
-                    clearFormDraft(LOGIN_DRAFT_KEY);
-                    handleClose();
-                    setForm(initialForm);
-                    setMessage("");
-                  }, 800);
                 }}
                 onError={(msg) => {
                   setMessage(msg);

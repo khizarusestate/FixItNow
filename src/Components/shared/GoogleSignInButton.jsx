@@ -2,20 +2,20 @@ import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "../../services/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useModal } from "../../context/ModalContext.jsx";
-import {
-  needsCompleteProfile,
-  workerNeedsProfessionalSignup,
-} from "../../utils/profileCompletion.js";
+import { runPostLoginFlow } from "../../utils/postLoginFlow.js";
 
 export default function GoogleSignInButton({
   role = "customer",
+  loginType,
   onSuccess,
   onError,
   disabled = false,
   className = "",
+  skipPostLoginFlow = false,
 }) {
   const { login } = useAuth();
-  const { openModal } = useModal();
+  const { switchModal, closeModal } = useModal();
+  const resolvedType = loginType || (role === "worker" ? "worker" : "customer");
 
   const handleSuccess = async (credentialResponse) => {
     const credential = credentialResponse?.credential;
@@ -43,17 +43,13 @@ export default function GoogleSignInButton({
       login(userData, userType, authToken, true, response.refreshToken);
       onSuccess?.(userData);
 
-      const profileUser = { ...userData, type: userType };
-      if (workerNeedsProfessionalSignup(profileUser)) {
-        setTimeout(
-          () =>
-            openModal("workerProfessional", {
-              email: profileUser.emailAddress || profileUser.email,
-            }),
-          500,
-        );
-      } else if (needsCompleteProfile(profileUser)) {
-        setTimeout(() => openModal("completeProfile"), 500);
+      if (!skipPostLoginFlow) {
+        runPostLoginFlow({
+          userData,
+          userType: resolvedType,
+          switchModal,
+          closeModal,
+        });
       }
     } catch (err) {
       onError?.(err.message || "Google sign-in failed.");

@@ -8,6 +8,7 @@ const initial = {
   firstName: "",
   lastName: "",
   emailAddress: "",
+  phoneNumber: "",
   password: "",
 };
 
@@ -43,6 +44,7 @@ export default function WorkerModal() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         emailAddress: form.emailAddress,
+        phoneNumber: form.phoneNumber.trim(),
         password: form.password,
       });
       if (response.success) {
@@ -83,12 +85,9 @@ export default function WorkerModal() {
             <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
               Join as Worker
             </p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-900">
+            <h2 className="mt-1 text-2xl font-bold text-blue-900">
               Step 1 — Basic info
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Verify your email, then complete trade, CNIC, and verification photo.
-            </p>
           </div>
           <button
             type="button"
@@ -132,15 +131,23 @@ export default function WorkerModal() {
             </div>
             <input
               type="email"
-              placeholder="Email Address"
+              placeholder="Email Address *"
               value={form.emailAddress}
               onChange={(e) => update("emailAddress", e.target.value)}
               required
               className={inputCls}
             />
             <input
+              type="tel"
+              placeholder="Phone Number *"
+              value={form.phoneNumber}
+              onChange={(e) => update("phoneNumber", e.target.value)}
+              required
+              className={inputCls}
+            />
+            <input
               type="password"
-              placeholder="Password (min 6 chars)"
+              placeholder="Password (min 6 chars) *"
               value={form.password}
               onChange={(e) => update("password", e.target.value)}
               required

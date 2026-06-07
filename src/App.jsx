@@ -44,7 +44,7 @@ export default function App() {
               <LegalProvider>
                 <div className="relative">
                   <Header />
-                  <main className="bg-slate-50 text-slate-900">
+                  <main className="bg-slate-50 text-slate-900 animate-fadeIn">
                     <Home />
                     <Suspense fallback={<SectionFallback />}>
                       <BookingSection />

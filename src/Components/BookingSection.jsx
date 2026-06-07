@@ -365,10 +365,6 @@ function BookingForm({ service, onClose, onSuccess }) {
             />
           </div>
 
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
-            No payment is required when booking. A worker will be assigned after
-            they submit commission payment for admin approval.
-          </p>
 
           {/* ERROR */}
           {error && (

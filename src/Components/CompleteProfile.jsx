@@ -26,7 +26,7 @@ import {
 } from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
-  const { activeModal, closeModal, openModal } = useModal();
+  const { activeModal, closeModal, switchModal, openModal } = useModal();
   const { user, updateUser } = useAuth();
   const isWorker = user?.type === "worker";
   const missing = getMissingProfileFields(user);
@@ -92,13 +92,17 @@ export default function CompleteProfile() {
     load();
   }, [activeModal, isWorker]);
 
+  useEffect(() => {
+    if (activeModal !== "completeProfile") return;
+    if (!isWorker || !workerNeedsProfessionalSignup(user)) return;
+    switchModal("workerProfessional", {
+      email: user?.emailAddress || user?.email,
+    });
+  }, [activeModal, isWorker, user, switchModal]);
+
   if (activeModal !== "completeProfile") return null;
 
   if (isWorker && workerNeedsProfessionalSignup(user)) {
-    closeModal();
-    openModal("workerProfessional", {
-      email: user?.emailAddress || user?.email,
-    });
     return null;
   }
 

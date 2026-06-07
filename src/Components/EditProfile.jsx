@@ -243,7 +243,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
   return (
     <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4" style={{ paddingTop: '100px' }}>
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-blue-900/60 backdrop-blur-sm"
         onClick={onClose}
       ></div>
       <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
@@ -273,7 +273,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
                   {form.fullName?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-blue-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera size={24} className="text-white" />
               </div>
             </div>

@@ -83,12 +83,12 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #1e3a8a;
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #f97316, #ea580c);
-  border: 3px solid #0f172a;
+  border: 3px solid #1e3a8a;
   border-radius: 999px;
 }
 
@@ -97,7 +97,7 @@ textarea {
 }
 
 * {
-  scrollbar-color: #f97316 #0f172a;
+  scrollbar-color: #f97316 #1e3a8a;
   scrollbar-width: thin;
 }
 
@@ -136,7 +136,7 @@ textarea {
   animation: scaleIn 0.3s ease-out;
 }
 
-.animate-fade-in {
+.animate-fadeIn {
   animation: fade-in 0.35s ease-out both;
 }
 

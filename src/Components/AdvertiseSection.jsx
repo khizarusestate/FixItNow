@@ -354,7 +354,7 @@ export default function AdvertiseSection() {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-blue-900/60 backdrop-blur-sm">
           <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
@@ -708,7 +708,7 @@ export default function AdvertiseSection() {
                                     <Video size={16} className="text-white" />
                                   </div>
                                 )}
-                                <span className="absolute bottom-0 right-0 bg-black/50 text-white text-xs px-1 rounded">
+                                <span className="absolute bottom-0 right-0 bg-blue-900/50 text-white text-xs px-1 rounded">
                                   {idx + 1}
                                 </span>
                               </div>
