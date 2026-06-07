@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Upload, Shield, Loader2 } from "lucide-react";
+import { X, Upload, Shield, Loader2, MapPin } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
 import SearchableSelect from "./SearchableSelect.jsx";
@@ -7,6 +7,8 @@ import { buildServicePickerOptions } from "../utils/servicePicker.js";
 import PhoneInput from "./shared/PhoneInput.jsx";
 import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import LocationPicker from "./LocationPicker";
+import { geoFromUser } from "../utils/location.js";
 
 export default function WorkerProfessionalSignup() {
   const { t } = useI18n();
@@ -28,6 +30,7 @@ export default function WorkerProfessionalSignup() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
+  const [geo, setGeo] = useState({ location: "", latitude: null, longitude: null, placeId: "" });
 
   useEffect(() => {
     if (activeModal !== "workerProfessional") return;
@@ -97,6 +100,12 @@ export default function WorkerProfessionalSignup() {
       return;
     }
 
+    if (!geo.location?.trim()) {
+      setMessage("Please select your location on the map.");
+      setIsError(true);
+      return;
+    }
+
     setSubmitting(true);
     setMessage("");
     try {
@@ -111,6 +120,10 @@ export default function WorkerProfessionalSignup() {
         body.append("primaryServiceCategory", form.primaryServiceCategory);
       }
       body.append("verificationPhoto", verificationPhoto);
+      body.append("location", geo.location.trim());
+      if (geo.latitude != null) body.append("latitude", geo.latitude);
+      if (geo.longitude != null) body.append("longitude", geo.longitude);
+      if (geo.placeId) body.append("placeId", geo.placeId);
 
       const res = await authService.registerWorkerProfessional(body);
       if (res.success) {
@@ -194,6 +207,16 @@ export default function WorkerProfessionalSignup() {
                   onChange={(v) => update("phoneNumber", v)}
                   placeholder={t("worker.phoneOptional")}
                 />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <span className="flex items-center gap-1"><MapPin size={13} /> Your Location *</span>
+                  </label>
+                  <LocationPicker
+                    value={geo}
+                    onChange={setGeo}
+                    placeholder="Search your city or area..."
+                  />
+                </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {t("worker.passportPhoto")} *
