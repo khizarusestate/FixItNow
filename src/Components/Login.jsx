@@ -8,11 +8,13 @@ import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 import { runPostLoginFlow } from "../utils/postLoginFlow.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const LOGIN_DRAFT_KEY = "fixitnow_draft_login";
 const initialForm = { email: "", password: "" };
 
 export default function Login({ onLoginSuccess }) {
+  const { t } = useI18n();
   const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal, openModal, modalPayload } =
     useModal();
@@ -73,7 +75,7 @@ export default function Login({ onLoginSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password) {
-      setMessage("Please enter both email and password.");
+      setMessage(t("login.enterBoth"));
       setIsError(true);
       return;
     }
@@ -151,7 +153,7 @@ export default function Login({ onLoginSuccess }) {
         }, 1200);
         return;
       }
-      setMessage(err.message || "Login failed. Please check your credentials.");
+      setMessage(err.message || t("login.failed"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -169,7 +171,7 @@ export default function Login({ onLoginSuccess }) {
         <div className="flex items-start justify-between p-6 pb-4">
           <div>
             <h2 className={`mt-1 text-2xl font-bold ${loginType === "worker" ? "text-blue-900" : "text-orange-500"}`}>
-              Welcome back
+              {t("login.title")}
             </h2>
           </div>
           <button
@@ -193,7 +195,7 @@ export default function Login({ onLoginSuccess }) {
               }`}
             >
               <User size={14} />
-              Customer
+              {t("signup.customer")}
             </button>
             <button
               type="button"
@@ -205,14 +207,14 @@ export default function Login({ onLoginSuccess }) {
               }`}
             >
               <Briefcase size={14} />
-              Worker
+              {t("signup.worker")}
             </button>
           </div>
 
           <input
             type="email"
             placeholder={
-              loginType === "worker" ? "Worker Email address" : "Email address"
+              loginType === "worker" ? t("login.workerEmail") : t("login.email")
             }
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
@@ -222,7 +224,7 @@ export default function Login({ onLoginSuccess }) {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Password"
+              placeholder={t("login.password")}
               value={form.password}
               onChange={(e) => update("password", e.target.value)}
               required
@@ -248,14 +250,14 @@ export default function Login({ onLoginSuccess }) {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
               />
-              Remember me
+              {t("login.rememberMe")}
             </label>
             <button
               type="button"
               onClick={() => switchModal("forgotPassword")}
               className="font-medium text-orange-500 hover:text-orange-600"
             >
-              Forgot password?
+              {t("login.forgot")}
             </button>
           </div>
 
@@ -279,8 +281,10 @@ export default function Login({ onLoginSuccess }) {
             <LogIn size={15} />
             <span className="truncate">
               {submitting
-                ? "Signing in..."
-                : `Sign In as ${loginType === "worker" ? "Worker" : "Customer"}`}
+                ? t("login.signingIn")
+                : loginType === "worker"
+                  ? t("login.submitWorker")
+                  : t("login.submitCustomer")}
             </span>
           </button>
 
@@ -291,7 +295,7 @@ export default function Login({ onLoginSuccess }) {
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
-                  or
+                  {t("common.or")}
                 </p>
               </div>
               <GoogleSignInButton
@@ -314,7 +318,7 @@ export default function Login({ onLoginSuccess }) {
 
           <div className="text-center space-y-2">
             <p className="text-sm text-slate-500">
-              Don't have an account?{" "}
+              {t("login.noAccount")}{" "}
               <button
                 type="button"
                 onClick={() =>
@@ -322,7 +326,7 @@ export default function Login({ onLoginSuccess }) {
                 }
                 className="font-medium text-orange-500 hover:text-orange-600 underline"
               >
-                {loginType === "worker" ? "Join as Worker" : "Join Fix It Now"}
+                {loginType === "worker" ? t("login.joinWorker") : t("login.joinCustomer")}
               </button>
             </p>
             {loginType === "worker" && (

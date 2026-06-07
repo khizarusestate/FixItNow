@@ -4,8 +4,12 @@ import { useModal } from "../context/ModalContext";
 import { authService, servicesService } from "../services/api.js";
 import SearchableSelect from "./SearchableSelect.jsx";
 import { buildServicePickerOptions } from "../utils/servicePicker.js";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function WorkerProfessionalSignup() {
+  const { t } = useI18n();
   const { activeModal, modalPayload, closeModal, switchModal } = useModal();
   const email = String(modalPayload?.email || "").trim().toLowerCase();
   const password = modalPayload?.password || "";
@@ -48,12 +52,12 @@ export default function WorkerProfessionalSignup() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setMessage("Please upload a JPEG or PNG photo.");
+      setMessage(t("worker.photoInvalid"));
       setIsError(true);
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setMessage("Photo must be under 5MB.");
+      setMessage(t("worker.photoSize"));
       setIsError(true);
       return;
     }
@@ -67,23 +71,28 @@ export default function WorkerProfessionalSignup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
-      setMessage("Email is required. Restart signup from step 1.");
+      setMessage(t("worker.emailRequired"));
       setIsError(true);
       return;
     }
     const cnicClean = String(form.cnicNumber).replace(/-/g, "");
     if (!/^\d{13}$/.test(cnicClean)) {
-      setMessage("CNIC must be 13 digits.");
+      setMessage(t("worker.cnicInvalid"));
       setIsError(true);
       return;
     }
     if (!form.primaryServiceId && !form.primaryServiceCategory) {
-      setMessage("Please select your trade / profession.");
+      setMessage(t("worker.tradeRequired"));
+      setIsError(true);
+      return;
+    }
+    if (form.phoneNumber && !isPhoneValid(form.phoneNumber)) {
+      setMessage(t("signup.invalidPhone"));
       setIsError(true);
       return;
     }
     if (!verificationPhoto) {
-      setMessage("Passport-size verification photo is required.");
+      setMessage(t("worker.photoRequired"));
       setIsError(true);
       return;
     }
@@ -106,14 +115,11 @@ export default function WorkerProfessionalSignup() {
       const res = await authService.registerWorkerProfessional(body);
       if (res.success) {
         setDone(true);
-        setMessage(
-          res.message ||
-            "Application submitted. Admin will review your details.",
-        );
+        setMessage(res.message || t("worker.submitApproval"));
         setIsError(false);
       }
     } catch (err) {
-      setMessage(err.message || "Could not submit professional details.");
+      setMessage(err.message || t("worker.profFailed"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -128,15 +134,13 @@ export default function WorkerProfessionalSignup() {
       <button
         onClick={closeModal}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-        aria-label="Close"
+        aria-label={t("common.close")}
       />
       <div className="relative w-full max-w-lg rounded-xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2">
             <Shield className="text-orange-500" size={22} />
-            <h2 className="text-lg font-bold text-slate-900">
-              Professional verification
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900">{t("worker.profTitle")}</h2>
           </div>
           <button onClick={closeModal} className="rounded-lg p-1 hover:bg-slate-100">
             <X size={20} />
@@ -152,18 +156,15 @@ export default function WorkerProfessionalSignup() {
                 onClick={() => switchModal("login", { email })}
                 className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
               >
-                Go to Login
+                {t("worker.goLogin")}
               </button>
             </div>
           ) : (
             <>
-              <p className="text-sm text-slate-600 mb-4">
-                Step 2 of 2: Add your trade, CNIC, and passport-size photo for admin
-                review. This photo is only for verification — not your profile picture.
-              </p>
+              <p className="text-sm text-slate-600 mb-4">{t("worker.profSubtitle")}</p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Trade / profession *
+                  {t("worker.trade")} *
                 </label>
                 <SearchableSelect
                   options={tradeOptions}
@@ -177,27 +178,25 @@ export default function WorkerProfessionalSignup() {
                       primaryServiceCategory: opt.category || "",
                     }));
                   }}
-                  placeholder="Select your trade"
+                  placeholder={t("worker.selectTrade")}
                   required
                 />
                 <input
                   type="text"
-                  placeholder="CNIC (13 digits) *"
+                  placeholder={`${t("worker.cnicPlaceholder")} *`}
                   value={form.cnicNumber}
                   onChange={(e) => update("cnicNumber", e.target.value)}
                   required
                   className={inputCls}
                 />
-                <input
-                  type="tel"
-                  placeholder="Phone (optional)"
+                <PhoneInput
                   value={form.phoneNumber}
-                  onChange={(e) => update("phoneNumber", e.target.value)}
-                  className={inputCls}
+                  onChange={(v) => update("phoneNumber", v)}
+                  placeholder={t("worker.phoneOptional")}
                 />
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Passport-size verification photo *
+                    {t("worker.passportPhoto")} *
                   </label>
                   <input
                     type="file"
@@ -211,12 +210,12 @@ export default function WorkerProfessionalSignup() {
                     className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-medium text-orange-800 hover:bg-orange-100"
                   >
                     <Upload size={16} />
-                    {verificationPhoto ? "Change photo" : "Upload photo"}
+                    {verificationPhoto ? t("worker.changePhoto") : t("worker.uploadPhoto")}
                   </label>
                   {photoPreview && (
                     <img
                       src={photoPreview}
-                      alt="Verification preview"
+                      alt=""
                       className="mt-3 h-28 w-28 rounded-lg border object-cover"
                     />
                   )}
@@ -234,10 +233,10 @@ export default function WorkerProfessionalSignup() {
                   {submitting ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      Submitting…
+                      {t("worker.submitting")}
                     </>
                   ) : (
-                    "Submit for approval"
+                    t("worker.submitApproval")
                   )}
                 </button>
               </form>

@@ -1,5 +1,6 @@
 import { Clock, Mail, MapPin, Phone, ArrowUpRight } from "lucide-react";
 import { openLegalModal } from "../utils/openLegal.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const FOOTER_LINKS = [
   { label: "Book a service", href: "#booking" },
@@ -9,6 +10,7 @@ const FOOTER_LINKS = [
 ];
 
 export default function Contact() {
+  const { t } = useI18n();
   const year = new Date().getFullYear();
 
   return (
@@ -21,10 +23,10 @@ export default function Contact() {
           <div className="reveal">
             <div className="text-center mb-12">
               <h2 className="font-display text-4xl font-bold leading-tight sm:text-5xl mb-4 text-blue-900">
-                Get in Touch
+                {t("contact.title")}
               </h2>
               <p className="mt-4 text-sm text-slate-600 max-w-md mx-auto">
-                Questions about bookings, workers, or ads? Reach us anytime.
+                {t("contact.subtitle")}
               </p>
             </div>
 

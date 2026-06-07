@@ -9,45 +9,48 @@ import {
   Bell,
 } from "lucide-react";
 import { lockPageScroll, unlockPageScroll } from "../../guide/scrollLock";
+import { useI18n } from "../../context/I18nContext.jsx";
 
-const PAGES = [
+const PAGE_DEFS = [
   {
     id: "dashboard",
-    title: "Worker dashboard",
-    subtitle:
-      "Open your dashboard from the menu to see available jobs and your active work.",
+    titleKey: "guide.worker.dashboard.title",
+    subtitleKey: "guide.worker.dashboard.subtitle",
     icon: Briefcase,
     accent: "from-slate-800 to-slate-950",
   },
   {
     id: "claim",
-    title: "Claim jobs",
-    subtitle:
-      "Browse approved jobs near you, check customer name and location, then tap Claim Job.",
+    titleKey: "guide.worker.claim.title",
+    subtitleKey: "guide.worker.claim.subtitle",
     icon: MapPin,
     accent: "from-orange-500 to-amber-500",
   },
   {
     id: "done",
-    title: "Mark jobs done",
-    subtitle:
-      "When work is finished, mark the job done from My Jobs. Guest bookings complete with your confirmation only.",
+    titleKey: "guide.worker.done.title",
+    subtitleKey: "guide.worker.done.subtitle",
     icon: CheckCircle,
     accent: "from-blue-500 to-indigo-600",
   },
   {
     id: "alerts",
-    title: "Live alerts",
-    subtitle:
-      "You will get live notifications for new jobs, customer updates, and completed bookings.",
+    titleKey: "guide.worker.alerts.title",
+    subtitleKey: "guide.worker.alerts.subtitle",
     icon: Bell,
     accent: "from-emerald-500 to-teal-600",
   },
 ];
 
 export default function WorkerGuidePanel({ isOpen, onClose }) {
+  const { t } = useI18n();
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState(1);
+  const PAGES = PAGE_DEFS.map((p) => ({
+    ...p,
+    title: t(p.titleKey),
+    subtitle: t(p.subtitleKey),
+  }));
 
   useEffect(() => {
     if (isOpen) {
@@ -155,7 +158,7 @@ export default function WorkerGuidePanel({ isOpen, onClose }) {
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 disabled:opacity-40"
           >
             <ChevronLeft size={16} />
-            Back
+            {t("common.back")}
           </button>
           {isLast ? (
             <button
@@ -163,7 +166,7 @@ export default function WorkerGuidePanel({ isOpen, onClose }) {
               onClick={onClose}
               className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
             >
-              Get started
+              {t("guide.getStarted")}
             </button>
           ) : (
             <button
@@ -171,7 +174,7 @@ export default function WorkerGuidePanel({ isOpen, onClose }) {
               onClick={() => go(page + 1)}
               className="inline-flex items-center gap-1 rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
             >
-              Next
+              {t("guide.next")}
               <ChevronRight size={16} />
             </button>
           )}

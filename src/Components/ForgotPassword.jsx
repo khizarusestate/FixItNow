@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { X, Mail, Key, ArrowRight, CheckCircle } from "lucide-react";
+import { X, Mail, Key, CheckCircle } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const FORGOT_DRAFT_KEY = "fixitnow_draft_forgot";
 const initialState = { email: "", code: "", password: "" };
 
 export default function ForgotPassword() {
+  const { t } = useI18n();
   const { activeModal, closeModal, switchModal } = useModal();
   const savedDraft = loadFormDraft(FORGOT_DRAFT_KEY, {});
   const [form, setForm] = useState({
@@ -41,7 +43,7 @@ export default function ForgotPassword() {
   const handleRequest = async (e) => {
     e.preventDefault();
     if (!form.email) {
-      setMessage("Enter your email to receive a reset code.");
+      setMessage(t("forgot.stepRequest"));
       setIsError(true);
       return;
     }
@@ -50,15 +52,15 @@ export default function ForgotPassword() {
     try {
       const response = await authService.requestPasswordReset(form.email);
       if (!response?.success) {
-        setMessage(response?.message || "Unable to send reset code.");
+        setMessage(response?.message || t("common.error"));
         setIsError(true);
       } else {
-        setMessage(response.message || "Reset code sent. Check your email.");
+        setMessage(response.message || t("forgot.sendCode"));
         setIsError(false);
         setStep("reset");
       }
     } catch (err) {
-      setMessage(err.message || "Unable to send reset code.");
+      setMessage(err.message || t("common.error"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -68,7 +70,7 @@ export default function ForgotPassword() {
   const handleReset = async (e) => {
     e.preventDefault();
     if (!form.email || !form.code || !form.password) {
-      setMessage("Email, code, and new password are required.");
+      setMessage(t("forgot.stepReset"));
       setIsError(true);
       return;
     }
@@ -81,16 +83,16 @@ export default function ForgotPassword() {
         form.password,
       );
       if (!response?.success) {
-        setMessage(response?.message || "Unable to reset password.");
+        setMessage(response?.message || t("common.error"));
         setIsError(true);
       } else {
-        setMessage(response.message || "Password reset successfully.");
+        setMessage(response.message || t("forgot.doneBody"));
         setIsError(false);
         setDone(true);
         clearFormDraft(FORGOT_DRAFT_KEY);
       }
     } catch (err) {
-      setMessage(err.message || "Unable to reset password.");
+      setMessage(err.message || t("common.error"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -115,21 +117,19 @@ export default function ForgotPassword() {
       <button
         onClick={handleClose}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-        aria-label="Close"
+        aria-label={t("common.close")}
       />
       <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl animate-[fadeScale_0.2s_ease-out]">
         <div className="flex items-start justify-between p-6 pb-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
-              Reset Password
+              {t("forgot.title")}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Forgot password?
+              {t("forgot.heading")}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {step === "request"
-                ? "Enter your email to receive a reset code."
-                : "Enter the code and choose a new password."}
+              {step === "request" ? t("forgot.stepRequest") : t("forgot.stepReset")}
             </p>
           </div>
           <button
@@ -149,16 +149,14 @@ export default function ForgotPassword() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                 <CheckCircle className="h-8 w-8 text-emerald-600" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">All set!</h3>
-              <p className="text-sm text-slate-600 mb-5">
-                Your password has been reset successfully.
-              </p>
+              <h3 className="text-lg font-bold text-slate-900">{t("forgot.doneTitle")}</h3>
+              <p className="text-sm text-slate-600 mb-5">{t("forgot.doneBody")}</p>
               <button
                 type="button"
                 onClick={() => switchModal("login")}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
               >
-                Back to Login
+                {t("forgot.backLogin")}
               </button>
             </div>
           ) : (
@@ -167,7 +165,7 @@ export default function ForgotPassword() {
                 <div className="relative">
                   <input
                     type="email"
-                    placeholder="Email address"
+                    placeholder={t("forgot.email")}
                     value={form.email}
                     onChange={(e) => update("email", e.target.value)}
                     required
@@ -183,7 +181,7 @@ export default function ForgotPassword() {
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Reset code"
+                        placeholder={t("forgot.code")}
                         value={form.code}
                         onChange={(e) => update("code", e.target.value)}
                         maxLength={6}
@@ -197,7 +195,7 @@ export default function ForgotPassword() {
                     </div>
                     <input
                       type="password"
-                      placeholder="New password"
+                      placeholder={t("forgot.newPassword")}
                       value={form.password}
                       onChange={(e) => update("password", e.target.value)}
                       required
@@ -221,11 +219,11 @@ export default function ForgotPassword() {
               >
                 {submitting
                   ? step === "request"
-                    ? "Sending..."
-                    : "Resetting..."
+                    ? t("forgot.sending")
+                    : t("forgot.resetting")
                   : step === "request"
-                    ? "Send reset code"
-                    : "Reset password"}
+                    ? t("forgot.sendCode")
+                    : t("forgot.reset")}
               </button>
               <div className="flex items-center justify-between text-sm text-slate-500">
                 <button
@@ -242,7 +240,7 @@ export default function ForgotPassword() {
                   }}
                   className="font-medium text-slate-500 hover:text-slate-700"
                 >
-                  {step === "reset" ? "Start over" : "Back to login"}
+                  {step === "reset" ? t("forgot.startOver") : t("forgot.backToLogin")}
                 </button>
                 {step === "reset" && (
                   <button
@@ -253,7 +251,7 @@ export default function ForgotPassword() {
                     }}
                     className="font-medium text-orange-500 hover:text-orange-600"
                   >
-                    Send another code
+                    {t("forgot.sendAnother")}
                   </button>
                 )}
               </div>

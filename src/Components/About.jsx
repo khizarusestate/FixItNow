@@ -1,7 +1,9 @@
 import { Users, Wrench, ShieldCheck, Clock, Award, Target, X } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
+import { useI18n } from '../context/I18nContext.jsx';
 
 export default function About() {
+  const { t } = useI18n();
   const { activeModal, closeModal, openModal } = useModal();
 
   if (activeModal !== 'about') return null;
@@ -23,9 +25,9 @@ export default function About() {
           <div className="mx-auto max-w-4xl">
             <div className="text-center mb-10">
               <img src="/Assets/Logo.png" alt="Fix It Now" className="h-16 w-auto mx-auto mb-4" />
-              <p className="text-sm font-bold uppercase tracking-widest text-orange-500">About FixItNow</p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">Your Trusted Home Service Partner</h2>
-              <p className="mt-3 max-w-xl mx-auto text-base text-slate-600">Connecting you with verified professionals. Fast, reliable service you can trust.</p>
+              <p className="text-sm font-bold uppercase tracking-widest text-orange-500">{t('about.title')}</p>
+              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">{t('about.title')}</h2>
+              <p className="mt-3 max-w-xl mx-auto text-base text-slate-600">{t('about.subtitle')}</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-12">

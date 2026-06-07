@@ -264,10 +264,10 @@ export default function MyBookings({ isOpen, onClose }) {
         <div className="flex items-start justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
-              My Bookings
+              {t("myBookings.title")}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Your Service Requests
+              {t("myBookings.subtitle")}
             </h2>
           </div>
           <button

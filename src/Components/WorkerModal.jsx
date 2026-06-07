@@ -1,23 +1,27 @@
 import { useState, useEffect } from "react";
-import { X, Briefcase, LogOut, AlertCircle } from "lucide-react";
+import { X, Briefcase, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
 import { isAuthenticated, logout } from "../utils/jwt.js";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const initial = {
-  firstName: "",
-  lastName: "",
+  fullName: "",
   emailAddress: "",
   phoneNumber: "",
   password: "",
 };
 
 export default function WorkerModal() {
+  const { t } = useI18n();
   const { activeModal, closeModal, switchModal } = useModal();
   const [form, setForm] = useState(initial);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -39,10 +43,16 @@ export default function WorkerModal() {
     setMessage("");
     setIsError(false);
 
+    if (!isPhoneValid(form.phoneNumber)) {
+      setMessage(t("signup.invalidPhone"));
+      setIsError(true);
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await authService.registerWorker({
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
+        fullName: form.fullName.trim(),
         emailAddress: form.emailAddress,
         phoneNumber: form.phoneNumber.trim(),
         password: form.password,
@@ -57,7 +67,7 @@ export default function WorkerModal() {
         });
       }
     } catch (err) {
-      setMessage(err.message || "Submission failed. Please try again.");
+      setMessage(err.message || t("signup.failed"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -83,10 +93,10 @@ export default function WorkerModal() {
         <div className="flex items-start justify-between p-6 pb-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
-              Join as Worker
+              {t("worker.joinTitle")}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-blue-900">
-              Step 1 — Basic info
+              {t("worker.step1Title")}
             </h2>
           </div>
           <button
@@ -107,53 +117,53 @@ export default function WorkerModal() {
                   className="text-amber-600 mt-0.5 flex-shrink-0"
                 />
                 <p className="text-xs text-amber-700">
-                  Use a different email than your customer account.
+                  {t("worker.differentEmail")}
                 </p>
               </div>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 type="text"
-                placeholder="First Name"
-                value={form.firstName}
-                onChange={(e) => update("firstName", e.target.value)}
+                placeholder={t("signup.fullName")}
+                value={form.fullName}
+                onChange={(e) => update("fullName", e.target.value)}
                 required
                 className={inputCls}
               />
               <input
-                type="text"
-                placeholder="Last Name"
-                value={form.lastName}
-                onChange={(e) => update("lastName", e.target.value)}
+                type="email"
+                placeholder={t("signup.email")}
+                value={form.emailAddress}
+                onChange={(e) => update("emailAddress", e.target.value)}
                 required
                 className={inputCls}
               />
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  placeholder={t("signup.passwordMin")}
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-10 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  aria-label={showPw ? t("login.hidePassword") : t("login.showPassword")}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <PhoneInput
+                value={form.phoneNumber}
+                onChange={(v) => update("phoneNumber", v)}
+                placeholder={t("signup.phone")}
+                required
+              />
             </div>
-            <input
-              type="email"
-              placeholder="Email Address *"
-              value={form.emailAddress}
-              onChange={(e) => update("emailAddress", e.target.value)}
-              required
-              className={inputCls}
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number *"
-              value={form.phoneNumber}
-              onChange={(e) => update("phoneNumber", e.target.value)}
-              required
-              className={inputCls}
-            />
-            <input
-              type="password"
-              placeholder="Password (min 6 chars) *"
-              value={form.password}
-              onChange={(e) => update("password", e.target.value)}
-              required
-              minLength={6}
-              className={inputCls}
-            />
             {message && (
               <p
                 className={`rounded-lg px-3 py-2 text-sm ${isError ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
@@ -167,7 +177,7 @@ export default function WorkerModal() {
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
             >
               <Briefcase size={16} />
-              {submitting ? "Creating…" : "Continue to email verification"}
+              {submitting ? t("common.saving") : t("worker.continueVerify")}
             </button>
           </form>
         </div>

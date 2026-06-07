@@ -14,10 +14,14 @@ import { useModal } from "../context/ModalContext";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { appReviewService } from "../services/api.js";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const REVIEWS_PER_PAGE = 3;
 
 export default function ReviewsSection() {
+  const { t } = useI18n();
   const { user, isAuthenticated } = useAuth();
   const modal = useModal();
   const [showModal, setShowModal] = useState(false);
@@ -106,6 +110,11 @@ export default function ReviewsSection() {
         }
         if (!guestForm.email.trim()) {
           setError("Please enter your email.");
+          setLoading(false);
+          return;
+        }
+        if (guestForm.phone.trim() && !isPhoneValid(guestForm.phone)) {
+          setError(t("signup.invalidPhone"));
           setLoading(false);
           return;
         }
@@ -497,7 +506,7 @@ export default function ReviewsSection() {
                       </p>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-slate-500">
-                          Name *
+                          {t("reviews.guestName")} *
                         </label>
                         <input
                           type="text"
@@ -511,7 +520,7 @@ export default function ReviewsSection() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-slate-500">
-                          Email *
+                          {t("reviews.guestEmail")} *
                         </label>
                         <input
                           type="email"
@@ -525,16 +534,13 @@ export default function ReviewsSection() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-slate-500">
-                          Phone (optional)
+                          {t("reviews.guestPhone")}
                         </label>
-                        <input
-                          type="tel"
+                        <PhoneInput
                           value={guestForm.phone}
-                          onChange={(e) =>
-                            setGuestForm((f) => ({ ...f, phone: e.target.value }))
+                          onChange={(v) =>
+                            setGuestForm((f) => ({ ...f, phone: v }))
                           }
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                          placeholder="03XX XXXXXXX"
                         />
                       </div>
                     </div>

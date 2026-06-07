@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useAppData } from "../context/AppDataContext";
 import { shapeServiceCatalog } from "../utils/catalogShape";
 import { useModal } from "../context/ModalContext";
@@ -38,6 +40,7 @@ import { geoFromUser, hasLocation } from "../utils/location.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import MenuPagination, { MENU_PAGE_SIZE } from "./shared/MenuPagination.jsx";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 
 // =======================
 // CATEGORY ICONS
@@ -99,6 +102,7 @@ const getIconComponent = (iconName) => {
 // =======================
 
 function BookingForm({ service, onClose, onSuccess }) {
+  const { t } = useI18n();
   const { user, isAuthenticated } = useAuth();
   const draftKey = `fixitnow_draft_booking_${service?.id || "service"}`;
   const savedDraft = loadFormDraft(draftKey, {});
@@ -162,17 +166,22 @@ function BookingForm({ service, onClose, onSuccess }) {
 
   const submitBooking = async () => {
     if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
-      setError("Please fill all required fields.");
+      setError(t("booking.fillRequired"));
+      return;
+    }
+
+    if (!isPhoneValid(form.phone)) {
+      setError(t("booking.invalidPhone"));
       return;
     }
 
     if (!hasLocation(geo)) {
-      setError("Please select the service location.");
+      setError(t("booking.selectLocation"));
       return;
     }
 
     if (!termsAgreed) {
-      setError("Please agree to the terms and conditions.");
+      setError(t("booking.termsRequired"));
       return;
     }
 
@@ -209,7 +218,7 @@ function BookingForm({ service, onClose, onSuccess }) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Booking failed. Please try again.",
+          t("booking.failed"),
       );
     } finally {
       setSubmitting(false);
@@ -220,7 +229,7 @@ function BookingForm({ service, onClose, onSuccess }) {
     e.preventDefault();
 
     if (!termsAgreed) {
-      setError("Please agree to the terms and conditions.");
+      setError(t("booking.termsRequired"));
       return;
     }
 
@@ -243,7 +252,7 @@ function BookingForm({ service, onClose, onSuccess }) {
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-100">
-                  Book Service
+                  {t("booking.title")}
                 </p>
 
                 <h3 className="text-xl font-bold text-white">
@@ -268,7 +277,7 @@ function BookingForm({ service, onClose, onSuccess }) {
           {service?.price > 0 && (
             <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Service Price
+                {t("booking.price")}
               </p>
               <p className="mt-1 text-2xl font-bold text-orange-600">
                 PKR {service.price}
@@ -281,7 +290,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             {/* NAME */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Full Name *
+                {t("booking.name")} *
               </label>
 
               <div className="relative">
@@ -303,29 +312,19 @@ function BookingForm({ service, onClose, onSuccess }) {
             {/* PHONE */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Phone Number *
+                {t("booking.phone")} *
               </label>
-
-              <div className="relative">
-                <Phone
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={18}
-                />
-
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => update("phone", e.target.value)}
-                  className={`${inputCls} pl-10`}
-                  required
-                />
-              </div>
+              <PhoneInput
+                value={form.phone}
+                onChange={(v) => update("phone", v)}
+                required
+              />
             </div>
 
             {/* EMAIL */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Email *
+                {t("booking.email")} *
               </label>
 
               <div className="relative">
@@ -345,7 +344,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             </div>
 
             <LocationPicker
-              label="Service location *"
+              label={`${t("booking.location")} *`}
               value={geo}
               onChange={setGeo}
             />
@@ -354,7 +353,7 @@ function BookingForm({ service, onClose, onSuccess }) {
           {/* NOTES */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Additional Notes
+              {t("booking.notes")}
             </label>
 
             <textarea
@@ -396,7 +395,7 @@ function BookingForm({ service, onClose, onSuccess }) {
             ) : (
               <>
                 <CheckCircle size={18} />
-                Confirm Booking
+                {t("booking.submit")}
               </>
             )}
           </button>

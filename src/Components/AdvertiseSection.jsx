@@ -27,10 +27,14 @@ import {
 } from "../utils/adPricing.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const AD_DRAFT_KEY = "fixitnow_draft_advertise";
 
 export default function AdvertiseSection() {
+  const { t } = useI18n();
   const { user, isAuthenticated } = useAuth();
   const savedDraft = loadFormDraft(AD_DRAFT_KEY, {});
   const [showModal, setShowModal] = useState(false);
@@ -209,6 +213,10 @@ export default function AdvertiseSection() {
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestContact.email.trim());
       if (!emailOk) {
         setError("Please enter a valid email address.");
+        return;
+      }
+      if (guestContact.phone.trim() && !isPhoneValid(guestContact.phone)) {
+        setError(t("signup.invalidPhone"));
         return;
       }
     }
@@ -459,18 +467,16 @@ export default function AdvertiseSection() {
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">
-                            Phone
+                            {t("advertise.phone")}
                           </label>
-                          <input
-                            type="text"
+                          <PhoneInput
                             value={guestContact.phone}
-                            onChange={(e) =>
+                            onChange={(v) =>
                               setGuestContact((p) => ({
                                 ...p,
-                                phone: e.target.value,
+                                phone: v,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100"
                           />
                         </div>
                       </div>

@@ -253,3 +253,52 @@ textarea {
 .nav-link:hover::after {
   width: 100%;
 }
+
+.fixit-phone-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.35rem 0.65rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fixit-phone-input:focus-within {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 1px #ffedd5;
+}
+
+.fixit-phone-input .PhoneInputCountry {
+  margin-right: 0.15rem;
+}
+
+.fixit-phone-input .PhoneInputCountrySelect {
+  font-size: 0.875rem;
+}
+
+.fixit-phone-input .PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  padding: 0.35rem 0;
+  font-family: inherit;
+}
+
+.fixit-phone-input .PhoneInputInput::placeholder {
+  color: #94a3b8;
+}
+
+[dir='rtl'] .fixit-phone-input {
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .fixit-phone-input .PhoneInputCountry {
+  margin-right: 0;
+  margin-left: 0.15rem;
+}

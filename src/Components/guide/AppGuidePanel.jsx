@@ -16,33 +16,34 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { lockPageScroll, unlockPageScroll } from "../../guide/scrollLock";
+import { useI18n } from "../../context/I18nContext.jsx";
 
-const PAGES = [
+const PAGE_DEFS = [
   {
     id: "book",
-    title: "Book a service",
-    subtitle: "Pick a category, choose a service, and submit your request in minutes.",
+    titleKey: "guide.book.title",
+    subtitleKey: "guide.book.subtitle",
     icon: CalendarCheck,
     accent: "from-orange-500 to-amber-500",
   },
   {
     id: "menu",
-    title: "Open the menu (mobile)",
-    subtitle: "On your phone, tap the menu icon to reach Help, My Bookings, and more.",
+    titleKey: "guide.menu.title",
+    subtitleKey: "guide.menu.subtitle",
     icon: Menu,
     accent: "from-slate-700 to-slate-900",
   },
   {
     id: "bookings",
-    title: "My Bookings",
-    subtitle: "Track every request — pending, approved, in progress, and completed.",
+    titleKey: "guide.bookings.title",
+    subtitleKey: "guide.bookings.subtitle",
     icon: ClipboardList,
     accent: "from-blue-500 to-indigo-600",
   },
   {
     id: "complete",
-    title: "Complete & rate",
-    subtitle: "When work is done, rate your worker and tap Mark as Done to finish.",
+    titleKey: "guide.complete.title",
+    subtitleKey: "guide.complete.subtitle",
     icon: Star,
     accent: "from-emerald-500 to-teal-600",
   },
@@ -228,8 +229,14 @@ const PAGE_VISUALS = {
 };
 
 export default function AppGuidePanel({ isOpen, onClose }) {
+  const { t } = useI18n();
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState(1);
+  const PAGES = PAGE_DEFS.map((p) => ({
+    ...p,
+    title: t(p.titleKey),
+    subtitle: t(p.subtitleKey),
+  }));
 
   useEffect(() => {
     if (isOpen) {
@@ -333,7 +340,7 @@ export default function AppGuidePanel({ isOpen, onClose }) {
             className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-blue-900 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-all"
           >
             <ChevronLeft size={18} />
-            Previous
+            {t("guide.previous")}
           </button>
           {isLast ? (
             <button
@@ -341,7 +348,7 @@ export default function AppGuidePanel({ isOpen, onClose }) {
               onClick={onClose}
               className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 transition-all"
             >
-              Get started
+              {t("guide.getStarted")}
             </button>
           ) : (
             <button
@@ -349,7 +356,7 @@ export default function AppGuidePanel({ isOpen, onClose }) {
               onClick={() => go(page + 1)}
               className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 transition-all"
             >
-              Next
+              {t("guide.next")}
               <ChevronRight size={18} />
             </button>
           )}

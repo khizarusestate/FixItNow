@@ -20,12 +20,16 @@ import {
 import { geoFromUser } from "../utils/location.js";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 import {
   getMissingProfileFields,
   workerNeedsProfessionalSignup,
 } from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
+  const { t } = useI18n();
   const { activeModal, closeModal, switchModal, openModal } = useModal();
   const { user, updateUser } = useAuth();
   const isWorker = user?.type === "worker";
@@ -144,6 +148,11 @@ export default function CompleteProfile() {
         setIsError(true);
         return;
       }
+      if (form.phone.trim() && !isPhoneValid(form.phone)) {
+        setMessage("Please enter a valid phone number.");
+        setIsError(true);
+        return;
+      }
 
 
       const updateData = {
@@ -246,10 +255,10 @@ export default function CompleteProfile() {
         <div className="flex items-start justify-between p-6 pb-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-orange-500">
-              Complete Profile
+              {t("profile.complete")}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Almost there!
+              {t("profile.almostThere")}
             </h2>
             <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
           </div>
@@ -271,17 +280,17 @@ export default function CompleteProfile() {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Profile Completed!
+                {t("profile.completed")}
               </h3>
               <p className="text-sm text-slate-600 mb-4">
-                Your profile is ready to use.
+                {t("profile.ready")}
               </p>
               <button
                 type="button"
                 onClick={handleClose}
                 className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-orange-600 transition-colors"
               >
-                Continue <ArrowRight size={16} />
+                {t("common.continue")} <ArrowRight size={16} />
               </button>
             </div>
           ) : (
@@ -310,7 +319,7 @@ export default function CompleteProfile() {
                   />
                 </label>
                 <p className="mt-2 text-xs text-slate-500">
-                  Profile photo (optional)
+                  {t("profile.photoOptional")}
                 </p>
               </div>
 
@@ -318,14 +327,11 @@ export default function CompleteProfile() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     <Phone size={14} className="inline mr-1" />
-                    Phone number {missing.includes("phone") ? "*" : ""}
+                    {t("profile.phone")} {missing.includes("phone") ? "*" : ""}
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={form.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
-                    placeholder="03XX XXXXXXX"
+                    onChange={(v) => update("phone", v)}
                   />
                 </div>
               )}

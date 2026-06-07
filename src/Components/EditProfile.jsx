@@ -12,6 +12,8 @@ import {
   uploadUserProfilePicture,
   isInlineImageValue,
 } from '../utils/profilePictureUpload.js'
+import PhoneInput from './shared/PhoneInput.jsx'
+import { isPhoneValid } from '../utils/phoneValidation.js'
 
 const FALLBACK_SERVICES = [];
 
@@ -135,6 +137,11 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
     
     if (!form.fullName || !form.phone || !geo.location?.trim() || (isWorker && !form.primaryServiceId && !form.serviceCategory)) {
       setError(isWorker ? 'Full name, phone, service category and location are required' : 'Full name, phone and location are required')
+      return
+    }
+
+    if (!isPhoneValid(form.phone)) {
+      setError('Please enter a valid phone number.')
       return
     }
 
@@ -324,11 +331,9 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
               <Phone size={16} className="inline mr-1" />
               Phone Number
             </label>
-            <input
-              type="tel"
+            <PhoneInput
               value={form.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              onChange={(v) => handleInputChange('phone', v)}
               placeholder="Enter your phone number"
               required
             />

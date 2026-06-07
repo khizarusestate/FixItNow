@@ -26,6 +26,7 @@ import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
 } from "../utils/platformPayment.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -70,7 +71,8 @@ function AvailableJobPreview({ job }) {
   );
 }
 
-function JobCard({ job, children }) {
+function JobCard({ job, children, limitedInfo = false, t }) {
+  const hideDetails = limitedInfo || job?.limitedInfo || job?.claimPending;
   const displayLocation = jobLocationText(job);
   const distanceLabel = formatDistance(job?._distanceKm);
   return (
@@ -90,19 +92,26 @@ function JobCard({ job, children }) {
         ) : null}
       </div>
       <div className="mt-3 space-y-2 text-sm text-slate-600">
-        {jobCustomerName(job) ? (
+        {!hideDetails && jobCustomerName(job) ? (
           <div className="flex items-start gap-2">
             <User size={16} className="mt-0.5 shrink-0 text-orange-500" />
             <span className="font-medium text-slate-800">{jobCustomerName(job)}</span>
           </div>
         ) : null}
-        <div className="flex items-start gap-2">
-          <Phone size={16} className="mt-0.5 shrink-0 text-orange-500" />
-          <span className="break-all">{jobPhone(job)}</span>
-        </div>
+        {!hideDetails ? (
+          <div className="flex items-start gap-2">
+            <Phone size={16} className="mt-0.5 shrink-0 text-orange-500" />
+            <span className="break-all">{jobPhone(job)}</span>
+          </div>
+        ) : (
+          <p className="rounded-lg bg-amber-50 px-2.5 py-2 text-xs font-medium text-amber-800">
+            {t?.("dashboard.claimPendingHint") ||
+              "Customer contact details unlock after admin approves your claim."}
+          </p>
+        )}
         <div className="flex items-start gap-2">
           <MapPin size={16} className="mt-0.5 shrink-0 text-orange-500" />
-          <span>{displayLocation}</span>
+          <span>{hideDetails ? job.area || displayLocation || "Area on file" : displayLocation}</span>
         </div>
       </div>
       {children ? <div className="mt-4">{children}</div> : null}
@@ -121,6 +130,7 @@ function isNetworkError(message = "") {
 }
 
 export default function WorkerDashboard({ isOpen, onClose }) {
+  const { t } = useI18n();
   const { user, newJobNotification, updateJobCount, updateUser } = useAuth();
   const storedWorker = getUserData("worker");
   const workerUser =
@@ -357,6 +367,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           availableJobs.filter((j) => j.id !== claimJob.id).length,
         );
         await fetchData(true);
+        setActiveTab("my-jobs");
         setError("");
       }
     } catch (err) {
@@ -387,11 +398,11 @@ export default function WorkerDashboard({ isOpen, onClose }) {
         <div className="flex items-center justify-between p-6 border-b border-slate-200 shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Worker Dashboard
+              {t("dashboard.title")}
             </h2>
 
             <p className="text-sm text-slate-500">
-              Welcome back{" "}
+              {t("dashboard.welcome")}{" "}
               {profile?.fullName || workerUser?.fullName || "Worker"}
             </p>
           </div>
@@ -409,17 +420,17 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           {[
             {
               key: "overview",
-              label: "Overview",
+              label: t("dashboard.overview"),
             },
 
             {
               key: "jobs",
-              label: "Jobs",
+              label: t("dashboard.jobs"),
             },
 
             {
               key: "my-jobs",
-              label: `My Jobs ${myJobs.length > 0 ? `(${myJobs.length})` : ""}`,
+              label: `${t("dashboard.myJobs")}${myJobs.length > 0 ? ` (${myJobs.length})` : ""}`,
             },
           ].map((tab) => (
             <button
@@ -611,7 +622,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-slate-900">
-                      My Jobs
+                      {t("dashboard.myJobs")}
                     </h3>
                     <span className="text-sm text-slate-500">
                       {myJobs.length} jobs
@@ -625,16 +636,20 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                         className="mx-auto text-slate-300 mb-4"
                       />
                       <p className="text-slate-500 font-medium">
-                        No jobs assigned yet
+                        {t("dashboard.noJobs")}
                       </p>
                       <p className="text-sm text-slate-400 mt-2">
-                        Accept jobs from the Available Jobs tab
+                        {t("dashboard.acceptHint")}
                       </p>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
                       {myJobs.map((job) => {
+                        const isClaimPending =
+                          job.claimPending ||
+                          job.status === "claim-pending";
                         const canMarkDone =
+                          !isClaimPending &&
                           job.status !== "completed" &&
                           !job.workerMarkedDone &&
                           [
@@ -650,7 +665,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                           job.status !== "completed";
 
                         return (
-                          <JobCard key={job.id} job={job}>
+                          <JobCard key={job.id} job={job} limitedInfo={isClaimPending} t={t}>
                             <div className="flex flex-col items-end gap-2 w-full">
                               <div className="flex items-center gap-2">
                                 <CompletionTicks
@@ -661,28 +676,33 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                 {job.status === "completed" ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
                                     <CheckCircle size={12} />
-                                    Completed
+                                    {t("dashboard.completed")}
+                                  </span>
+                                ) : isClaimPending ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                    <AlertTriangle size={12} />
+                                    {t("dashboard.claimPending")}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
                                     <Briefcase size={12} />
                                     {job.status === "assigned" ||
                                     job.status === "worker-assigned"
-                                      ? "Assigned"
+                                      ? t("dashboard.assigned")
                                       : job.status === "in-progress"
-                                        ? "In progress"
-                                        : "Active"}
+                                        ? t("dashboard.inProgress")
+                                        : t("dashboard.active")}
                                   </span>
                                 )}
                               </div>
                               {waitingCustomer && (
                                 <p className="text-xs text-blue-700 font-medium text-right">
-                                  Waiting for customer rating
+                                  {t("dashboard.waitingRating")}
                                 </p>
                               )}
                               {job.customerMarkedDone && !job.workerMarkedDone && (
                                 <p className="text-xs text-orange-700 font-medium text-right">
-                                  Customer marked done — confirm below
+                                  {t("dashboard.customerMarkedDone")}
                                 </p>
                               )}
                               {canMarkDone && (
@@ -698,7 +718,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                       Saving…
                                     </span>
                                   ) : (
-                                    "Mark as Done"
+                                    t("dashboard.markDone")
                                   )}
                                 </button>
                               )}

@@ -21,6 +21,7 @@ import {
   profileFieldText,
   profileLocationText,
 } from "../utils/profileFieldDisplay.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 function ProfileFieldValue({ text }) {
   const missing = text === OWN_PROFILE_MISSING_HINT;
@@ -40,6 +41,7 @@ export default function ProfileModal({
   onProfileUpdate,
   onLogout,
 }) {
+  const { t } = useI18n();
   const [view, setView] = useState("profile");
   const [showEdit, setShowEdit] = useState(false);
 
@@ -94,12 +96,12 @@ export default function ProfileModal({
               )}
               <div className="min-w-0">
                 <h2 className="text-lg font-bold text-slate-900 truncate">
-                  {view === "settings" ? "Settings" : "My Profile"}
+                  {view === "settings" ? t("profile.settings") : t("profile.myProfile")}
                 </h2>
                 <p className="text-xs text-slate-500 truncate">
                   {userData?.type === "worker"
-                    ? "Worker account"
-                    : "Customer account"}
+                    ? t("profile.workerAccount")
+                    : t("profile.customerAccount")}
                 </p>
               </div>
             </div>
@@ -170,7 +172,7 @@ export default function ProfileModal({
                     <Mail size={18} className="text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Email Address</p>
+                    <p className="text-xs text-slate-500">{t("profile.emailLabel")}</p>
                     <ProfileFieldValue
                       text={profileFieldText(
                         userData?.email || userData?.emailAddress,
@@ -185,7 +187,7 @@ export default function ProfileModal({
                     <Phone size={18} className="text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Phone Number</p>
+                    <p className="text-xs text-slate-500">{t("profile.phone")}</p>
                     <ProfileFieldValue
                       text={profileFieldText(
                         userData?.phone || userData?.phoneNumber,

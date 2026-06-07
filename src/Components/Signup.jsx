@@ -19,17 +19,20 @@ import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
 const initialWorker = {
-  firstName: "",
-  lastName: "",
+  fullName: "",
   emailAddress: "",
   phoneNumber: "",
   password: "",
 };
 export default function Signup() {
+  const { t } = useI18n();
   const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal } = useModal();
   const savedDraft = loadFormDraft(SIGNUP_DRAFT_KEY, {});
@@ -38,9 +41,12 @@ export default function Signup() {
     ...initialCustomer,
     ...savedDraft.customerForm,
   });
-  const [workerForm, setWorkerForm] = useState({
-    ...initialWorker,
-    ...savedDraft.workerForm,
+  const [workerForm, setWorkerForm] = useState(() => {
+    const draft = { ...initialWorker, ...savedDraft.workerForm };
+    if (!draft.fullName && (draft.firstName || draft.lastName)) {
+      draft.fullName = [draft.firstName, draft.lastName].filter(Boolean).join(" ");
+    }
+    return draft;
   });
   const [showPw, setShowPw] = useState(false);
   const [showWorkerPw, setShowWorkerPw] = useState(false);
@@ -84,7 +90,7 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!termsAgreed) {
-      setMessage("Please agree to the terms and conditions.");
+      setMessage(t("signup.termsRequired"));
       setIsError(true);
       return;
     }
@@ -98,7 +104,13 @@ export default function Signup() {
           !customerForm.phone ||
           !customerForm.password
         ) {
-          setMessage("Please fill all fields.");
+          setMessage(t("signup.fillAll"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
+        if (!isPhoneValid(customerForm.phone)) {
+          setMessage(t("signup.invalidPhone"));
           setIsError(true);
           setSubmitting(false);
           return;
@@ -120,21 +132,25 @@ export default function Signup() {
         }
       } else {
         if (
-          !workerForm.firstName?.trim() ||
-          !workerForm.lastName?.trim() ||
+          !workerForm.fullName?.trim() ||
           !workerForm.emailAddress ||
           !workerForm.phoneNumber?.trim() ||
           !workerForm.password
         ) {
-          setMessage("First name, last name, email, phone, and password are required.");
+          setMessage(t("signup.workerRequired"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
+        if (!isPhoneValid(workerForm.phoneNumber)) {
+          setMessage(t("signup.invalidPhone"));
           setIsError(true);
           setSubmitting(false);
           return;
         }
 
         const response = await authService.registerWorker({
-          firstName: workerForm.firstName.trim(),
-          lastName: workerForm.lastName.trim(),
+          fullName: workerForm.fullName.trim(),
           emailAddress: workerForm.emailAddress,
           phoneNumber: workerForm.phoneNumber.trim(),
           password: workerForm.password,
@@ -151,7 +167,7 @@ export default function Signup() {
         }
       }
     } catch (err) {
-      setMessage(err.message || "Registration failed. Please try again.");
+      setMessage(err.message || t("signup.failed"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -183,7 +199,7 @@ export default function Signup() {
         <div className="flex items-start justify-between p-6 pb-4">
           <div>
             <h2 className={`mt-1 text-2xl font-bold ${signupType === "worker" ? "text-blue-900" : "text-orange-500"}`}>
-              Join FixItNow
+              {t("signup.title")}
             </h2>
           </div>
           <button
@@ -203,16 +219,16 @@ export default function Signup() {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Account created successfully!
+                {t("signup.successTitle")}
               </h3>
               <p className="text-sm text-slate-600 mb-5">
-                Check your email for the 6-digit verification code.
+                {t("signup.successBody")}
               </p>
               <button
                 onClick={() => switchModal("login")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
               >
-                Login Now <ArrowRight size={15} />
+                {t("signup.loginNow")} <ArrowRight size={15} />
               </button>
             </div>
           ) : (
@@ -230,7 +246,7 @@ export default function Signup() {
                   }`}
                 >
                   <User size={14} />
-                  Customer
+                  {t("signup.customer")}
                 </button>
                 <button
                   type="button"
@@ -243,7 +259,7 @@ export default function Signup() {
                   }`}
                 >
                   <Briefcase size={14} />
-                  Worker
+                  {t("signup.worker")}
                 </button>
               </div>
 
@@ -253,7 +269,7 @@ export default function Signup() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input
                         type="text"
-                        placeholder="Full Name"
+                        placeholder={t("signup.fullName")}
                         value={customerForm.name}
                         onChange={(e) => updateCustomer("name", e.target.value)}
                         required
@@ -261,7 +277,7 @@ export default function Signup() {
                       />
                       <input
                         type="email"
-                        placeholder="Email Address"
+                        placeholder={t("signup.email")}
                         value={customerForm.email}
                         onChange={(e) =>
                           updateCustomer("email", e.target.value)
@@ -272,7 +288,7 @@ export default function Signup() {
                       <div className="relative">
                         <input
                           type={showPw ? "text" : "password"}
-                          placeholder="Password"
+                          placeholder={t("signup.password")}
                           value={customerForm.password}
                           onChange={(e) =>
                             updateCustomer("password", e.target.value)
@@ -288,15 +304,11 @@ export default function Signup() {
                           {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
-                      <input
-                        type="tel"
-                        placeholder="Phone Number"
+                      <PhoneInput
                         value={customerForm.phone}
-                        onChange={(e) =>
-                          updateCustomer("phone", e.target.value)
-                        }
+                        onChange={(v) => updateCustomer("phone", v)}
+                        placeholder={t("signup.phone")}
                         required
-                        className={inputCls}
                       />
                     </div>
                   </>
@@ -305,71 +317,57 @@ export default function Signup() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input
                         type="text"
-                        placeholder="First Name"
-                        value={workerForm.firstName}
+                        placeholder={t("signup.fullName")}
+                        value={workerForm.fullName}
                         onChange={(e) =>
-                          updateWorker("firstName", e.target.value)
+                          updateWorker("fullName", e.target.value)
                         }
                         required
                         className={inputCls}
                       />
                       <input
-                        type="text"
-                        placeholder="Last Name"
-                        value={workerForm.lastName}
+                        type="email"
+                        placeholder={t("signup.email")}
+                        value={workerForm.emailAddress}
                         onChange={(e) =>
-                          updateWorker("lastName", e.target.value)
+                          updateWorker("emailAddress", e.target.value)
                         }
                         required
                         className={inputCls}
                       />
-                    </div>
-                    <input
-                      type="email"
-                      placeholder="Email Address *"
-                      value={workerForm.emailAddress}
-                      onChange={(e) =>
-                        updateWorker("emailAddress", e.target.value)
-                      }
-                      required
-                      className={inputCls}
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Phone Number *"
-                      value={workerForm.phoneNumber}
-                      onChange={(e) =>
-                        updateWorker("phoneNumber", e.target.value)
-                      }
-                      required
-                      className={inputCls}
-                    />
-                    <div className="relative">
-                      <input
-                        type={showWorkerPw ? "text" : "password"}
-                        placeholder="Password (min 6 chars)"
-                        value={workerForm.password}
-                        onChange={(e) =>
-                          updateWorker("password", e.target.value)
-                        }
+                      <div className="relative">
+                        <input
+                          type={showWorkerPw ? "text" : "password"}
+                          placeholder={t("signup.passwordMin")}
+                          value={workerForm.password}
+                          onChange={(e) =>
+                            updateWorker("password", e.target.value)
+                          }
+                          required
+                          minLength={6}
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-10 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowWorkerPw(!showWorkerPw)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                          aria-label={
+                            showWorkerPw ? t("login.hidePassword") : t("login.showPassword")
+                          }
+                        >
+                          {showWorkerPw ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </button>
+                      </div>
+                      <PhoneInput
+                        value={workerForm.phoneNumber}
+                        onChange={(v) => updateWorker("phoneNumber", v)}
+                        placeholder={t("signup.phone")}
                         required
-                        minLength={6}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-10 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowWorkerPw(!showWorkerPw)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                        aria-label={
-                          showWorkerPw ? "Hide password" : "Show password"
-                        }
-                      >
-                        {showWorkerPw ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
                     </div>
                   </>
                 )}
@@ -423,7 +421,7 @@ export default function Signup() {
                         <div className="w-full border-t border-slate-200" />
                       </div>
                       <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
-                        or sign up with email
+                        {t("signup.orEmail")}
                       </p>
                     </div>
                   </>
@@ -440,19 +438,21 @@ export default function Signup() {
                 >
                   <span className="truncate">
                     {submitting
-                      ? "Creating..."
-                      : `Create ${signupType === "worker" ? "Worker" : "Customer"} Account`}
+                      ? t("signup.creating")
+                      : signupType === "worker"
+                        ? t("signup.createWorker")
+                        : t("signup.createCustomer")}
                   </span>
                   <ArrowRight size={15} />
                 </button>
                 <p className="text-center text-sm text-slate-500">
-                  Already have an account?{" "}
+                  {t("signup.haveAccount")}{" "}
                   <button
                     type="button"
                     onClick={() => switchModal("login")}
                     className="font-medium text-orange-500 hover:text-orange-600 underline"
                   >
-                    Sign In
+                    {t("signup.signIn")}
                   </button>
                 </p>
               </form>
