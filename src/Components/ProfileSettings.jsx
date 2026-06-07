@@ -75,7 +75,7 @@ export default function ProfileSettings({
 
       await apiRequestWithAuth(endpoint, {
         method: "DELETE",
-        role: userType === "worker" ? "worker" : "customer",
+        role: userData?.type === "worker" ? "worker" : "customer",
       });
       setMessage("Account deleted successfully.");
       setTimeout(() => onLogout(), 2000);
