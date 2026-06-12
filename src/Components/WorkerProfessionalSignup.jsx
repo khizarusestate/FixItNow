@@ -94,12 +94,6 @@ export default function WorkerProfessionalSignup() {
       setIsError(true);
       return;
     }
-    if (!verificationPhoto) {
-      setMessage(t("worker.photoRequired"));
-      setIsError(true);
-      return;
-    }
-
     if (!geo.location?.trim()) {
       setMessage("Please select your location on the map.");
       setIsError(true);
@@ -219,7 +213,7 @@ export default function WorkerProfessionalSignup() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    {t("worker.passportPhoto")} *
+                    {t("worker.passportPhoto")} <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="file"
