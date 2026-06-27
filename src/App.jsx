@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { OAuthConfigProvider } from "./context/OAuthConfigContext.jsx";
 import { LegalProvider } from "./context/LegalContext.jsx";
@@ -9,6 +9,8 @@ import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import Contact from "./Components/Contact";
+import socketClient from "./utils/socketClient";
+import { useAuth } from "./context/AuthContext";
 
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
@@ -33,6 +35,32 @@ function SectionFallback() {
   );
 }
 
+// Component to initialize socket when user is logged in
+function SocketInitializer({ children }) {
+  const { currentUser } = useAuth?.() || {};
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      // Connect socket
+      socketClient.connect(currentUser.id);
+
+      // Listen for notifications
+      socketClient.on('notification', (notification) => {
+        console.log('📲 Notification received:', notification);
+        // TODO: Show toast or notification in your UI
+        // Example: toast.success(notification.message);
+      });
+
+      // Cleanup on logout
+      return () => {
+        socketClient.disconnect();
+      };
+    }
+  }, [currentUser?.id]);
+
+  return children;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -42,29 +70,31 @@ export default function App() {
           <GuideProvider>
             <ModalProvider>
               <LegalProvider>
-                <div className="relative">
-                  <Header />
-                  <main className="bg-slate-50 text-slate-900 animate-fadeIn">
-                    <Home />
-                    <Suspense fallback={<SectionFallback />}>
-                      <BookingSection />
-                      <ApprovedAds />
-                      <AdvertiseSection />
-                      <ReviewsSection />
+                <SocketInitializer>
+                  <div className="relative">
+                    <Header />
+                    <main className="bg-slate-50 text-slate-900 animate-fadeIn">
+                      <Home />
+                      <Suspense fallback={<SectionFallback />}>
+                        <BookingSection />
+                        <ApprovedAds />
+                        <AdvertiseSection />
+                        <ReviewsSection />
+                      </Suspense>
+                      <Contact />
+                    </main>
+                    <Suspense fallback={null}>
+                      <About />
+                      <Login />
+                      <Signup />
+                      <ForgotPassword />
+                      <VerifyEmail />
+                      <WorkerModal />
+                      <WorkerProfessionalSignup />
+                      <CompleteProfile />
                     </Suspense>
-                    <Contact />
-                  </main>
-                  <Suspense fallback={null}>
-                    <About />
-                    <Login />
-                    <Signup />
-                    <ForgotPassword />
-                    <VerifyEmail />
-                    <WorkerModal />
-                    <WorkerProfessionalSignup />
-                    <CompleteProfile />
-                  </Suspense>
-                </div>
+                  </div>
+                </SocketInitializer>
               </LegalProvider>
             </ModalProvider>
           </GuideProvider>
