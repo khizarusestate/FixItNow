@@ -75,12 +75,33 @@ function JobCard({ job, children, limitedInfo = false, t }) {
   const hideDetails = limitedInfo || job?.limitedInfo || job?.claimPending;
   const displayLocation = jobLocationText(job);
   const distanceLabel = formatDistance(job?._distanceKm);
+  
+  // Format timestamps
+  const createdDate = job?.createdAt ? new Date(job.createdAt) : null;
+  const createdStr = createdDate ? createdDate.toLocaleDateString('en-PK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' ') : '';
+  
+  // Calculate duration for completed jobs
+  const startedDate = job?.startedAt ? new Date(job.startedAt) : null;
+  const completedDate = job?.completedAt ? new Date(job.completedAt) : null;
+  let durationStr = '';
+  if (startedDate && completedDate) {
+    const durationMs = completedDate - startedDate;
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  }
+  
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 animate-fade-in">
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-base font-semibold text-slate-900">
-          {job.serviceTitle || "Service"}
-        </h4>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-base font-semibold text-slate-900">
+            {job.serviceTitle || "Service"}
+          </h4>
+          {createdStr && (
+            <p className="text-xs text-slate-500 mt-0.5">Created {createdStr}</p>
+          )}
+        </div>
         {distanceLabel ? (
           <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
             {distanceLabel}
@@ -91,6 +112,15 @@ function JobCard({ job, children, limitedInfo = false, t }) {
           </span>
         ) : null}
       </div>
+      
+      {job.status === 'completed' && durationStr && (
+        <div className="mt-2 text-xs text-green-700 bg-green-50 px-2.5 py-1.5 rounded-lg">
+          {startedDate && <span>Started: {startedDate.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })} · </span>}
+          {completedDate && <span>Completed: {completedDate.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })} · </span>}
+          Duration: {durationStr}
+        </div>
+      )}
+      
       <div className="mt-3 space-y-2 text-sm text-slate-600">
         {!hideDetails && jobCustomerName(job) ? (
           <div className="flex items-start gap-2">

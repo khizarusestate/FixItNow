@@ -22,12 +22,6 @@ export default function BankTransferInfo({ className = "" }) {
             <span className="font-medium">Account #:</span>{" "}
             <span className="font-mono font-bold">{bank.accountNumber}</span>
           </li>
-          {bank.iban ? (
-            <li>
-              <span className="font-medium">IBAN:</span>{" "}
-              <span className="font-mono font-bold break-all">{bank.iban}</span>
-            </li>
-          ) : null}
         </ul>
         <p className="mt-2 text-xs text-indigo-700/90">
           Transfer the amount, then upload your payment receipt below.
