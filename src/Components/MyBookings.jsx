@@ -248,7 +248,7 @@ export default function MyBookings({ isOpen, onClose }) {
 
   const getApprovedTimestamp = (booking) => {
     const approvedEvent = (booking.timeline || []).find(
-      (entry) => entry.status === "approved",
+      (entry) => entry.status === "worker-assigned",
     );
     return approvedEvent?.timestamp || booking.updatedAt || null;
   };
