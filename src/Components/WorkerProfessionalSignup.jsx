@@ -60,9 +60,31 @@ export default function WorkerProfessionalSignup() {
       .getAll()
       .then((response) => {
         const services = response?.data?.services || [];
-        setTradeOptions(buildServicePickerOptions(services));
+        if (!services || services.length === 0) {
+          console.warn('No services received from API');
+          setTradeOptions([]);
+          setMessage('Services not available. Please try again later.');
+          setIsError(true);
+          return;
+        }
+        const options = buildServicePickerOptions(services);
+        if (options.length === 0) {
+          console.warn('No valid trade options after formatting');
+          setTradeOptions([]);
+          setMessage('No trades available. Please try again later.');
+          setIsError(true);
+          return;
+        }
+        setTradeOptions(options);
+        setMessage('');
+        setIsError(false);
       })
-      .catch(() => setTradeOptions([]));
+      .catch((err) => {
+        console.error('Error loading services:', err);
+        setTradeOptions([]);
+        setMessage('Failed to load trades. Please refresh the page.');
+        setIsError(true);
+      });
   }, [activeModal]);
 
   useEffect(() => {
