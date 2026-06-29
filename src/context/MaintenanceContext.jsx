@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import MaintenanceScreen from '../Components/MaintenanceScreen';
-import { apiRequest } from '../lib/apiRequest';
+import { apiRequest } from '../lib/api';
 
 const MaintenanceContext = createContext();
 
