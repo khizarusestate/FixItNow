@@ -23,12 +23,14 @@ export default function WorkerProfessionalSignup() {
       primaryServiceId: "",
       primaryServiceName: "",
       primaryServiceCategory: "",
+      phoneNumber: "",
     };
     return {
       cnicNumber: draft.cnicNumber || "",
       primaryServiceId: draft.primaryServiceId || "",
       primaryServiceName: draft.primaryServiceName || "",
       primaryServiceCategory: draft.primaryServiceCategory || "",
+      phoneNumber: draft.phoneNumber || "",
     };
   });
   const [verificationPhoto, setVerificationPhoto] = useState(null);
@@ -107,6 +109,21 @@ export default function WorkerProfessionalSignup() {
       setIsError(true);
       return;
     }
+    
+    // Validate phone number
+    if (!form.phoneNumber || !form.phoneNumber.trim()) {
+      setMessage("Phone number is required");
+      setIsError(true);
+      return;
+    }
+    
+    const phoneClean = String(form.phoneNumber).replace(/\D/g, "");
+    if (phoneClean.length < 10) {
+      setMessage("Phone number must be at least 10 digits");
+      setIsError(true);
+      return;
+    }
+    
     const cnicClean = String(form.cnicNumber).replace(/-/g, "");
     if (!/^\d{13}$/.test(cnicClean)) {
       setMessage(t("worker.cnicInvalid"));
@@ -135,6 +152,7 @@ export default function WorkerProfessionalSignup() {
     try {
       const body = new FormData();
       body.append("emailAddress", email);
+      body.append("phoneNumber", phoneClean);
       if (password) body.append("password", password);
       body.append("cnicNumber", cnicClean);
       if (form.primaryServiceId) body.append("primaryServiceId", form.primaryServiceId);
@@ -223,6 +241,14 @@ export default function WorkerProfessionalSignup() {
                   placeholder={`${t("worker.cnicPlaceholder")} *`}
                   value={form.cnicNumber}
                   onChange={(e) => update("cnicNumber", e.target.value)}
+                  required
+                  className={inputCls}
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number (e.g., 03001234567) *"
+                  value={form.phoneNumber}
+                  onChange={(e) => update("phoneNumber", e.target.value)}
                   required
                   className={inputCls}
                 />
