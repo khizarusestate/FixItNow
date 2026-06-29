@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 
 export default function PayAfterWorkAckModal({ onConfirm, onClose }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
       <div className="relative w-full max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-2xl animate-scaleIn">
         <button
           type="button"

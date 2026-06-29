@@ -207,7 +207,7 @@ export default function WorkerProfessionalSignup() {
     "w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 bg-white";
 
   return (
-    <div className="fixed inset-0 z-[76] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <button
         onClick={closeModal}
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"

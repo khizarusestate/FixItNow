@@ -8,7 +8,7 @@ import { AlertTriangle, Wrench, Clock } from 'lucide-react';
 
 export default function MaintenanceScreen({ message }) {
   return (
-    <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+    <div className="fixed inset-0 z-[999] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse" />

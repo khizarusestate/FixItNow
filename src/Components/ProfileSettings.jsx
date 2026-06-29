@@ -149,7 +149,7 @@ export default function ProfileSettings({
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-blue-900/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blue-900/70 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">

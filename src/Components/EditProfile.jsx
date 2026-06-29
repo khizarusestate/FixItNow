@@ -248,7 +248,7 @@ export default function EditProfile({ isOpen, onClose, userData, onProfileUpdate
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4" style={{ paddingTop: '100px' }}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4" style={{ paddingTop: '100px' }}>
       <div 
         className="absolute inset-0 bg-blue-900/60 backdrop-blur-sm"
         onClick={onClose}

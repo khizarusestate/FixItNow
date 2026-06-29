@@ -6,7 +6,7 @@ export default function MissedNotificationsModal({ count, onOpenBell, onDismiss 
   const label = count > 9 ? "9+ new notifications" : `${count} new notification${count === 1 ? "" : "s"}`;
 
   return (
-    <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
       <div className="relative w-full max-w-sm rounded-2xl border border-orange-200 bg-white p-6 shadow-2xl">
         <button
           type="button"

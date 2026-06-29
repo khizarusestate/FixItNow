@@ -73,15 +73,14 @@ export default function ProfileModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[9999] flex items-start justify-center p-4"
+        className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex items-start justify-center p-4 pointer-events-auto"
+        onClick={handleClose}
         style={{ paddingTop: "80px" }}
       >
         <div
-          className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-          onClick={handleClose}
-        />
-
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+          className="relative bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto z-50 pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
             <div className="flex items-center gap-2 min-w-0">
               {view === "settings" && (
