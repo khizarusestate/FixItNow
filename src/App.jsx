@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { OAuthConfigProvider } from "./context/OAuthConfigContext.jsx";
 import { LegalProvider } from "./context/LegalContext.jsx";
 import { I18nProvider } from "./context/I18nContext.jsx";
+import { MaintenanceModeProvider } from "./context/MaintenanceContext.jsx";
 import { GuideProvider } from "./context/GuideContext";
 import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
@@ -64,43 +65,45 @@ function SocketInitializer({ children }) {
 export default function App() {
   return (
     <ErrorBoundary>
-      <I18nProvider>
-      <OAuthConfigProvider>
-        <AuthProvider>
-          <GuideProvider>
-            <ModalProvider>
-              <LegalProvider>
-                <SocketInitializer>
-                  <div className="relative">
-                    <Header />
-                    <main className="bg-slate-50 text-slate-900 animate-fadeIn">
-                      <Home />
-                      <Suspense fallback={<SectionFallback />}>
-                        <BookingSection />
-                        <ApprovedAds />
-                        <AdvertiseSection />
-                        <ReviewsSection />
+      <MaintenanceModeProvider>
+        <I18nProvider>
+        <OAuthConfigProvider>
+          <AuthProvider>
+            <GuideProvider>
+              <ModalProvider>
+                <LegalProvider>
+                  <SocketInitializer>
+                    <div className="relative">
+                      <Header />
+                      <main className="bg-slate-50 text-slate-900 animate-fadeIn">
+                        <Home />
+                        <Suspense fallback={<SectionFallback />}>
+                          <BookingSection />
+                          <ApprovedAds />
+                          <AdvertiseSection />
+                          <ReviewsSection />
+                        </Suspense>
+                        <Contact />
+                      </main>
+                      <Suspense fallback={null}>
+                        <About />
+                        <Login />
+                        <Signup />
+                        <ForgotPassword />
+                        <VerifyEmail />
+                        <WorkerModal />
+                        <WorkerProfessionalSignup />
+                        <CompleteProfile />
                       </Suspense>
-                      <Contact />
-                    </main>
-                    <Suspense fallback={null}>
-                      <About />
-                      <Login />
-                      <Signup />
-                      <ForgotPassword />
-                      <VerifyEmail />
-                      <WorkerModal />
-                      <WorkerProfessionalSignup />
-                      <CompleteProfile />
-                    </Suspense>
-                  </div>
-                </SocketInitializer>
-              </LegalProvider>
-            </ModalProvider>
-          </GuideProvider>
-        </AuthProvider>
-      </OAuthConfigProvider>
-      </I18nProvider>
+                    </div>
+                  </SocketInitializer>
+                </LegalProvider>
+              </ModalProvider>
+            </GuideProvider>
+          </AuthProvider>
+        </OAuthConfigProvider>
+        </I18nProvider>
+      </MaintenanceModeProvider>
     </ErrorBoundary>
   );
 }
