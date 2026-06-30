@@ -323,11 +323,11 @@ export default function CompleteProfile() {
                 </p>
               </div>
 
-              {(missing.includes("phone") || !isWorker) && (
+              {missing.includes("phone") && (
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     <Phone size={14} className="inline mr-1" />
-                    {t("profile.phone")} {missing.includes("phone") ? "*" : ""}
+                    {t("profile.phone")} *
                   </label>
                   <PhoneInput
                     value={form.phone}
