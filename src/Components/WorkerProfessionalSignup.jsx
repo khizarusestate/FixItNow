@@ -11,7 +11,8 @@ import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft
 
 const PROFESSIONAL_DRAFT_KEY = "fixitnow:worker-professional-draft";
 
-function isOAuthProfessionalPayload(payload = {}) {
+function isOAuthProfessionalPayload(payload) {
+  if (!payload || typeof payload !== 'object') return false;
   if (payload.signupMethod === "oauth") return true;
   if (payload.authProvider === "google") return true;
   if (payload.isOAuth === true) return true;
@@ -23,7 +24,7 @@ export default function WorkerProfessionalSignup() {
   const { activeModal, modalPayload, closeModal, switchModal } = useModal();
   const email = String(modalPayload?.email || "").trim().toLowerCase();
   const password = modalPayload?.password || "";
-  const needsPhone = isOAuthProfessionalPayload(modalPayload);
+  const needsPhone = modalPayload ? isOAuthProfessionalPayload(modalPayload) : false;
 
   const [form, setForm] = useState(() => {
     const draft = loadFormDraft(PROFESSIONAL_DRAFT_KEY, {});
