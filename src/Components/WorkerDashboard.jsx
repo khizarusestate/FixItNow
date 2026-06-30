@@ -434,10 +434,18 @@ export default function WorkerDashboard({ isOpen, onClose }) {
     }
   };
 
+<<<<<<< HEAD
   const closeModal = () => {
     setClaimJob(null);
     setError("");
   };
+=======
+  if (!isOpen) return null;
+
+  const activeMyJobs = (myJobs || []).filter((job) => job.status !== "completed");
+
+  const completedMyJobs = (myJobs || []).filter((job) => job.status === "completed");
+>>>>>>> 0e7df8a3e09a9ee2d03d38f923540e0d746cfc5a
 
   return (
     <>
