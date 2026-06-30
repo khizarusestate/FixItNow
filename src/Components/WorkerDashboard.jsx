@@ -424,59 +424,74 @@ export default function WorkerDashboard({ isOpen, onClose }) {
         // Show success toast notification
         setClaimSuccess(true);
         setTimeout(() => setClaimSuccess(false), 4000);
-            </p >
-          </div >
-
-    <button
-      onClick={onClose}
-      className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors"
-    >
-      <X size={18} />
-    </button>
-        </div >
-
-    {/* TABS */ }
-    < div className = "flex border-b border-slate-200 bg-slate-50 overflow-x-auto shrink-0 min-h-[58px]" >
-    {
-      [
-      {
-        key: "overview",
-        label: t("dashboard.overview"),
-      },
-
-      {
-        key: "jobs",
-        label: t("dashboard.jobs"),
-      },
-
-      {
-        key: "my-jobs",
-        label: `${t("dashboard.myJobs")}${myJobs.length > 0 ? ` (${myJobs.length})` : ""}`,
-      },
-      {
-        key: "advertise",
-        label: "Submit Advertisement",
-      },
-          ].map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => setActiveTab(tab.key)}
-          className={`px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 min-w-fit ${activeTab === tab.key
-            ? "border-orange-500 text-orange-600 bg-white"
-            : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-        >
-          {tab.label}
-        </button>
-      ))
+      } else {
+        setError(response?.message || "Failed to submit claim.");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to submit claim.");
+    } finally {
+      setClaiming(null);
     }
-        </div >
+  };
 
-    {/* BODY */ }
-    < div className = "flex-1 min-h-0 overflow-y-auto p-6" >
-    {
-      loading?(
-            <div className = "flex flex-col items-center py-20" >
+  const closeModal = () => {
+    setClaimJob(null);
+    setError("");
+  };
+
+  return (
+    <>
+      <div className="relative">
+        <button
+          onClick={onClose}
+          className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* TABS */}
+      <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto shrink-0 min-h-[58px]">
+        {
+          [
+            {
+              key: "overview",
+              label: t("dashboard.overview"),
+            },
+
+            {
+              key: "jobs",
+              label: t("dashboard.jobs"),
+            },
+
+            {
+              key: "my-jobs",
+              label: `${t("dashboard.myJobs")}${myJobs.length > 0 ? ` (${myJobs.length})` : ""}`,
+            },
+            {
+              key: "advertise",
+              label: "Submit Advertisement",
+            },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 min-w-fit ${activeTab === tab.key
+                ? "border-orange-500 text-orange-600 bg-white"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))
+        }
+      </div >
+
+      {/* BODY */}
+      < div className="flex-1 min-h-0 overflow-y-auto p-6" >
+        {
+          loading ? (
+            <div className="flex flex-col items-center py-20" >
               <Loader2
                 size={40}
                 className="animate-spin text-orange-500 mb-4"
@@ -485,416 +500,414 @@ export default function WorkerDashboard({ isOpen, onClose }) {
               <p className="text-slate-500">Loading...</p>
             </div>
           ) : error ? (
-    <div className="text-center py-20">
-      <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
+            <div className="text-center py-20">
+              <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
 
-      <p className="text-red-600 font-medium">{error}</p>
+              <p className="text-red-600 font-medium">{error}</p>
 
-      <button
-        type="button"
-        onClick={() => fetchData(false)}
-        className="mt-4 px-5 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-colors"
-      >
-        Retry
-      </button>
-    </div>
-  ) : (
-    <>
-      {/* OVERVIEW */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => setActiveTab("my-jobs")}
-            className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-orange-300 hover:bg-orange-50 text-left"
-          >
-            <Briefcase className="text-orange-500 mb-3" size={24} />
-
-            <p className="text-sm text-slate-500">Active Jobs</p>
-
-            <p className="text-3xl font-bold">{activeMyJobs.length}</p>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("my-jobs")}
-            className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-green-300 hover:bg-green-50 text-left"
-          >
-            <CheckCircle className="text-green-500 mb-3" size={24} />
-
-            <p className="text-sm text-slate-500">Completed Jobs</p>
-
-            <p className="text-3xl font-bold">
-              {completedMyJobs.length}
-            </p>
-          </button>
-        </div>
-      )}
-
-      {/* JOBS TAB */}
-      {activeTab === "jobs" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">
-              Available Jobs
-            </h3>
-            <span className="text-sm text-slate-500">
-              {availableJobs.length} jobs found
-            </span>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={20} className="text-slate-400" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by job title, customer, or area..."
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
-            {searchTerm && (
               <button
-                onClick={() => setSearchTerm("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                type="button"
+                onClick={() => fetchData(false)}
+                className="mt-4 px-5 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-colors"
               >
-                <X
-                  size={20}
-                  className="text-slate-400 hover:text-slate-600"
-                />
+                Retry
               </button>
-            )}
-          </div>
-
-          {searchTerm && (
-            <div className="text-sm text-slate-500">
-              Showing results for "{searchTerm}" ({availableJobs.length}{" "}
-              jobs)
-            </div>
-          )}
-
-          {availableJobs.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-              <Search
-                size={48}
-                className="mx-auto text-slate-300 mb-4"
-              />
-              <p className="text-slate-500 font-medium">
-                {searchTerm
-                  ? "No jobs found matching your search"
-                  : "No available jobs found"}
-              </p>
-              <p className="text-sm text-slate-400 mt-2">
-                {searchTerm
-                  ? "Try a different title or area"
-                  : "Check back later for new opportunities"}
-              </p>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  Clear Search
-                </button>
-              )}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {availableJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-orange-300 relative"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-semibold text-slate-900">
-                      {job.serviceTitle}
-                    </h4>
-                    <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
-                      {job._demoted && (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                          Lower match
-                        </span>
-                      )}
-                      {formatDistance(job._distanceKm) ? (
-                        <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
-                          {formatDistance(job._distanceKm)}
-                        </span>
-                      ) : job?._matchMeta?.approximateLocation ? (
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-                          Approx. area
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <AvailableJobPreview job={job} />
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => openClaimModal(job)}
-                      disabled={claiming === job.id}
-                      className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Claim Job
-                    </button>
-                  </div>
+            <>
+              {/* OVERVIEW */}
+              {activeTab === "overview" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setActiveTab("my-jobs")}
+                    className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-orange-300 hover:bg-orange-50 text-left"
+                  >
+                    <Briefcase className="text-orange-500 mb-3" size={24} />
+
+                    <p className="text-sm text-slate-500">Active Jobs</p>
+
+                    <p className="text-3xl font-bold">{activeMyJobs.length}</p>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab("my-jobs")}
+                    className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-green-300 hover:bg-green-50 text-left"
+                  >
+                    <CheckCircle className="text-green-500 mb-3" size={24} />
+
+                    <p className="text-sm text-slate-500">Completed Jobs</p>
+
+                    <p className="text-3xl font-bold">
+                      {completedMyJobs.length}
+                    </p>
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              )}
 
-      {/* MY JOBS TAB */}
-      {activeTab === "my-jobs" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">
-              {t("dashboard.myJobs")}
-            </h3>
-            <span className="text-sm text-slate-500">
-              {myJobs.length} jobs
-            </span>
-          </div>
+              {/* JOBS TAB */}
+              {activeTab === "jobs" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Available Jobs
+                    </h3>
+                    <span className="text-sm text-slate-500">
+                      {availableJobs.length} jobs found
+                    </span>
+                  </div>
 
-          {myJobs.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-              <Briefcase
-                size={48}
-                className="mx-auto text-slate-300 mb-4"
-              />
-              <p className="text-slate-500 font-medium">
-                {t("dashboard.noJobs")}
-              </p>
-              <p className="text-sm text-slate-400 mt-2">
-                {t("dashboard.acceptHint")}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {myJobs.map((job) => {
-                const isClaimPending =
-                  job.claimPending ||
-                  job.status === "claim-pending";
-                const canMarkDone =
-                  !isClaimPending &&
-                  job.status !== "completed" &&
-                  !job.workerMarkedDone &&
-                  [
-                    "assigned",
-                    "worker-assigned",
-                    "in-progress",
-                  ].includes(job.status);
-                const isGuestJob = Boolean(job.isGuest);
-                const waitingCustomer =
-                  !isGuestJob &&
-                  job.workerMarkedDone &&
-                  !job.customerMarkedDone &&
-                  job.status !== "completed";
-
-                return (
-                  <JobCard key={job.id} job={job} limitedInfo={isClaimPending} t={t}>
-                    <div className="flex flex-col items-end gap-2 w-full">
-                      <div className="flex items-center gap-2">
-                        <CompletionTicks
-                          guestOnly={isGuestJob}
-                          customerMarkedDone={job.customerMarkedDone}
-                          workerMarkedDone={job.workerMarkedDone}
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search size={20} className="text-slate-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search by job title, customer, or area..."
+                      className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        <X
+                          size={20}
+                          className="text-slate-400 hover:text-slate-600"
                         />
-                        {job.status === "completed" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                            <CheckCircle size={12} />
-                            {t("dashboard.completed")}
-                          </span>
-                        ) : isClaimPending ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                            <AlertTriangle size={12} />
-                            {t("dashboard.claimPending")}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                            <Briefcase size={12} />
-                            {job.status === "assigned" ||
-                              job.status === "worker-assigned"
-                              ? t("dashboard.assigned")
-                              : job.status === "in-progress"
-                                ? t("dashboard.inProgress")
-                                : t("dashboard.active")}
-                          </span>
-                        )}
-                      </div>
-                      {waitingCustomer && (
-                        <p className="text-xs text-blue-700 font-medium text-right">
-                          {t("dashboard.waitingRating")}
-                        </p>
-                      )}
-                      {job.customerMarkedDone && !job.workerMarkedDone && (
-                        <p className="text-xs text-orange-700 font-medium text-right">
-                          {t("dashboard.customerMarkedDone")}
-                        </p>
-                      )}
-                      {canMarkDone && (
+                      </button>
+                    )}
+                  </div>
+
+                  {searchTerm && (
+                    <div className="text-sm text-slate-500">
+                      Showing results for "{searchTerm}" ({availableJobs.length}{" "}
+                      jobs)
+                    </div>
+                  )}
+
+                  {availableJobs.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
+                      <Search
+                        size={48}
+                        className="mx-auto text-slate-300 mb-4"
+                      />
+                      <p className="text-slate-500 font-medium">
+                        {searchTerm
+                          ? "No jobs found matching your search"
+                          : "No available jobs found"}
+                      </p>
+                      <p className="text-sm text-slate-400 mt-2">
+                        {searchTerm
+                          ? "Try a different title or area"
+                          : "Check back later for new opportunities"}
+                      </p>
+                      {searchTerm && (
                         <button
-                          type="button"
-                          onClick={() => handleMarkJobDone(job.id)}
-                          disabled={completing === job.id}
-                          className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          onClick={() => setSearchTerm("")}
+                          className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                         >
-                          {completing === job.id ? (
-                            <span className="inline-flex items-center justify-center gap-2">
-                              <Loader2 size={16} className="animate-spin" />
-                              Saving…
-                            </span>
-                          ) : (
-                            t("dashboard.markDone")
-                          )}
+                          Clear Search
                         </button>
                       )}
                     </div>
-                  </JobCard>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {availableJobs.map((job) => (
+                        <div
+                          key={job.id}
+                          className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-orange-300 relative"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-semibold text-slate-900">
+                              {job.serviceTitle}
+                            </h4>
+                            <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
+                              {job._demoted && (
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                                  Lower match
+                                </span>
+                              )}
+                              {formatDistance(job._distanceKm) ? (
+                                <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
+                                  {formatDistance(job._distanceKm)}
+                                </span>
+                              ) : job?._matchMeta?.approximateLocation ? (
+                                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                                  Approx. area
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <AvailableJobPreview job={job} />
+                          <div className="mt-4 flex gap-2">
+                            <button
+                              onClick={() => openClaimModal(job)}
+                              disabled={claiming === job.id}
+                              className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Claim Job
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-      {activeTab === "advertise" && (
-        <div className="max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            Submit Advertisement
-          </h3>
-          <p className="text-sm text-slate-600 mb-6">
-            Promote your services to customers on FixItNow.
-          </p>
-          <AdvertisementForm
-            onClose={() => setActiveTab("overview")}
-            onSuccess={() => setActiveTab("overview")}
-          />
-        </div>
-      )}
-    </>
-  )
-}
-        </div >
-      </div >
+              {/* MY JOBS TAB */}
+              {activeTab === "my-jobs" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {t("dashboard.myJobs")}
+                    </h3>
+                    <span className="text-sm text-slate-500">
+                      {myJobs.length} jobs
+                    </span>
+                  </div>
 
-  { claimJob && (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-blue-900/50"
-        onClick={() => setClaimJob(null)}
-      />
-      <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-900">Claim job</h3>
+                  {myJobs.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
+                      <Briefcase
+                        size={48}
+                        className="mx-auto text-slate-300 mb-4"
+                      />
+                      <p className="text-slate-500 font-medium">
+                        {t("dashboard.noJobs")}
+                      </p>
+                      <p className="text-sm text-slate-400 mt-2">
+                        {t("dashboard.acceptHint")}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {myJobs.map((job) => {
+                        const isClaimPending =
+                          job.claimPending ||
+                          job.status === "claim-pending";
+                        const canMarkDone =
+                          !isClaimPending &&
+                          job.status !== "completed" &&
+                          !job.workerMarkedDone &&
+                          [
+                            "assigned",
+                            "worker-assigned",
+                            "in-progress",
+                          ].includes(job.status);
+                        const isGuestJob = Boolean(job.isGuest);
+                        const waitingCustomer =
+                          !isGuestJob &&
+                          job.workerMarkedDone &&
+                          !job.customerMarkedDone &&
+                          job.status !== "completed";
+
+                        return (
+                          <JobCard key={job.id} job={job} limitedInfo={isClaimPending} t={t}>
+                            <div className="flex flex-col items-end gap-2 w-full">
+                              <div className="flex items-center gap-2">
+                                <CompletionTicks
+                                  guestOnly={isGuestJob}
+                                  customerMarkedDone={job.customerMarkedDone}
+                                  workerMarkedDone={job.workerMarkedDone}
+                                />
+                                {job.status === "completed" ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                    <CheckCircle size={12} />
+                                    {t("dashboard.completed")}
+                                  </span>
+                                ) : isClaimPending ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                    <AlertTriangle size={12} />
+                                    {t("dashboard.claimPending")}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                                    <Briefcase size={12} />
+                                    {job.status === "assigned" ||
+                                      job.status === "worker-assigned"
+                                      ? t("dashboard.assigned")
+                                      : job.status === "in-progress"
+                                        ? t("dashboard.inProgress")
+                                        : t("dashboard.active")}
+                                  </span>
+                                )}
+                              </div>
+                              {waitingCustomer && (
+                                <p className="text-xs text-blue-700 font-medium text-right">
+                                  {t("dashboard.waitingRating")}
+                                </p>
+                              )}
+                              {job.customerMarkedDone && !job.workerMarkedDone && (
+                                <p className="text-xs text-orange-700 font-medium text-right">
+                                  {t("dashboard.customerMarkedDone")}
+                                </p>
+                              )}
+                              {canMarkDone && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkJobDone(job.id)}
+                                  disabled={completing === job.id}
+                                  className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                  {completing === job.id ? (
+                                    <span className="inline-flex items-center justify-center gap-2">
+                                      <Loader2 size={16} className="animate-spin" />
+                                      Saving…
+                                    </span>
+                                  ) : (
+                                    t("dashboard.markDone")
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </JobCard>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "advertise" && (
+                <div className="max-w-2xl mx-auto">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                    Submit Advertisement
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6">
+                    Promote your services to customers on FixItNow.
+                  </p>
+                  <AdvertisementForm
+                    onClose={() => setActiveTab("overview")}
+                    onSuccess={() => setActiveTab("overview")}
+                  />
+                </div>
+              )}
+            </>
+          )
+        }
+      </div>
+
+      {claimJob && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
           <button
             type="button"
+            className="absolute inset-0 bg-blue-900/50"
             onClick={() => setClaimJob(null)}
-            className="rounded-full border border-slate-200 p-2"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <p className="text-sm text-slate-600 mb-2">
-          {claimJob.serviceTitle} — pay{" "}
-          <strong>
-            ₨
-            {(
-              claimJob.commissionAmount ??
-              Math.round((claimJob.price || 0) * 0.2)
-            ).toLocaleString()}
-          </strong>{" "}
-          commission (20% of ₨{Number(claimJob.price || 0).toLocaleString()}).
-        </p>
-        <AvailableJobPreview job={claimJob} />
-        <form onSubmit={submitClaim} className="mt-4 space-y-3">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Payment method *
-            </label>
-            <select
-              value={claimPaymentMethod}
-              onChange={(e) => setClaimPaymentMethod(e.target.value)}
-              required
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            >
-              <option value="">Select method</option>
-              <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
-              </option>
-              <option value={PAYMENT_METHOD_VALUES.BANK_TRANSFER}>
-                {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.BANK_TRANSFER]}
-              </option>
-            </select>
-          </div>
-          {claimPaymentMethod === PAYMENT_METHOD_VALUES.BANK_TRANSFER && (
-            <BankTransferInfo />
-          )}
-          {claimPaymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
-            <p className="text-sm text-sky-800 rounded-lg bg-sky-50 px-3 py-2">
-              Send JazzCash payment to{" "}
-              <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
+          />
+          <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">Claim job</h3>
+              <button
+                type="button"
+                onClick={() => setClaimJob(null)}
+                className="rounded-full border border-slate-200 p-2"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-2">
+              {claimJob.serviceTitle} — pay{" "}
+              <strong>
+                ₨
+                {(
+                  claimJob.commissionAmount ??
+                  Math.round((claimJob.price || 0) * 0.2)
+                ).toLocaleString()}
+              </strong>{" "}
+              commission (20% of ₨{Number(claimJob.price || 0).toLocaleString()}).
             </p>
-          )}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Transaction ID *
-            </label>
-            <input
-              value={claimTransactionId}
-              onChange={(e) => setClaimTransactionId(e.target.value)}
-              required
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              placeholder="e.g. T123456789"
-            />
+            <AvailableJobPreview job={claimJob} />
+            <form onSubmit={submitClaim} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Payment method *
+                </label>
+                <select
+                  value={claimPaymentMethod}
+                  onChange={(e) => setClaimPaymentMethod(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Select method</option>
+                  <option value={PAYMENT_METHOD_VALUES.JAZZCASH}>
+                    {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.JAZZCASH]}
+                  </option>
+                  <option value={PAYMENT_METHOD_VALUES.BANK_TRANSFER}>
+                    {PAYMENT_METHOD_LABELS[PAYMENT_METHOD_VALUES.BANK_TRANSFER]}
+                  </option>
+                </select>
+              </div>
+              {claimPaymentMethod === PAYMENT_METHOD_VALUES.BANK_TRANSFER && (
+                <BankTransferInfo />
+              )}
+              {claimPaymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
+                <p className="text-sm text-sky-800 rounded-lg bg-sky-50 px-3 py-2">
+                  Send JazzCash payment to{" "}
+                  <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
+                </p>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Transaction ID *
+                </label>
+                <input
+                  value={claimTransactionId}
+                  onChange={(e) => setClaimTransactionId(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="e.g. T123456789"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Commission receipt *
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-800">
+                  <Upload size={16} />
+                  {claimReceipt ? claimReceipt.name : "Upload receipt"}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="sr-only"
+                    onChange={(e) => setClaimReceipt(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+              <button
+                type="submit"
+                disabled={claiming === claimJob.id}
+                className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {claiming === claimJob.id ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Submitting…
+                  </>
+                ) : (
+                  "Submit claim for review"
+                )}
+              </button>
+            </form>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Commission receipt *
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-800">
-              <Upload size={16} />
-              {claimReceipt ? claimReceipt.name : "Upload receipt"}
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                className="sr-only"
-                onChange={(e) => setClaimReceipt(e.target.files?.[0] || null)}
-              />
-            </label>
-          </div>
-          <button
-            type="submit"
-            disabled={claiming === claimJob.id}
-            className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {claiming === claimJob.id ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Submitting…
-              </>
-            ) : (
-              "Submit claim for review"
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
-  )}
+        </div>
+      )}
 
-{/* SUCCESS TOAST - Claim Submitted */ }
-{
-  claimSuccess && (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[90] animate-slideUp">
-      <div className="flex items-center gap-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-3.5 text-white shadow-2xl">
-        <CheckCircle size={24} />
-        <span className="font-semibold">
-          Your claim has been submitted successfully. The admin will review your payment proof and assign the job to you once approved.
-        </span>
-      </div>
-    </div>
-  )
-}
-    </div >
+      {/* SUCCESS TOAST - Claim Submitted */}
+      {claimSuccess && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[90] animate-slideUp">
+          <div className="flex items-center gap-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-3.5 text-white shadow-2xl">
+            <CheckCircle size={24} />
+            <span className="font-semibold">
+              Your claim has been submitted successfully. The admin will review your payment proof and assign the job to you once approved.
+            </span>
+          </div>
+        </div>
+      )
+      }
+    </>
   );
 }
