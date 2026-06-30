@@ -20,7 +20,15 @@ export function runPostLoginFlow({
   closeModal?.();
 
   if (workerNeedsProfessionalSignup(profileUser)) {
-    switchModal("workerProfessional", { email, password });
+    const isOAuth =
+      profileUser.authProvider === "google" ||
+      Boolean(profileUser.googleId);
+    switchModal("workerProfessional", {
+      email,
+      password,
+      signupMethod: isOAuth ? "oauth" : "email",
+      authProvider: profileUser.authProvider,
+    });
     return;
   }
 

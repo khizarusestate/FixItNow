@@ -1,28 +1,22 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, Plus, Check, Loader2, Briefcase } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, X, Plus, Loader2 } from "lucide-react";
 import { servicesService } from "../services/api";
 
-function serviceIdOf(service) {
-  return String(service._id || service.serviceId || "");
-}
-
-function isSelected(selectedServices, id) {
-  return selectedServices.some((s) => String(s.serviceId) === String(id));
+function getServiceId(service) {
+  return String(service?.id || service?._id || service?.serviceId || "");
 }
 
 export default function ServiceSelection({
   selectedServices,
   onChange,
   maxSelection = 5,
-  placeholder = "Search services to add…",
 }) {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
-  const inputRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [pendingId, setPendingId] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,47 +44,48 @@ export default function ServiceSelection({
   }, []);
 
   useEffect(() => {
-    const onPointerDown = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
+    if (selectedServices.length === 0) {
+      setPickerOpen(true);
+    }
+  }, [selectedServices.length]);
 
   const atMax = selectedServices.length >= maxSelection;
 
-  const filteredServices = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = services;
-    if (q) {
-      list = services.filter(
-        (s) =>
-          String(s.name || "")
-            .toLowerCase()
-            .includes(q) ||
-          String(s.category || "")
-            .toLowerCase()
-            .includes(q),
+  const availableServices = useMemo(() => {
+    const selectedIds = new Set(
+      selectedServices.map((s) => String(s.serviceId)),
+    );
+    const q = search.trim().toLowerCase();
+    return services.filter((service) => {
+      const id = getServiceId(service);
+      if (!id || selectedIds.has(id)) return false;
+      if (!q) return true;
+      return (
+        String(service.name || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(service.category || "")
+          .toLowerCase()
+          .includes(q)
       );
-    }
-    return list.slice(0, 12);
-  }, [services, query]);
+    });
+  }, [services, search, selectedServices]);
 
-  const addService = (service) => {
-    const id = serviceIdOf(service);
-    if (!id || isSelected(selectedServices, id) || atMax) return;
+  const addPendingService = () => {
+    if (!pendingId || atMax) return;
+    const service = services.find((s) => getServiceId(s) === pendingId);
+    if (!service) return;
     onChange([
       ...selectedServices,
       {
-        serviceId: id,
+        serviceId: getServiceId(service),
         serviceName: service.name,
-        serviceCategory: service.category,
+        serviceCategory: service.category || "",
       },
     ]);
-    setQuery("");
-    inputRef.current?.focus();
+    setPendingId("");
+    setSearch("");
+    setPickerOpen(false);
   };
 
   const removeService = (id) => {
@@ -101,8 +96,8 @@ export default function ServiceSelection({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-        <Loader2 size={16} className="animate-spin text-slate-400" />
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500">
+        <Loader2 size={16} className="animate-spin" />
         Loading services…
       </div>
     );
@@ -110,7 +105,7 @@ export default function ServiceSelection({
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
         {error}
       </div>
     );
@@ -118,137 +113,112 @@ export default function ServiceSelection({
 
   if (services.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
         No services available
       </div>
     );
   }
 
   return (
-    <div
-      ref={rootRef}
-      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow focus-within:border-slate-300 focus-within:shadow-md"
-    >
+    <div className="space-y-3">
       {selectedServices.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-3">
-          {selectedServices.map((item) => (
-            <span
+        <ul className="space-y-2">
+          {selectedServices.map((item, index) => (
+            <li
               key={item.serviceId}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-white py-1 pl-3 pr-1.5 text-sm font-medium text-slate-800 shadow-sm"
+              className="flex items-center justify-between gap-2 rounded-lg border border-orange-100 bg-orange-50/60 px-3 py-2"
             >
-              <span className="truncate">{item.serviceName}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-slate-900">
+                  {index + 1}. {item.serviceName}
+                </p>
+                {item.serviceCategory ? (
+                  <p className="truncate text-xs text-slate-500">
+                    {item.serviceCategory}
+                  </p>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => removeService(item.serviceId)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-white hover:text-red-600"
                 aria-label={`Remove ${item.serviceName}`}
               >
-                <X size={14} />
+                <X size={16} />
               </button>
-            </span>
+            </li>
           ))}
+        </ul>
+      )}
+
+      {pickerOpen && !atMax && (
+        <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPendingId("");
+              }}
+              placeholder="Search services…"
+              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Select service
+            </label>
+            <select
+              value={pendingId}
+              onChange={(e) => setPendingId(e.target.value)}
+              size={Math.min(6, Math.max(3, availableServices.length))}
+              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100"
+            >
+              <option value="" disabled>
+                {availableServices.length
+                  ? "Choose a service from the list"
+                  : "No matching services"}
+              </option>
+              {availableServices.map((service) => (
+                <option key={getServiceId(service)} value={getServiceId(service)}>
+                  {service.name}
+                  {service.category ? ` — ${service.category}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={addPendingService}
+            disabled={!pendingId}
+            className="w-full rounded-lg bg-orange-500 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add service
+          </button>
         </div>
       )}
 
-      <div className="relative px-3 py-3">
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 transition-colors focus-within:border-[#0a66c2] focus-within:ring-2 focus-within:ring-[#0a66c2]/15">
-          <Search size={18} className="shrink-0 text-slate-400" aria-hidden />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setOpen(false);
-                inputRef.current?.blur();
-              }
-            }}
-            placeholder={
-              atMax
-                ? `Maximum ${maxSelection} services selected`
-                : placeholder
-            }
-            disabled={atMax}
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:text-slate-400"
-            autoComplete="off"
-          />
-        </div>
+      {!pickerOpen && !atMax && selectedServices.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-orange-300 bg-orange-50/50 py-2.5 text-sm font-semibold text-orange-700 hover:bg-orange-50"
+        >
+          <Plus size={16} />
+          Add more
+        </button>
+      )}
 
-        {open && !atMax && (
-          <div className="absolute left-3 right-3 top-[calc(100%-4px)] z-30 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
-            <div className="border-b border-slate-100 px-3 py-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                {query.trim() ? "Search results" : "Suggested services"}
-              </p>
-            </div>
-            <ul className="max-h-52 overflow-y-auto py-1" role="listbox">
-              {filteredServices.length === 0 ? (
-                <li className="px-4 py-6 text-center text-sm text-slate-500">
-                  No services match &ldquo;{query}&rdquo;
-                </li>
-              ) : (
-                filteredServices.map((service) => {
-                  const id = serviceIdOf(service);
-                  const selected = isSelected(selectedServices, id);
-                  return (
-                    <li key={id}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={selected}
-                        disabled={selected || atMax}
-                        onClick={() => addService(service)}
-                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-slate-50 disabled:cursor-default disabled:opacity-60"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                          <Briefcase size={16} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-slate-900">
-                            {service.name}
-                          </span>
-                          {service.category ? (
-                            <span className="block truncate text-xs text-slate-500">
-                              {service.category}
-                            </span>
-                          ) : null}
-                        </span>
-                        <span
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                            selected
-                              ? "bg-[#0a66c2]/10 text-[#0a66c2]"
-                              : "bg-slate-100 text-slate-500 group-hover:bg-[#0a66c2]/10"
-                          }`}
-                        >
-                          {selected ? (
-                            <Check size={16} strokeWidth={2.5} />
-                          ) : (
-                            <Plus size={16} strokeWidth={2.5} />
-                          )}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-        <span>
-          {selectedServices.length} of {maxSelection} selected
-        </span>
-        {selectedServices.length === 0 ? (
-          <span className="text-slate-400">Add at least one service</span>
-        ) : null}
-      </div>
+      <p className="text-xs text-slate-500">
+        {selectedServices.length} of {maxSelection} services selected
+      </p>
     </div>
   );
 }

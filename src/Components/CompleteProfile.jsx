@@ -71,6 +71,9 @@ export default function CompleteProfile() {
     if (!isWorker || !workerNeedsProfessionalSignup(user)) return;
     switchModal("workerProfessional", {
       email: user?.emailAddress || user?.email,
+      signupMethod:
+        user?.authProvider === "google" || user?.googleId ? "oauth" : "email",
+      authProvider: user?.authProvider,
     });
   }, [activeModal, isWorker, user, switchModal]);
 

@@ -405,6 +405,8 @@ export default function Signup() {
                           closeModal();
                           switchModal("workerProfessional", {
                             email: userData?.emailAddress || userData?.email,
+                            signupMethod: "oauth",
+                            authProvider: "google",
                           });
                         } else {
                           setDone(true);

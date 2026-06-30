@@ -1,27 +1,39 @@
 import { useState, useEffect } from "react";
-import { X, Upload, Shield, Loader2, MapPin } from "lucide-react";
+import { X, Upload, Shield, Loader2, MapPin, Phone } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
 import ServiceSelection from "./ServiceSelection.jsx";
+import PhoneInput from "./shared/PhoneInput.jsx";
+import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import LocationPicker from "./LocationPicker";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 
 const PROFESSIONAL_DRAFT_KEY = "fixitnow:worker-professional-draft";
 
+function isOAuthProfessionalPayload(payload = {}) {
+  if (payload.signupMethod === "oauth") return true;
+  if (payload.authProvider === "google") return true;
+  if (payload.isOAuth === true) return true;
+  return false;
+}
+
 export default function WorkerProfessionalSignup() {
   const { t } = useI18n();
   const { activeModal, modalPayload, closeModal, switchModal } = useModal();
   const email = String(modalPayload?.email || "").trim().toLowerCase();
   const password = modalPayload?.password || "";
+  const needsPhone = isOAuthProfessionalPayload(modalPayload);
 
   const [form, setForm] = useState(() => {
     const draft = loadFormDraft(PROFESSIONAL_DRAFT_KEY, {});
-    if (draft.email !== email) return {
-      cnicNumber: "",
-      phoneNumber: "",
-      selectedServices: [],
-    };
+    if (draft.email !== email) {
+      return {
+        cnicNumber: "",
+        phoneNumber: "",
+        selectedServices: [],
+      };
+    }
     return {
       cnicNumber: draft.cnicNumber || "",
       phoneNumber: draft.phoneNumber || "",
@@ -91,21 +103,20 @@ export default function WorkerProfessionalSignup() {
       setIsError(true);
       return;
     }
-    
-    // Validate phone number
-    if (!form.phoneNumber || !form.phoneNumber.trim()) {
-      setMessage("Phone number is required");
-      setIsError(true);
-      return;
+
+    if (needsPhone) {
+      if (!form.phoneNumber?.trim()) {
+        setMessage(t("signup.fillAll"));
+        setIsError(true);
+        return;
+      }
+      if (!isPhoneValid(form.phoneNumber)) {
+        setMessage(t("signup.invalidPhone"));
+        setIsError(true);
+        return;
+      }
     }
-    
-    const phoneClean = String(form.phoneNumber).replace(/\D/g, "");
-    if (phoneClean.length < 10) {
-      setMessage("Phone number must be at least 10 digits");
-      setIsError(true);
-      return;
-    }
-    
+
     const cnicClean = String(form.cnicNumber).replace(/-/g, "");
     if (!/^\d{13}$/.test(cnicClean)) {
       setMessage(t("worker.cnicInvalid"));
@@ -134,7 +145,9 @@ export default function WorkerProfessionalSignup() {
     try {
       const body = new FormData();
       body.append("emailAddress", email);
-      body.append("phoneNumber", phoneClean);
+      if (needsPhone && form.phoneNumber?.trim()) {
+        body.append("phoneNumber", form.phoneNumber.trim());
+      }
       if (password) body.append("password", password);
       body.append("cnicNumber", cnicClean);
       body.append("services", JSON.stringify(form.selectedServices));
@@ -198,19 +211,18 @@ export default function WorkerProfessionalSignup() {
             <>
               <p className="text-sm text-slate-600 mb-4">{t("worker.profSubtitle")}</p>
               <form onSubmit={handleSubmit} className="space-y-3">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {t("worker.trade")} *
-                </label>
-                <p className="mb-2 text-xs text-slate-500">
-                  Search and add the services you offer — like skills on a professional profile.
-                </p>
-                <ServiceSelection
-                  selectedServices={form.selectedServices}
-                  onChange={(selectedServices) =>
-                    setForm((f) => ({ ...f, selectedServices }))
-                  }
-                  placeholder={t("worker.searchServices") || "Search services to add…"}
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {t("worker.trade")} *
+                  </label>
+                  <ServiceSelection
+                    selectedServices={form.selectedServices}
+                    onChange={(selectedServices) =>
+                      setForm((f) => ({ ...f, selectedServices }))
+                    }
+                  />
+                </div>
+
                 <input
                   type="text"
                   placeholder={`${t("worker.cnicPlaceholder")} *`}
@@ -219,17 +231,26 @@ export default function WorkerProfessionalSignup() {
                   required
                   className={inputCls}
                 />
-                <input
-                  type="tel"
-                  placeholder="Phone Number (e.g., 03001234567) *"
-                  value={form.phoneNumber}
-                  onChange={(e) => update("phoneNumber", e.target.value)}
-                  required
-                  className={inputCls}
-                />
+
+                {needsPhone && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <Phone size={13} className="inline mr-1" />
+                      {t("signup.phone")} *
+                    </label>
+                    <PhoneInput
+                      value={form.phoneNumber}
+                      onChange={(v) => update("phoneNumber", v)}
+                      required
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    <span className="flex items-center gap-1"><MapPin size={13} /> Your Location *</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin size={13} /> Your Location *
+                    </span>
                   </label>
                   <LocationPicker
                     value={geo}
@@ -237,6 +258,7 @@ export default function WorkerProfessionalSignup() {
                     placeholder="Search your city or area..."
                   />
                 </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     {t("worker.passportPhoto")} *
@@ -263,6 +285,7 @@ export default function WorkerProfessionalSignup() {
                     />
                   )}
                 </div>
+
                 {message && (
                   <p
                     className={`text-sm ${isError ? "text-red-600" : "text-emerald-700"}`}
@@ -270,6 +293,7 @@ export default function WorkerProfessionalSignup() {
                     {message}
                   </p>
                 )}
+
                 <button
                   type="submit"
                   disabled={submitting}

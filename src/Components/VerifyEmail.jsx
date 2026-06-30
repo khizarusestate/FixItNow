@@ -102,6 +102,7 @@ export default function VerifyEmail() {
         switchModal("workerProfessional", {
           email: form.email,
           password: modalPayload?.password || "",
+          signupMethod: "email",
         });
         return;
       }
