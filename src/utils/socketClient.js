@@ -9,8 +9,9 @@
  */
 
 import io from 'socket.io-client';
+import { SOCKET_URL as ENV_SOCKET_URL, API_ORIGIN } from '../config/env.js';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+const SOCKET_URL = ENV_SOCKET_URL || import.meta.env.VITE_SOCKET_URL || API_ORIGIN || 'http://localhost:3000';
 const RECONNECT_DELAY = 5000;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
@@ -44,7 +45,7 @@ class SocketClient {
       });
 
       this.setupEventListeners();
-      
+
     } catch (error) {
       console.error('❌ Socket connection failed:', error);
       this.handleConnectionError(error);
@@ -113,7 +114,7 @@ class SocketClient {
       this.listeners[eventName] = [];
     }
     this.listeners[eventName].push(callback);
-    
+
     if (this.socket) {
       this.socket.on(eventName, callback);
     }
@@ -133,12 +134,12 @@ class SocketClient {
 
   enableNotificationPolling() {
     console.log('📡 Enabling notification polling (websocket fallback)');
-    
+
     setInterval(async () => {
       try {
         const response = await fetch(`${SOCKET_URL}/api/notifications/unread`);
         const { notifications } = await response.json();
-        
+
         notifications?.forEach(notification => {
           this.emit('notification', notification);
           this.showBrowserNotification(notification);
