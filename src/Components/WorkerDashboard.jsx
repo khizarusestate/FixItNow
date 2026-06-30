@@ -421,9 +421,9 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const activeMyJobs = myJobs.filter((job) => job.status !== "completed");
+  const activeMyJobs = (myJobs || []).filter((job) => job.status !== "completed");
 
-  const completedMyJobs = myJobs.filter((job) => job.status === "completed");
+  const completedMyJobs = (myJobs || []).filter((job) => job.status === "completed");
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
