@@ -63,8 +63,9 @@ export default function VerifyEmail() {
 
   const finishCustomerAutoLogin = (res) => {
     const token = res.accessToken || res.token;
-    const customer = res.customer || res.data;
+    const customer = res.customer || res.data?.customer;
     if (!token || !customer) return false;
+    closeModal();
     login(customer, "customer", token, true, res.refreshToken);
     setAutoLoggingIn(true);
     setMessage(t("verify.loggingIn"));
@@ -76,7 +77,7 @@ export default function VerifyEmail() {
         switchModal,
         closeModal,
       });
-    }, 400);
+    }, 800);
     return true;
   };
 
@@ -118,9 +119,12 @@ export default function VerifyEmail() {
   if (autoLoggingIn) {
     return (
       <div className="fixed inset-0 z-[80] flex items-center justify-center bg-white/90 backdrop-blur-sm">
-        <div className="text-center animate-fade-up">
+        <div className="text-center animate-fade-up px-6">
           <Loader2 className="mx-auto h-10 w-10 animate-spin text-orange-500" />
-          <p className="mt-4 text-sm font-medium text-blue-900">{message}</p>
+          <p className="mt-4 text-base font-semibold text-emerald-700">
+            {t("verify.successTitle")}
+          </p>
+          <p className="mt-2 text-sm font-medium text-blue-900">Logging In...</p>
         </div>
       </div>
     );

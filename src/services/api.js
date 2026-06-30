@@ -497,16 +497,27 @@ export const authService = {
       skipAuthRefresh: true,
       body: JSON.stringify({ email, code, rememberMe: true, ...(role ? { role } : {}) }),
     }).then((data) => {
-      const token = data.accessToken || data.token;
-      if (token && data.customer) {
+      const nested = data.data && typeof data.data === "object" ? data.data : {};
+      const token =
+        data.accessToken || data.token || nested.accessToken || nested.token;
+      const customer = data.customer || nested.customer;
+      const refreshToken = data.refreshToken || nested.refreshToken;
+      if (token && customer) {
         clearOtherRoleSessions("customer");
         setToken(token, "customer");
-        if (data.refreshToken) setRefreshToken(data.refreshToken, "customer");
-        setUserData(data.customer, "customer");
+        if (refreshToken) setRefreshToken(refreshToken, "customer");
+        setUserData(customer, "customer");
         applySessionPolicy("customer", true);
         markCookieSession("customer");
       }
-      return { ...data, token };
+      return {
+        ...data,
+        ...nested,
+        token,
+        customer,
+        refreshToken,
+        autoLogin: data.autoLogin || nested.autoLogin || Boolean(token && customer),
+      };
     }),
 
   resendVerification: (email, role) =>

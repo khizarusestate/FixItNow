@@ -11,12 +11,9 @@ import {
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { useAuth } from "../context/AuthContext";
-import { apiRequestWithAuth, servicesService } from "../services/api.js";
+import { apiRequestWithAuth } from "../services/api.js";
 import LocationPicker from "./LocationPicker";
-import SearchableSelect from "./SearchableSelect.jsx";
-import {
-  buildServicePickerOptions,
-} from "../utils/servicePicker.js";
+import ServiceSelection from "./ServiceSelection.jsx";
 import { geoFromUser } from "../utils/location.js";
 import { resolveUploadMediaUrl } from "../utils/mediaUrl.js";
 import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
@@ -45,10 +42,22 @@ export default function CompleteProfile() {
         : "",
     primaryServiceName: user?.primaryServiceName || "",
     primaryServiceId: user?.primaryServiceId ? String(user.primaryServiceId) : "",
+    selectedServices: user?.services?.length
+      ? user.services.map((s) => ({
+          serviceId: String(s.serviceId || s._id || ""),
+          serviceName: s.serviceName || "",
+          serviceCategory: s.serviceCategory || "",
+        }))
+      : user?.primaryServiceId
+        ? [{
+            serviceId: String(user.primaryServiceId),
+            serviceName: user.primaryServiceName || "",
+            serviceCategory: user.primaryServiceCategory || "",
+          }]
+        : [],
     availability: user?.availability ?? true,
     profilePicture: null,
   });
-  const [tradeOptions, setTradeOptions] = useState([]);
   const [previewImage, setPreviewImage] = useState(
     user?.profilePicture ? resolveUploadMediaUrl(user.profilePicture) : null,
   );
@@ -56,45 +65,6 @@ export default function CompleteProfile() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (activeModal !== "completeProfile" || !isWorker) return;
-    const load = async () => {
-      try {
-        const response = await servicesService.getAll();
-        const services = response?.data?.services || [];
-        const options = buildServicePickerOptions(services);
-        setTradeOptions(options);
-        if (!form.primaryServiceId && user?.primaryServiceId) {
-          setForm((f) => ({
-            ...f,
-            primaryServiceId: String(user.primaryServiceId),
-          }));
-        } else if (
-          !form.primaryServiceId &&
-          user?.primaryServiceCategory &&
-          user?.primaryServiceName
-        ) {
-          const match = options.find(
-            (o) =>
-              o.category === user.primaryServiceCategory &&
-              o.name === user.primaryServiceName,
-          );
-          if (match) {
-            setForm((f) => ({
-              ...f,
-              primaryServiceId: match.value,
-              primaryServiceCategory: match.category,
-              primaryServiceName: match.name,
-            }));
-          }
-        }
-      } catch {
-        setTradeOptions([]);
-      }
-    };
-    load();
-  }, [activeModal, isWorker]);
 
   useEffect(() => {
     if (activeModal !== "completeProfile") return;
@@ -165,6 +135,9 @@ export default function CompleteProfile() {
       if (isWorker) {
         updateData.availability = form.availability;
         if (form.phone.trim()) updateData.phoneNumber = form.phone.trim();
+        if (form.selectedServices?.length) {
+          updateData.services = form.selectedServices;
+        }
       } else if (form.phone.trim()) {
         updateData.phone = form.phone.trim();
       }
@@ -358,22 +331,13 @@ export default function CompleteProfile() {
               {isWorker && missing.includes("trade") && (
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Your trade / service *
+                    Your services *
                   </label>
-                  <SearchableSelect
-                    options={tradeOptions}
-                    value={form.primaryServiceId}
-                    onChange={(val) => update("primaryServiceId", val)}
-                    onSelectOption={(opt) => {
-                      setForm((f) => ({
-                        ...f,
-                        primaryServiceId: opt.value,
-                        primaryServiceCategory: opt.category || "",
-                        primaryServiceName: opt.name || "",
-                      }));
-                      setMessage("");
-                    }}
-                    placeholder="Search and select your service"
+                  <ServiceSelection
+                    selectedServices={form.selectedServices}
+                    onChange={(selectedServices) =>
+                      setForm((f) => ({ ...f, selectedServices }))
+                    }
                   />
                 </div>
               )}

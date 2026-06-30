@@ -27,8 +27,10 @@ export default function ServiceSelection({ selectedServices, onChange, maxSelect
   };
 
   const toggleService = (service) => {
-    const serviceId = service._id;
-    const isSelected = selectedServices.some(s => s.serviceId === serviceId);
+    const serviceId = String(service._id);
+    const isSelected = selectedServices.some(
+      (s) => String(s.serviceId) === serviceId,
+    );
     
     if (isSelected) {
       onChange(selectedServices.filter(s => s.serviceId !== serviceId));
@@ -49,7 +51,9 @@ export default function ServiceSelection({ selectedServices, onChange, maxSelect
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {services.map(service => {
-          const isSelected = selectedServices.some(s => s.serviceId === service._id);
+          const isSelected = selectedServices.some(
+            (s) => String(s.serviceId) === String(service._id),
+          );
           return (
             <button
               key={service._id}

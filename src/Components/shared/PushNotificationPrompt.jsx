@@ -13,9 +13,8 @@ import {
 export default function PushNotificationPrompt() {
   const { isAuthenticated, user, updateUser } = useAuth();
   const userId = user?._id || user?.id;
-  const devicePushEnabled = user?.devicePushEnabled !== false;
   const [visible, setVisible] = useState(() =>
-    shouldShowPushPrompt(userId, devicePushEnabled),
+    shouldShowPushPrompt(userId),
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -23,7 +22,6 @@ export default function PushNotificationPrompt() {
   if (
     !visible ||
     !isAuthenticated ||
-    !devicePushEnabled ||
     (user?.type !== "customer" && user?.type !== "worker")
   ) {
     return null;
@@ -75,7 +73,7 @@ export default function PushNotificationPrompt() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-slate-900 text-sm">
-              Enable device notifications?
+              Enable Notifications?
             </p>
             <p className="mt-1 text-xs text-slate-600 leading-relaxed">
               Get alerts when the app is closed — bookings, messages, and updates

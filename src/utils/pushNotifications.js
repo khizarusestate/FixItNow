@@ -49,15 +49,15 @@ export function cacheDevicePushPreference(userId, enabled) {
 
 export function readCachedDevicePushPreference(userId) {
   const key = prefCacheKey(userId);
-  if (!key) return true;
+  if (!key) return false;
   const raw = localStorage.getItem(key);
-  if (raw === null) return true;
+  if (raw === null) return false;
   return raw === "1";
 }
 
 export async function fetchDevicePushPreference() {
   const res = await apiRequestWithAuth("/push/preferences", { role: authRole() });
-  return res?.data?.devicePushEnabled !== false;
+  return Boolean(res?.data?.devicePushEnabled);
 }
 
 export async function saveDevicePushPreference(enabled) {
@@ -66,11 +66,10 @@ export async function saveDevicePushPreference(enabled) {
     body: JSON.stringify({ devicePushEnabled: enabled }),
     role: authRole(),
   });
-  return res?.data?.devicePushEnabled !== false;
+  return Boolean(res?.data?.devicePushEnabled);
 }
 
-export function shouldShowPushPrompt(userId, devicePushEnabled = true) {
-  if (!devicePushEnabled) return false;
+export function shouldShowPushPrompt(userId) {
   if (!isPushSupported()) return false;
   if (localStorage.getItem(DISMISS_KEY) === "1") return false;
   if (Notification.permission === "granted") return false;

@@ -27,6 +27,7 @@ import {
   PAYMENT_METHOD_VALUES,
 } from "../utils/platformPayment.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import AdvertisementForm from "./AdvertisementForm.jsx";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -41,6 +42,25 @@ function formatDistance(km) {
   const n = Number(km);
   if (n < 1) return `${Math.round(n * 1000)} m away`;
   return `${n.toFixed(1)} km away`;
+}
+
+const PRIORITY_STYLES = {
+  "very-high": "bg-red-100 text-red-800 border-red-200",
+  high: "bg-orange-100 text-orange-800 border-orange-200",
+  medium: "bg-blue-100 text-blue-800 border-blue-200",
+  low: "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+function JobPriorityBadge({ priority }) {
+  if (!priority?.label) return null;
+  const tier = priority.tier || "low";
+  return (
+    <span
+      className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${PRIORITY_STYLES[tier] || PRIORITY_STYLES.low}`}
+    >
+      {priority.label}
+    </span>
+  );
 }
 
 function AvailableJobPreview({ job }) {
@@ -102,15 +122,18 @@ function JobCard({ job, children, limitedInfo = false, t }) {
             <p className="text-xs text-slate-500 mt-0.5">Created {createdStr}</p>
           )}
         </div>
-        {distanceLabel ? (
-          <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
-            {distanceLabel}
-          </span>
-        ) : job?._matchMeta?.approximateLocation ? (
-          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-            Approx. area
-          </span>
-        ) : null}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {distanceLabel ? (
+            <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">
+              {distanceLabel}
+            </span>
+          ) : job?._matchMeta?.approximateLocation ? (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+              Approx. area
+            </span>
+          ) : null}
+          <JobPriorityBadge priority={job?._matchPriority} />
+        </div>
       </div>
       
       {job.status === 'completed' && durationStr && (
@@ -471,6 +494,10 @@ export default function WorkerDashboard({ isOpen, onClose }) {
               key: "my-jobs",
               label: `${t("dashboard.myJobs")}${myJobs.length > 0 ? ` (${myJobs.length})` : ""}`,
             },
+            {
+              key: "advertise",
+              label: "Submit Advertisement",
+            },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -767,6 +794,21 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                       })}
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeTab === "advertise" && (
+                <div className="max-w-2xl mx-auto">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                    Submit Advertisement
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6">
+                    Promote your services to customers on FixItNow.
+                  </p>
+                  <AdvertisementForm
+                    onClose={() => setActiveTab("overview")}
+                    onSuccess={() => setActiveTab("overview")}
+                  />
                 </div>
               )}
             </>

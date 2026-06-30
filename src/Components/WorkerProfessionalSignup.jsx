@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { X, Upload, Shield, Loader2, MapPin } from "lucide-react";
 import { useModal } from "../context/ModalContext";
-import { authService, servicesService } from "../services/api.js";
-import SearchableSelect from "./SearchableSelect.jsx";
-import { buildServicePickerOptions } from "../utils/servicePicker.js";
+import { authService } from "../services/api.js";
+import ServiceSelection from "./ServiceSelection.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import LocationPicker from "./LocationPicker";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
@@ -20,22 +19,17 @@ export default function WorkerProfessionalSignup() {
     const draft = loadFormDraft(PROFESSIONAL_DRAFT_KEY, {});
     if (draft.email !== email) return {
       cnicNumber: "",
-      primaryServiceId: "",
-      primaryServiceName: "",
-      primaryServiceCategory: "",
       phoneNumber: "",
+      selectedServices: [],
     };
     return {
       cnicNumber: draft.cnicNumber || "",
-      primaryServiceId: draft.primaryServiceId || "",
-      primaryServiceName: draft.primaryServiceName || "",
-      primaryServiceCategory: draft.primaryServiceCategory || "",
       phoneNumber: draft.phoneNumber || "",
+      selectedServices: draft.selectedServices || [],
     };
   });
   const [verificationPhoto, setVerificationPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [tradeOptions, setTradeOptions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -52,40 +46,6 @@ export default function WorkerProfessionalSignup() {
       placeId: draft.placeId || "",
     };
   });
-
-  useEffect(() => {
-    if (activeModal !== "workerProfessional") return;
-
-    servicesService
-      .getAll()
-      .then((response) => {
-        const services = response?.data?.services || [];
-        if (!services || services.length === 0) {
-          console.warn('No services received from API');
-          setTradeOptions([]);
-          setMessage('Services not available. Please try again later.');
-          setIsError(true);
-          return;
-        }
-        const options = buildServicePickerOptions(services);
-        if (options.length === 0) {
-          console.warn('No valid trade options after formatting');
-          setTradeOptions([]);
-          setMessage('No trades available. Please try again later.');
-          setIsError(true);
-          return;
-        }
-        setTradeOptions(options);
-        setMessage('');
-        setIsError(false);
-      })
-      .catch((err) => {
-        console.error('Error loading services:', err);
-        setTradeOptions([]);
-        setMessage('Failed to load trades. Please refresh the page.');
-        setIsError(true);
-      });
-  }, [activeModal]);
 
   useEffect(() => {
     if (activeModal !== "workerProfessional" || !email) return;
@@ -152,7 +112,7 @@ export default function WorkerProfessionalSignup() {
       setIsError(true);
       return;
     }
-    if (!form.primaryServiceId && !form.primaryServiceCategory) {
+    if (!form.selectedServices?.length) {
       setMessage(t("worker.tradeRequired"));
       setIsError(true);
       return;
@@ -177,11 +137,9 @@ export default function WorkerProfessionalSignup() {
       body.append("phoneNumber", phoneClean);
       if (password) body.append("password", password);
       body.append("cnicNumber", cnicClean);
-      if (form.primaryServiceId) body.append("primaryServiceId", form.primaryServiceId);
-      if (form.primaryServiceName) body.append("primaryServiceName", form.primaryServiceName);
-      if (form.primaryServiceCategory) {
-        body.append("primaryServiceCategory", form.primaryServiceCategory);
-      }
+      body.append("services", JSON.stringify(form.selectedServices));
+      const primary = form.selectedServices[0];
+      if (primary?.serviceId) body.append("primaryServiceId", primary.serviceId);
       body.append("verificationPhoto", verificationPhoto);
       body.append("location", geo.location.trim());
       if (geo.latitude != null) body.append("latitude", geo.latitude);
@@ -241,22 +199,13 @@ export default function WorkerProfessionalSignup() {
               <p className="text-sm text-slate-600 mb-4">{t("worker.profSubtitle")}</p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {t("worker.trade")} *
+                  {t("worker.trade")} * <span className="font-normal text-slate-500">(select one or more)</span>
                 </label>
-                <SearchableSelect
-                  options={tradeOptions}
-                  value={form.primaryServiceId}
-                  onChange={(val) => update("primaryServiceId", val)}
-                  onSelectOption={(opt) => {
-                    setForm((f) => ({
-                      ...f,
-                      primaryServiceId: opt.value,
-                      primaryServiceName: opt.name || "",
-                      primaryServiceCategory: opt.category || "",
-                    }));
-                  }}
-                  placeholder={t("worker.selectTrade")}
-                  required
+                <ServiceSelection
+                  selectedServices={form.selectedServices}
+                  onChange={(selectedServices) =>
+                    setForm((f) => ({ ...f, selectedServices }))
+                  }
                 />
                 <input
                   type="text"
