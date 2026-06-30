@@ -111,6 +111,7 @@
   "worker.profTitle": "Professional verification",
   "worker.profSubtitle": "Step 2 of 2: Add your trade, CNIC, and passport-size photo for admin review. This photo is only for verification — not your profile picture.",
   "worker.selectTrade": "Select your trade",
+  "worker.searchServices": "Search services to add…",
   "worker.cnicPlaceholder": "CNIC (13 digits)",
   "worker.phoneOptional": "Phone (optional)",
   "worker.uploadPhoto": "Upload photo",

@@ -199,13 +199,17 @@ export default function WorkerProfessionalSignup() {
               <p className="text-sm text-slate-600 mb-4">{t("worker.profSubtitle")}</p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {t("worker.trade")} * <span className="font-normal text-slate-500">(select one or more)</span>
+                  {t("worker.trade")} *
                 </label>
+                <p className="mb-2 text-xs text-slate-500">
+                  Search and add the services you offer — like skills on a professional profile.
+                </p>
                 <ServiceSelection
                   selectedServices={form.selectedServices}
                   onChange={(selectedServices) =>
                     setForm((f) => ({ ...f, selectedServices }))
                   }
+                  placeholder={t("worker.searchServices") || "Search services to add…"}
                 />
                 <input
                   type="text"

@@ -333,6 +333,9 @@ export default function CompleteProfile() {
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Your services *
                   </label>
+                  <p className="mb-2 text-xs text-slate-500">
+                    Search and add the services you offer.
+                  </p>
                   <ServiceSelection
                     selectedServices={form.selectedServices}
                     onChange={(selectedServices) =>
