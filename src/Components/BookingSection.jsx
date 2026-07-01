@@ -698,30 +698,8 @@ export default function BookingSection() {
       `}</style>
 
       <div className="mx-auto max-w-7xl">
-        {isAuthenticated && user?.type === "customer" && pendingBookingCount > 0 && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-3 shadow-sm ring-1 ring-amber-100/80">
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                <Clock size={18} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-amber-900">
-                  {pendingBookingCount} booking{pendingBookingCount > 1 ? "s" : ""} awaiting admin confirmation
-                </p>
-                <p className="text-xs text-amber-800/90 mt-0.5">
-                  You can track status anytime from My Bookings.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-my-bookings"))}
-              className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
-            >
-              View bookings
-            </button>
-          </div>
-        )}
+
+        {/* Awaiting confirmation message removed - bookings auto-approved */}
 
         {/* HEADER */}
         <div className="text-center mb-12 animate-fadeIn">
