@@ -7,6 +7,14 @@ export function getJazzcashMsisdn() {
   ).trim();
 }
 
+/** Account title for JazzCash. */
+export function getJazzcashAccountTitle() {
+  return String(
+    import.meta.env.VITE_PLATFORM_JAZZCASH_ACCOUNT_TITLE ||
+      "FixItNow Platform",
+  ).trim();
+}
+
 /** Bank transfer details from env (demo / production account info). */
 export function getBankTransferDetails() {
   return {
@@ -65,7 +73,7 @@ export function buildPayToSummary(method) {
     return "Payment after work is completed";
   }
   if (m === PAYMENT_METHOD_VALUES.JAZZCASH) {
-    return `JazzCash → ${getJazzcashMsisdn()}`;
+    return `JazzCash → ${getJazzcashAccountTitle()} / ${getJazzcashMsisdn()}`;
   }
   if (m === PAYMENT_METHOD_VALUES.BANK_TRANSFER) {
     const b = getBankTransferDetails();
