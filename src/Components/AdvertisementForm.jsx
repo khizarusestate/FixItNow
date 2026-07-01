@@ -45,20 +45,38 @@ export default function AdvertisementForm({ onClose, onSuccess }) {
     setSuccess('');
 
     try {
-      if (!form.title || !form.description || !form.service) {
-        setError('Title, description, and service are required.');
+      // Trim and validate all required fields
+      const title = form.title.trim();
+      const description = form.description.trim();
+      const service = form.service.trim();
+
+      if (!title) {
+        setError('Title is required.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!description) {
+        setError('Description is required.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!service) {
+        setError('Service is required.');
+        setLoading(false);
         return;
       }
 
       const formData = new FormData();
-      formData.append('title', form.title);
-      formData.append('description', form.description);
-      formData.append('service', form.service);
-      formData.append('category', form.category);
-      formData.append('budget', form.budget);
-      formData.append('location', form.location);
-      formData.append('phoneNumber', form.phoneNumber);
-      formData.append('email', form.email);
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('service', service);
+      formData.append('category', form.category || '');
+      formData.append('budget', form.budget || '0');
+      formData.append('location', form.location || '');
+      formData.append('phoneNumber', form.phoneNumber || '');
+      formData.append('email', form.email || '');
 
       images.forEach((img) => formData.append('images', img));
 
@@ -75,6 +93,7 @@ export default function AdvertisementForm({ onClose, onSuccess }) {
       }
     } catch (err) {
       setError(err.message || 'Failed to post advertisement');
+      console.error('Advertisement error:', err);
     } finally {
       setLoading(false);
     }
