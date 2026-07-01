@@ -23,6 +23,7 @@ import { jobLocationText } from "../utils/profileFieldDisplay.js";
 import BankTransferInfo from "./shared/BankTransferInfo.jsx";
 import {
   getJazzcashMsisdn,
+  getJazzcashAccountTitle,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
 } from "../utils/platformPayment.js";
@@ -876,7 +877,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                   {claimPaymentMethod === PAYMENT_METHOD_VALUES.JAZZCASH && (
                     <p className="text-sm text-sky-800 rounded-lg bg-sky-50 px-3 py-2">
                       Send JazzCash payment to{" "}
-                      <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
+                      <span className="font-mono font-bold">{getJazzcashAccountTitle()} / {getJazzcashMsisdn()}</span>
                     </p>
                   )}
                   <div>

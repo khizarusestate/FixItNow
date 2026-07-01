@@ -17,6 +17,7 @@ import {
   PAYMENT_METHOD_VALUES,
   PAYMENT_METHOD_LABELS,
   getJazzcashMsisdn,
+  getJazzcashAccountTitle,
   requiresPaymentReceipt,
 } from "../utils/platformPayment.js";
 import BankTransferInfo from "./shared/BankTransferInfo.jsx";
@@ -588,7 +589,7 @@ export default function AdvertiseSection() {
                         <p className="font-semibold">Pay via JazzCash</p>
                         <p className="mt-1 text-sky-800">
                           Send payment to:{" "}
-                          <span className="font-mono font-bold">{getJazzcashMsisdn()}</span>
+                          <span className="font-mono font-bold">{getJazzcashAccountTitle()} / {getJazzcashMsisdn()}</span>
                         </p>
                         <p className="mt-1 text-xs text-sky-700/90">
                           Upload your payment receipt below.

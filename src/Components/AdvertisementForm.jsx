@@ -25,7 +25,13 @@ export default function AdvertisementForm({ onClose, onSuccess }) {
   };
 
   const handleImageSelect = (e) => {
-    setImages([...images, ...e.target.files]);
+    // Max 5 images limit
+    const newImages = [...images, ...Array.from(e.target.files)];
+    if (newImages.length > 5) {
+      setError('Maximum 5 images allowed');
+      return;
+    }
+    setImages(newImages);
   };
 
   const handleImageRemove = (index) => {
@@ -176,43 +182,73 @@ export default function AdvertisementForm({ onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Images</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="hidden"
-              id="image-upload"
-            />
-            <label
-              htmlFor="image-upload"
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
-            >
-              <Upload size={20} className="text-slate-500" />
-              <span className="text-slate-600">Upload Images</span>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Images {images.length > 0 && <span className="text-slate-500">({images.length}/5)</span>}
             </label>
-
-            {images.length > 0 && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative">
-                    <img
-                      src={URL.createObjectURL(img)}
-                      alt={`Preview ${idx}`}
-                      className="w-full h-24 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleImageRemove(idx)}
-                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
+            {images.length < 5 && (
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                id="image-upload"
+              />
+            )}
+            {images.length > 0 && images.length < 5 && (
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                id="image-upload-more"
+              />
+            )}
+            
+            {images.length < 5 ? (
+              <label
+                htmlFor="image-upload"
+                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <Upload size={20} className="text-slate-500" />
+                <span className="text-slate-600">Upload Images</span>
+              </label>
+            ) : (
+              <div className="px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 text-center text-sm text-slate-500">
+                Maximum 5 images reached
               </div>
             )}
+
+            {images.length > 0 && (
+              <div className="mt-3">
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {images.map((img, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={URL.createObjectURL(img)}
+                        alt={`Preview ${idx}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleImageRemove(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {images.length < 5 && (
+                  <label
+                    htmlFor="image-upload-more"
+                    className="block text-center px-3 py-2 border border-dashed border-blue-300 rounded-lg text-sm text-blue-600 hover:bg-blue-50 cursor-pointer font-medium"
+                  >
+                    + Add more images ({images.length}/5)
+                  </label>
+                )}
+              </div>
           </div>
 
           {error && (
