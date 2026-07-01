@@ -268,6 +268,7 @@ export default function AdvertisementForm({ onClose, onSuccess }) {
                   </label>
                 )}
               </div>
+            )}
           </div>
 
           {error && (
