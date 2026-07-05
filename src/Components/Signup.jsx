@@ -211,6 +211,17 @@ export default function Signup() {
 
         if (response.success) {
           clearFormDraft(SIGNUP_DRAFT_KEY);
+          // If backend requires verification, open verify modal for worker
+          if (response.requiresVerification) {
+            closeModal();
+            switchModal("verifyEmail", {
+              email: workerForm.emailAddress.trim().toLowerCase(),
+              role: "worker",
+              password: workerForm.password,
+            });
+            return;
+          }
+
           setDone(true);
           setMessage(response.message || t("worker.submitApproval"));
           setIsError(false);
