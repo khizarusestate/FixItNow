@@ -24,8 +24,8 @@ const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
-const WorkerProfessionalSignup = lazy(
-  () => import("./Components/WorkerProfessionalSignup"),
+const WorkerApprovalPending = lazy(
+  () => import("./Components/WorkerApprovalPending"),
 );
 
 function SectionFallback() {
@@ -67,41 +67,41 @@ export default function App() {
     <ErrorBoundary>
       <MaintenanceModeProvider>
         <I18nProvider>
-        <OAuthConfigProvider>
-          <AuthProvider>
-            <GuideProvider>
-              <ModalProvider>
-                <LegalProvider>
-                  <SocketInitializer>
-                    <div className="relative">
-                      <Header />
-                      <main className="bg-slate-50 text-slate-900 animate-fadeIn">
-                        <Home />
-                        <Suspense fallback={<SectionFallback />}>
-                          <BookingSection />
-                          <ApprovedAds />
-                          <AdvertiseSection />
-                          <ReviewsSection />
+          <OAuthConfigProvider>
+            <AuthProvider>
+              <GuideProvider>
+                <ModalProvider>
+                  <LegalProvider>
+                    <SocketInitializer>
+                      <div className="relative">
+                        <Header />
+                        <main className="bg-slate-50 text-slate-900 animate-fadeIn">
+                          <Home />
+                          <Suspense fallback={<SectionFallback />}>
+                            <BookingSection />
+                            <ApprovedAds />
+                            <AdvertiseSection />
+                            <ReviewsSection />
+                          </Suspense>
+                          <Contact />
+                        </main>
+                        <Suspense fallback={null}>
+                          <About />
+                          <Login />
+                          <Signup />
+                          <ForgotPassword />
+                          <VerifyEmail />
+                          <WorkerModal />
+                          <WorkerApprovalPending />
+                          <CompleteProfile />
                         </Suspense>
-                        <Contact />
-                      </main>
-                      <Suspense fallback={null}>
-                        <About />
-                        <Login />
-                        <Signup />
-                        <ForgotPassword />
-                        <VerifyEmail />
-                        <WorkerModal />
-                        <WorkerProfessionalSignup />
-                        <CompleteProfile />
-                      </Suspense>
-                    </div>
-                  </SocketInitializer>
-                </LegalProvider>
-              </ModalProvider>
-            </GuideProvider>
-          </AuthProvider>
-        </OAuthConfigProvider>
+                      </div>
+                    </SocketInitializer>
+                  </LegalProvider>
+                </ModalProvider>
+              </GuideProvider>
+            </AuthProvider>
+          </OAuthConfigProvider>
         </I18nProvider>
       </MaintenanceModeProvider>
     </ErrorBoundary>

@@ -8,6 +8,7 @@ import {
   User,
   Briefcase,
   Upload,
+  MapPin,
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
@@ -20,6 +21,8 @@ import PhoneInput from "./shared/PhoneInput.jsx";
 import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import { formatCnicInput, isValidCnic } from "../utils/workerSignup.js";
+import LocationPicker from "./LocationPicker.jsx";
+import { geoFromUser } from "../utils/location.js";
 
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
@@ -48,6 +51,8 @@ export default function Signup() {
     }
     return draft;
   });
+  const [customerGeo, setCustomerGeo] = useState(() => geoFromUser(null));
+  const [workerGeo, setWorkerGeo] = useState(() => geoFromUser(null));
   const [showPw, setShowPw] = useState(false);
   const [showWorkerPw, setShowWorkerPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -123,12 +128,22 @@ export default function Signup() {
           setSubmitting(false);
           return;
         }
+        if (!customerGeo.location?.trim()) {
+          setMessage("Please select your location on the map.");
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
 
         const response = await authService.registerCustomer({
           fullName: customerForm.name,
           email: customerForm.email,
           phone: customerForm.phone,
           password: customerForm.password,
+          location: customerGeo.location.trim(),
+          latitude: customerGeo.latitude,
+          longitude: customerGeo.longitude,
+          placeId: customerGeo.placeId,
         });
 
         if (response.success) {
@@ -169,8 +184,8 @@ export default function Signup() {
           setSubmitting(false);
           return;
         }
-        if (!verificationPhoto) {
-          setMessage(t("worker.photoRequired"));
+        if (!workerGeo.location?.trim()) {
+          setMessage("Please select your location on the map.");
           setIsError(true);
           setSubmitting(false);
           return;
@@ -183,10 +198,17 @@ export default function Signup() {
         body.append("phoneNumber", workerForm.phoneNumber.trim());
         body.append("password", workerForm.password);
         body.append("cnicNumber", workerForm.cnicNumber.replace(/-/g, ""));
+        body.append("location", workerGeo.location.trim());
+        body.append("latitude", workerGeo.latitude);
+        body.append("longitude", workerGeo.longitude);
+        body.append("placeId", workerGeo.placeId);
         body.append("services", JSON.stringify(workerForm.selectedServices));
         const primary = workerForm.selectedServices[0];
         if (primary?.serviceId) body.append("primaryServiceId", primary.serviceId);
-        body.append("verificationPhoto", verificationPhoto);
+        // Photo is optional; can be added later in profile
+        if (verificationPhoto) {
+          body.append("verificationPhoto", verificationPhoto);
+        }
 
         // Debug: log FormData keys to help diagnose 400 errors (non-sensitive)
         try {
@@ -370,6 +392,16 @@ export default function Signup() {
                         required
                       />
                     </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-700">
+                        <MapPin size={14} className="inline mr-1" />
+                        Location *
+                      </label>
+                      <LocationPicker
+                        geo={customerGeo}
+                        setGeo={setCustomerGeo}
+                      />
+                    </div>
                   </>
                 ) : (
                   <>
@@ -457,7 +489,17 @@ export default function Signup() {
                         </div>
                         <div>
                           <label className="mb-1 block text-xs font-semibold text-slate-700">
-                            {t("worker.passportPhoto")} *
+                            <MapPin size={14} className="inline mr-1" />
+                            Location *
+                          </label>
+                          <LocationPicker
+                            geo={workerGeo}
+                            setGeo={setWorkerGeo}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-slate-700">
+                            {t("worker.passportPhoto")} (Optional)
                           </label>
                           <input
                             type="file"
@@ -476,6 +518,7 @@ export default function Signup() {
                           {photoPreview && (
                             <img src={photoPreview} alt="" className="mt-3 h-28 w-28 rounded-lg border object-cover" />
                           )}
+                          <p className="mt-2 text-xs text-slate-500">You can add a passport-size photo now or upload it later in your profile.</p>
                         </div>
                       </div>
                     )}

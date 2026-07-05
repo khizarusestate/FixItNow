@@ -99,10 +99,8 @@ export default function VerifyEmail() {
 
       if (isWorker) {
         closeModal();
-        switchModal("workerProfessional", {
+        switchModal("workerApprovalPending", {
           email: form.email,
-          password: modalPayload?.password || "",
-          signupMethod: "email",
         });
         return;
       }

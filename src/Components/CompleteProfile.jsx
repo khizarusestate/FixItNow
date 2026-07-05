@@ -44,16 +44,16 @@ export default function CompleteProfile() {
     primaryServiceId: user?.primaryServiceId ? String(user.primaryServiceId) : "",
     selectedServices: user?.services?.length
       ? user.services.map((s) => ({
-          serviceId: String(s.serviceId || s._id || ""),
-          serviceName: s.serviceName || "",
-          serviceCategory: s.serviceCategory || "",
-        }))
+        serviceId: String(s.serviceId || s._id || ""),
+        serviceName: s.serviceName || "",
+        serviceCategory: s.serviceCategory || "",
+      }))
       : user?.primaryServiceId
         ? [{
-            serviceId: String(user.primaryServiceId),
-            serviceName: user.primaryServiceName || "",
-            serviceCategory: user.primaryServiceCategory || "",
-          }]
+          serviceId: String(user.primaryServiceId),
+          serviceName: user.primaryServiceName || "",
+          serviceCategory: user.primaryServiceCategory || "",
+        }]
         : [],
     availability: user?.availability ?? true,
     profilePicture: null,
@@ -67,21 +67,10 @@ export default function CompleteProfile() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (activeModal !== "completeProfile") return;
-    if (!isWorker || !workerNeedsProfessionalSignup(user)) return;
-    switchModal("workerProfessional", {
-      email: user?.emailAddress || user?.email,
-      signupMethod:
-        user?.authProvider === "google" || user?.googleId ? "oauth" : "email",
-      authProvider: user?.authProvider,
-    });
-  }, [activeModal, isWorker, user, switchModal]);
+    // No longer switching to workerProfessional - signup form is now single source of truth
+  }, []);
 
   if (activeModal !== "completeProfile") return null;
-
-  if (isWorker && workerNeedsProfessionalSignup(user)) {
-    return null;
-  }
 
   const update = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -366,14 +355,12 @@ export default function CompleteProfile() {
                     onClick={() =>
                       update("availability", !form.availability)
                     }
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      form.availability ? "bg-orange-500" : "bg-slate-300"
-                    }`}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${form.availability ? "bg-orange-500" : "bg-slate-300"
+                      }`}
                   >
                     <span
-                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        form.availability ? "translate-x-6" : ""
-                      }`}
+                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${form.availability ? "translate-x-6" : ""
+                        }`}
                     />
                   </button>
                 </div>

@@ -1,6 +1,5 @@
 import {
   needsCompleteProfile,
-  workerNeedsProfessionalSignup,
 } from "./profileCompletion.js";
 
 /**
@@ -15,22 +14,8 @@ export function runPostLoginFlow({
   closeModal,
 }) {
   const profileUser = { ...userData, type: userType };
-  const email = profileUser.emailAddress || profileUser.email || "";
 
   closeModal?.();
-
-  if (workerNeedsProfessionalSignup(profileUser)) {
-    const isOAuth =
-      profileUser.authProvider === "google" ||
-      Boolean(profileUser.googleId);
-    switchModal("workerProfessional", {
-      email,
-      password,
-      signupMethod: isOAuth ? "oauth" : "email",
-      authProvider: profileUser.authProvider,
-    });
-    return;
-  }
 
   if (needsCompleteProfile(profileUser)) {
     switchModal("completeProfile");
