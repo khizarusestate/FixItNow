@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 import { runPostLoginFlow } from "../utils/postLoginFlow.js";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -188,11 +187,10 @@ export default function Login({ onLoginSuccess }) {
             <button
               type="button"
               onClick={() => setLoginType("customer")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                loginType === "customer"
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${loginType === "customer"
                   ? "bg-orange-500 text-white"
                   : "text-slate-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
               <User size={14} />
               {t("signup.customer")}
@@ -200,11 +198,10 @@ export default function Login({ onLoginSuccess }) {
             <button
               type="button"
               onClick={() => setLoginType("worker")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                loginType === "worker"
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${loginType === "worker"
                   ? "bg-blue-900 text-white"
                   : "text-slate-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
               <Briefcase size={14} />
               {t("signup.worker")}
@@ -272,11 +269,10 @@ export default function Login({ onLoginSuccess }) {
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${
-              loginType === "worker"
+            className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${loginType === "worker"
                 ? "bg-blue-900 hover:bg-blue-800"
                 : "bg-orange-500 hover:bg-orange-600"
-            }`}
+              }`}
           >
             <LogIn size={15} />
             <span className="truncate">
@@ -288,33 +284,7 @@ export default function Login({ onLoginSuccess }) {
             </span>
           </button>
 
-          {isGoogleSignInEnabled && (
-            <>
-              <div className="relative py-1">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
-                </div>
-                <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
-                  {t("common.or")}
-                </p>
-              </div>
-              <GoogleSignInButton
-                role={loginType === "worker" ? "worker" : "customer"}
-                disabled={submitting}
-                loginType={loginType}
-                onSuccess={(userData) => {
-                  clearFormDraft(LOGIN_DRAFT_KEY);
-                  setForm(initialForm);
-                  setMessage("");
-                  if (onLoginSuccess) onLoginSuccess(userData);
-                }}
-                onError={(msg) => {
-                  setMessage(msg);
-                  setIsError(true);
-                }}
-              />
-            </>
-          )}
+          {/* OAuth disabled; social sign-in removed */}
 
           <div className="text-center space-y-2">
             <p className="text-sm text-slate-500">

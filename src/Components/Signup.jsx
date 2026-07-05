@@ -188,6 +188,25 @@ export default function Signup() {
         if (primary?.serviceId) body.append("primaryServiceId", primary.serviceId);
         body.append("verificationPhoto", verificationPhoto);
 
+        // Debug: log FormData keys to help diagnose 400 errors (non-sensitive)
+        try {
+          if (typeof window !== "undefined" && window.console && body instanceof FormData) {
+            const entries = [];
+            for (const pair of body.entries()) {
+              if (pair[0] === "verificationPhoto" && pair[1] instanceof File) {
+                entries.push([pair[0], pair[1].name]);
+              } else if (pair[1] instanceof File) {
+                entries.push([pair[0], pair[1].name]);
+              } else {
+                entries.push([pair[0], String(pair[1]).slice(0, 200)]);
+              }
+            }
+            console.debug("[Signup] registerWorker FormData:", entries);
+          }
+        } catch (e) {
+          /* ignore logging errors */
+        }
+
         const response = await authService.registerWorker(body);
 
         if (response.success) {
@@ -469,45 +488,7 @@ export default function Signup() {
                   prefix="By signing up, you agree to the"
                 />
 
-                {isGoogleSignInEnabled && (
-                  <>
-                    <GoogleSignInButton
-                      role={signupType === "worker" ? "worker" : "customer"}
-                      disabled={submitting || !termsAgreed}
-                      onSuccess={(userData) => {
-                        clearFormDraft(SIGNUP_DRAFT_KEY);
-                        if (
-                          signupType === "worker" &&
-                          (userData?.needsProfessionalProfile ||
-                            userData?.signupStep !== "complete")
-                        ) {
-                          closeModal();
-                          switchModal("workerProfessional", {
-                            email: userData?.emailAddress || userData?.email,
-                            signupMethod: "oauth",
-                            authProvider: "google",
-                          });
-                        } else {
-                          setDone(true);
-                          setMessage("");
-                          setIsError(false);
-                        }
-                      }}
-                      onError={(msg) => {
-                        setMessage(msg);
-                        setIsError(true);
-                      }}
-                    />
-                    <div className="relative py-1">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-200" />
-                      </div>
-                      <p className="relative mx-auto w-fit bg-white px-3 text-xs text-slate-400">
-                        {t("signup.orEmail")}
-                      </p>
-                    </div>
-                  </>
-                )}
+                {/* OAuth disabled; social sign-in removed */}
 
                 <button
                   type="submit"
