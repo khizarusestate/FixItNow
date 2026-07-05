@@ -398,8 +398,8 @@ export default function Signup() {
                         Location *
                       </label>
                       <LocationPicker
-                        geo={customerGeo}
-                        setGeo={setCustomerGeo}
+                         value={customerGeo}
+                         onChange={setCustomerGeo}
                       />
                     </div>
                   </>
@@ -493,8 +493,8 @@ export default function Signup() {
                             Location *
                           </label>
                           <LocationPicker
-                            geo={workerGeo}
-                            setGeo={setWorkerGeo}
+                              value={workerGeo}
+                              onChange={setWorkerGeo}
                           />
                         </div>
                         <div>
