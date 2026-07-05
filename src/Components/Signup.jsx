@@ -7,14 +7,11 @@ import {
   ArrowRight,
   User,
   Briefcase,
+  Upload,
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
-import { authService, servicesService } from "../services/api.js";
-import SearchableSelect from "./SearchableSelect.jsx";
-import {
-  buildServicePickerOptions,
-  findServiceOption,
-} from "../utils/servicePicker.js";
+import { authService } from "../services/api.js";
+import ServiceSelection from "./ServiceSelection.jsx";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
 import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
 import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
@@ -22,6 +19,7 @@ import TermsAgreement from "./shared/TermsAgreement.jsx";
 import PhoneInput from "./shared/PhoneInput.jsx";
 import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import { formatCnicInput, isValidCnic } from "../utils/workerSignup.js";
 
 const SIGNUP_DRAFT_KEY = "fixitnow_draft_signup";
 const initialCustomer = { name: "", email: "", phone: "", password: "" };
@@ -30,6 +28,8 @@ const initialWorker = {
   emailAddress: "",
   phoneNumber: "",
   password: "",
+  cnicNumber: "",
+  selectedServices: [],
 };
 export default function Signup() {
   const { t } = useI18n();
@@ -55,7 +55,8 @@ export default function Signup() {
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
-  const [tradeOptions, setTradeOptions] = useState([]);
+  const [verificationPhoto, setVerificationPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
     if (activeModal !== "signup") return;
@@ -70,22 +71,28 @@ export default function Signup() {
   const updateCustomer = (k, v) => setCustomerForm((f) => ({ ...f, [k]: v }));
   const updateWorker = (k, v) => setWorkerForm((f) => ({ ...f, [k]: v }));
 
-  useEffect(() => {
-    if (activeModal === "signup") {
-      const loadServices = async () => {
-        try {
-          const response = await servicesService.getAll();
-          const services = response?.data?.services || [];
-          setTradeOptions(buildServicePickerOptions(services));
-        } catch {
-          setTradeOptions([]);
-        }
-      };
-      loadServices();
-    }
-  }, [activeModal]);
 
   if (activeModal !== "signup") return null;
+
+  const handleWorkerPhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage(t("worker.photoInvalid"));
+      setIsError(true);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage(t("worker.photoSize"));
+      setIsError(true);
+      return;
+    }
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setVerificationPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setMessage("");
+    setIsError(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -136,7 +143,8 @@ export default function Signup() {
           !workerForm.fullName?.trim() ||
           !workerForm.emailAddress ||
           !workerForm.phoneNumber?.trim() ||
-          !workerForm.password
+          !workerForm.password ||
+          !workerForm.cnicNumber?.trim()
         ) {
           setMessage(t("signup.workerRequired"));
           setIsError(true);
@@ -149,22 +157,44 @@ export default function Signup() {
           setSubmitting(false);
           return;
         }
+        if (!isValidCnic(workerForm.cnicNumber)) {
+          setMessage(t("worker.cnicInvalid"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
+        if (!workerForm.selectedServices?.length) {
+          setMessage(t("worker.tradeRequired"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
+        if (!verificationPhoto) {
+          setMessage(t("worker.photoRequired"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
 
-        const response = await authService.registerWorker({
-          fullName: workerForm.fullName.trim(),
-          emailAddress: workerForm.emailAddress,
-          phoneNumber: workerForm.phoneNumber.trim(),
-          password: workerForm.password,
-        });
+        const body = new FormData();
+        body.append("fullName", workerForm.fullName.trim());
+        body.append("email", workerForm.emailAddress.trim().toLowerCase());
+        body.append("emailAddress", workerForm.emailAddress.trim().toLowerCase());
+        body.append("phoneNumber", workerForm.phoneNumber.trim());
+        body.append("password", workerForm.password);
+        body.append("cnicNumber", workerForm.cnicNumber.replace(/-/g, ""));
+        body.append("services", JSON.stringify(workerForm.selectedServices));
+        const primary = workerForm.selectedServices[0];
+        if (primary?.serviceId) body.append("primaryServiceId", primary.serviceId);
+        body.append("verificationPhoto", verificationPhoto);
+
+        const response = await authService.registerWorker(body);
 
         if (response.success) {
           clearFormDraft(SIGNUP_DRAFT_KEY);
-          closeModal();
-          switchModal("verifyEmail", {
-            email: workerForm.emailAddress.trim().toLowerCase(),
-            role: "worker",
-            password: workerForm.password,
-          });
+          setDone(true);
+          setMessage(response.message || t("worker.submitApproval"));
+          setIsError(false);
         }
       }
     } catch (err) {
@@ -240,11 +270,10 @@ export default function Signup() {
                   type="button"
                   data-signup-type="customer"
                   onClick={() => { setSignupType("customer"); setMessage(""); setIsError(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    signupType === "customer"
-                      ? "bg-orange-500 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${signupType === "customer"
+                    ? "bg-orange-500 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   <User size={14} />
                   {t("signup.customer")}
@@ -253,11 +282,10 @@ export default function Signup() {
                   type="button"
                   data-signup-type="worker"
                   onClick={() => { setSignupType("worker"); setMessage(""); setIsError(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    signupType === "worker"
-                      ? "bg-blue-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${signupType === "worker"
+                    ? "bg-blue-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   <Briefcase size={14} />
                   {t("signup.worker")}
@@ -370,6 +398,57 @@ export default function Signup() {
                         required
                       />
                     </div>
+                    {signupType === "worker" && (
+                      <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-slate-700">
+                            {t("worker.trade")} *
+                          </label>
+                          <ServiceSelection
+                            selectedServices={workerForm.selectedServices || []}
+                            onChange={(selectedServices) => updateWorker("selectedServices", selectedServices)}
+                            maxSelection={5}
+                          />
+                          <p className="mt-1 text-xs text-slate-500">Select up to 5 trades to continue.</p>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-slate-700">
+                            {t("worker.cnic")} *
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={workerForm.cnicNumber}
+                            onChange={(e) => updateWorker("cnicNumber", formatCnicInput(e.target.value))}
+                            placeholder={t("worker.cnicPlaceholder")}
+                            required
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-slate-700">
+                            {t("worker.passportPhoto")} *
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleWorkerPhoto}
+                            className="sr-only"
+                            id="signup-worker-photo"
+                          />
+                          <label
+                            htmlFor="signup-worker-photo"
+                            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-medium text-orange-800 hover:bg-orange-100"
+                          >
+                            <Upload size={16} />
+                            {verificationPhoto ? t("worker.changePhoto") : t("worker.uploadPhoto")}
+                          </label>
+                          {photoPreview && (
+                            <img src={photoPreview} alt="" className="mt-3 h-28 w-28 rounded-lg border object-cover" />
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -433,11 +512,10 @@ export default function Signup() {
                 <button
                   type="submit"
                   disabled={submitting || !termsAgreed}
-                  className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${
-                    signupType === "worker"
-                      ? "bg-blue-900 hover:bg-blue-800"
-                      : "bg-orange-500 hover:bg-orange-600"
-                  }`}
+                  className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 ${signupType === "worker"
+                    ? "bg-blue-900 hover:bg-blue-800"
+                    : "bg-orange-500 hover:bg-orange-600"
+                    }`}
                 >
                   <span className="truncate">
                     {submitting

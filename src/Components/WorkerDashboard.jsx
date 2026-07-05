@@ -460,11 +460,9 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6 bg-slate-950/60 backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute inset-0 bg-transparent"
-        aria-label="Close worker dashboard"
+      <div
+        className="absolute inset-0 bg-transparent pointer-events-none"
+        aria-hidden="true"
       />
       <div className="relative w-full max-w-6xl max-h-[calc(100vh-4rem)] overflow-hidden rounded-[28px] bg-white shadow-2xl border border-slate-200">
         <div className="absolute right-4 top-4 z-10">
@@ -822,10 +820,9 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
           {claimJob && (
             <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
-              <button
-                type="button"
-                className="absolute inset-0 bg-blue-900/50"
-                onClick={() => setClaimJob(null)}
+              <div
+                className="absolute inset-0 bg-blue-900/50 pointer-events-none"
+                aria-hidden="true"
               />
               <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">

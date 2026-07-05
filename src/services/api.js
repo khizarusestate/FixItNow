@@ -186,9 +186,9 @@ export async function apiRequest(
   const headers = isFormData
     ? { ...(options.headers || {}) }
     : {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      };
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
 
   if (role && !skipAuth) {
     if (!isClientSessionValid(role)) {
@@ -479,7 +479,7 @@ export const authService = {
       method: "POST",
       skipAuth: true,
       skipAuthRefresh: true,
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     }),
 
   registerWorkerProfessional: (formData) =>
