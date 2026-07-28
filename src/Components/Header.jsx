@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { setUserData } from '../utils/jwt.js';
@@ -10,6 +10,9 @@ import ProfileModal from './ProfileModal';
 import NotificationBell from './NotificationBell';
 import { useGuide } from '../context/GuideContext';
 import { useI18n } from '../context/I18nContext.jsx';
+import { servicesService } from '../services/api.js';
+import { shapeServiceCatalog } from '../utils/catalogShape.js';
+import { CATEGORY_ICONS } from '../utils/categoryIcons.js';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -17,6 +20,10 @@ export default function Header() {
   const [bookingsOpen, setBookingsOpen] = useState(false);
   const [workerDashOpen, setWorkerDashOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [servicesMenuOpen, setServicesMenuOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const servicesMenuRef = useRef(null);
   const { openModal } = useModal();
   const { openGuide } = useGuide();
   const auth = useAuth();
@@ -38,6 +45,34 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    servicesService
+      .getAll()
+      .then((response) => {
+        if (cancelled) return;
+        const shaped = shapeServiceCatalog(response);
+        setCategories(shaped.categories);
+      })
+      .catch(() => {
+        /* nav dropdown simply won't show categories if this fails */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!servicesMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (servicesMenuRef.current && !servicesMenuRef.current.contains(e.target)) {
+        setServicesMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [servicesMenuOpen]);
+
   const close = () => setMenuOpen(false);
   const openHelp = () => {
     openGuide();
@@ -49,6 +84,16 @@ export default function Header() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const openServiceCategory = (category) => {
+    window.dispatchEvent(
+      new CustomEvent('fixitnow:open-category', { detail: { category } }),
+    );
+    scrollToSection('booking');
+    setServicesMenuOpen(false);
+    setMobileServicesOpen(false);
+    close();
   };
 
   return (
@@ -64,6 +109,40 @@ export default function Header() {
             <button onClick={() => scrollToSection('home')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
               <Home size={24} /> <span className="truncate text-blue-900">{t('nav.home')}</span>
             </button>
+            <div className="relative" ref={servicesMenuRef}>
+              <button
+                onClick={() => setServicesMenuOpen((open) => !open)}
+                aria-expanded={servicesMenuOpen}
+                className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer"
+              >
+                <Wrench size={24} /> <span className="truncate text-blue-900">{t('nav.services')}</span>
+                <ChevronDown
+                  size={16}
+                  className={`text-blue-900 transition-transform duration-300 ${servicesMenuOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {servicesMenuOpen && (
+                <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl animate-scaleIn">
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map((category) => {
+                      const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => openServiceCategory(category)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-orange-50 hover:text-blue-900 hover:shadow-md"
+                        >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white">
+                            <CategoryIcon size={16} />
+                          </span>
+                          <span className="truncate">{category}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
             <button onClick={() => openModal('about')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
               <Info size={24} /> <span className="truncate text-blue-900">{t('nav.about')}</span>
             </button>
@@ -193,6 +272,40 @@ export default function Header() {
             <button onClick={() => { scrollToSection('home'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
               <Home size={16} className="text-orange-500" /> {t('nav.home')}
             </button>
+            <div className="rounded-lg border border-slate-200 overflow-hidden">
+              <button
+                onClick={() => setMobileServicesOpen((open) => !open)}
+                aria-expanded={mobileServicesOpen}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-blue-900 hover:bg-orange-50"
+              >
+                <span className="flex items-center gap-3">
+                  <Wrench size={16} className="text-orange-500" /> {t('nav.services')}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-orange-500 transition-transform duration-300 ${mobileServicesOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {mobileServicesOpen && (
+                <div className="grid grid-cols-2 gap-2 bg-orange-50/40 p-2">
+                  {categories.map((category) => {
+                    const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => openServiceCategory(category)}
+                        className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 text-white">
+                          <CategoryIcon size={12} />
+                        </span>
+                        <span className="truncate">{category}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
               <Info size={16} className="text-orange-500" /> {t('nav.about')}
             </button>
