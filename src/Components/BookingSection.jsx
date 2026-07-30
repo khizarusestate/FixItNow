@@ -503,6 +503,15 @@ export default function BookingSection() {
     ],
   );
 
+  useEffect(() => {
+    const handler = (e) => {
+      const service = e?.detail?.service;
+      if (service) handleSelectService(service);
+    };
+    window.addEventListener("fixitnow:select-service", handler);
+    return () => window.removeEventListener("fixitnow:select-service", handler);
+  }, [handleSelectService]);
+
   // =======================
   // FILTER SERVICES
   // =======================
@@ -561,15 +570,6 @@ export default function BookingSection() {
     setSearch("");
     setServicePage(1);
   }, []);
-
-  useEffect(() => {
-    const handler = (e) => {
-      const category = e?.detail?.category;
-      if (category) openCategory(category);
-    };
-    window.addEventListener("fixitnow:open-category", handler);
-    return () => window.removeEventListener("fixitnow:open-category", handler);
-  }, [openCategory]);
 
   const backToCategories = useCallback(() => {
     setSelectedCategory(null);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown } from 'lucide-react';
+import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown, ChevronLeft } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { setUserData } from '../utils/jwt.js';
@@ -22,7 +22,10 @@ export default function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [servicesMenuOpen, setServicesMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [mobileActiveCategory, setMobileActiveCategory] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [servicesByCategory, setServicesByCategory] = useState({});
   const servicesMenuRef = useRef(null);
   const { openModal } = useModal();
   const { openGuide } = useGuide();
@@ -53,9 +56,10 @@ export default function Header() {
         if (cancelled) return;
         const shaped = shapeServiceCatalog(response);
         setCategories(shaped.categories);
+        setServicesByCategory(shaped.services);
       })
       .catch(() => {
-        /* nav dropdown simply won't show categories if this fails */
+        /* nav dropdown simply won't show categories/services if this fails */
       });
     return () => {
       cancelled = true;
@@ -73,6 +77,14 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [servicesMenuOpen]);
 
+  useEffect(() => {
+    if (!servicesMenuOpen) setActiveCategory(null);
+  }, [servicesMenuOpen]);
+
+  useEffect(() => {
+    if (!mobileServicesOpen) setMobileActiveCategory(null);
+  }, [mobileServicesOpen]);
+
   const close = () => setMenuOpen(false);
   const openHelp = () => {
     openGuide();
@@ -86,13 +98,15 @@ export default function Header() {
     }
   };
 
-  const openServiceCategory = (category) => {
+  const selectService = (service) => {
     window.dispatchEvent(
-      new CustomEvent('fixitnow:open-category', { detail: { category } }),
+      new CustomEvent('fixitnow:select-service', { detail: { service } }),
     );
     scrollToSection('booking');
     setServicesMenuOpen(false);
+    setActiveCategory(null);
     setMobileServicesOpen(false);
+    setMobileActiveCategory(null);
     close();
   };
 
@@ -122,24 +136,46 @@ export default function Header() {
                 />
               </button>
               {servicesMenuOpen && (
-                <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl animate-scaleIn">
-                  <div className="grid grid-cols-2 gap-2">
-                    {categories.map((category) => {
-                      const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => openServiceCategory(category)}
-                          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-orange-50 hover:text-blue-900 hover:shadow-md"
-                        >
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white">
-                            <CategoryIcon size={16} />
-                          </span>
-                          <span className="truncate">{category}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl animate-scaleIn max-h-96 overflow-y-auto">
+                  {!activeCategory ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {categories.map((category) => {
+                        const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                        return (
+                          <button
+                            key={category}
+                            onClick={() => setActiveCategory(category)}
+                            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-orange-50 hover:text-blue-900 hover:shadow-md"
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white">
+                              <CategoryIcon size={16} />
+                            </span>
+                            <span className="truncate">{category}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div>
+                      <button
+                        onClick={() => setActiveCategory(null)}
+                        className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50"
+                      >
+                        <ChevronLeft size={14} /> {activeCategory}
+                      </button>
+                      <div className="flex flex-col gap-1">
+                        {(servicesByCategory[activeCategory] || []).map((service) => (
+                          <button
+                            key={service?.id || service?._id}
+                            onClick={() => selectService(service)}
+                            className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:bg-orange-50 hover:text-blue-900"
+                          >
+                            {service?.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -287,23 +323,45 @@ export default function Header() {
                 />
               </button>
               {mobileServicesOpen && (
-                <div className="grid grid-cols-2 gap-2 bg-orange-50/40 p-2">
-                  {categories.map((category) => {
-                    const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                    return (
-                      <button
-                        key={category}
-                        onClick={() => openServiceCategory(category)}
-                        className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 text-white">
-                          <CategoryIcon size={12} />
-                        </span>
-                        <span className="truncate">{category}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                !mobileActiveCategory ? (
+                  <div className="grid grid-cols-2 gap-2 bg-orange-50/40 p-2">
+                    {categories.map((category) => {
+                      const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => setMobileActiveCategory(category)}
+                          className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 text-white">
+                            <CategoryIcon size={12} />
+                          </span>
+                          <span className="truncate">{category}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-orange-50/40 p-2">
+                    <button
+                      onClick={() => setMobileActiveCategory(null)}
+                      className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-white"
+                    >
+                      <ChevronLeft size={14} /> {mobileActiveCategory}
+                    </button>
+                    <div className="flex flex-col gap-1">
+                      {(servicesByCategory[mobileActiveCategory] || []).map((service) => (
+                        <button
+                          key={service?.id || service?._id}
+                          onClick={() => selectService(service)}
+                          className="rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
+                        >
+                          {service?.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
             </div>
             <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
