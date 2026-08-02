@@ -14,8 +14,6 @@ import { useModal } from "../context/ModalContext";
 import { authService } from "../services/api.js";
 import ServiceSelection from "./ServiceSelection.jsx";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import GoogleSignInButton from "./shared/GoogleSignInButton.jsx";
-import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
 import PhoneInput from "./shared/PhoneInput.jsx";
 import { isPhoneValid } from "../utils/phoneValidation.js";
@@ -36,7 +34,6 @@ const initialWorker = {
 };
 export default function Signup() {
   const { t } = useI18n();
-  const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal } = useModal();
   const savedDraft = loadFormDraft(SIGNUP_DRAFT_KEY, {});
   const [signupType, setSignupType] = useState(savedDraft.signupType ?? "customer");
@@ -190,6 +187,12 @@ export default function Signup() {
           setSubmitting(false);
           return;
         }
+        if (!verificationPhoto) {
+          setMessage(t("worker.photoRequired"));
+          setIsError(true);
+          setSubmitting(false);
+          return;
+        }
 
         const body = new FormData();
         body.append("fullName", workerForm.fullName.trim());
@@ -205,28 +208,9 @@ export default function Signup() {
         body.append("services", JSON.stringify(workerForm.selectedServices));
         const primary = workerForm.selectedServices[0];
         if (primary?.serviceId) body.append("primaryServiceId", primary.serviceId);
-        // Photo is optional; can be added later in profile
+        // Photo is required for admin identity verification
         if (verificationPhoto) {
           body.append("verificationPhoto", verificationPhoto);
-        }
-
-        // Debug: log FormData keys to help diagnose 400 errors (non-sensitive)
-        try {
-          if (typeof window !== "undefined" && window.console && body instanceof FormData) {
-            const entries = [];
-            for (const pair of body.entries()) {
-              if (pair[0] === "verificationPhoto" && pair[1] instanceof File) {
-                entries.push([pair[0], pair[1].name]);
-              } else if (pair[1] instanceof File) {
-                entries.push([pair[0], pair[1].name]);
-              } else {
-                entries.push([pair[0], String(pair[1]).slice(0, 200)]);
-              }
-            }
-            console.debug("[Signup] registerWorker FormData:", entries);
-          }
-        } catch (e) {
-          /* ignore logging errors */
         }
 
         const response = await authService.registerWorker(body);
@@ -499,7 +483,7 @@ export default function Signup() {
                         </div>
                         <div>
                           <label className="mb-1 block text-xs font-semibold text-slate-700">
-                            {t("worker.passportPhoto")} (Optional)
+                            {t("worker.passportPhoto")}
                           </label>
                           <input
                             type="file"
@@ -518,7 +502,7 @@ export default function Signup() {
                           {photoPreview && (
                             <img src={photoPreview} alt="" className="mt-3 h-28 w-28 rounded-lg border object-cover" />
                           )}
-                          <p className="mt-2 text-xs text-slate-500">You can add a passport-size photo now or upload it later in your profile.</p>
+                          <p className="mt-2 text-xs text-slate-500">Required so our team can verify your identity before approval.</p>
                         </div>
                       </div>
                     )}
@@ -541,8 +525,6 @@ export default function Signup() {
                   }}
                   prefix="By signing up, you agree to the"
                 />
-
-                {/* OAuth disabled; social sign-in removed */}
 
                 <button
                   type="submit"

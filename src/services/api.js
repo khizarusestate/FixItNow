@@ -395,34 +395,6 @@ export const authService = {
       };
     }),
 
-  loginWithGoogleWorker: (credential, remember = true) =>
-    apiRequest("/auth/google/worker", {
-      method: "POST",
-      skipAuth: true,
-      skipAuthRefresh: true,
-      body: JSON.stringify({ credential, rememberMe: remember }),
-    }).then((data) => {
-      const token = data.accessToken || data.token;
-      if (data.success && token) {
-        clearOtherRoleSessions("worker");
-        setToken(token, "worker");
-        if (data.refreshToken) {
-          setRefreshToken(data.refreshToken, "worker");
-        }
-        const userData = data.worker || data.data;
-        if (userData) {
-          setUserData(userData, "worker");
-        }
-        applySessionPolicy("worker", remember);
-        markCookieSession("worker");
-      }
-      return {
-        ...data,
-        token,
-        worker: data.worker || data.data,
-      };
-    }),
-
   loginWorker: (email, password, remember = true) =>
     apiRequest("/auth/worker/login", {
       method: "POST",
@@ -480,14 +452,6 @@ export const authService = {
       skipAuth: true,
       skipAuthRefresh: true,
       body: data instanceof FormData ? data : JSON.stringify(data),
-    }),
-
-  registerWorkerProfessional: (formData) =>
-    apiRequest("/auth/worker/register/professional", {
-      method: "POST",
-      skipAuth: true,
-      skipAuthRefresh: true,
-      body: formData,
     }),
 
   verifyEmail: (email, code, role) =>

@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api.js";
 import { isApiClientError } from "../utils/apiError.js";
 import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import { useOAuthConfig } from "../context/OAuthConfigContext.jsx";
 import { runPostLoginFlow } from "../utils/postLoginFlow.js";
 import { useI18n } from "../context/I18nContext.jsx";
 
@@ -14,7 +13,6 @@ const initialForm = { email: "", password: "" };
 
 export default function Login({ onLoginSuccess }) {
   const { t } = useI18n();
-  const { isGoogleSignInEnabled } = useOAuthConfig();
   const { activeModal, closeModal, switchModal, openModal, modalPayload } =
     useModal();
   const savedDraft = loadFormDraft(LOGIN_DRAFT_KEY, {});

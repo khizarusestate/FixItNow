@@ -5,7 +5,6 @@ const CREDENTIAL_PATHS = new Set([
   "/auth/customer/register",
   "/auth/worker/register",
   "/auth/google/customer",
-  "/auth/google/worker",
   "/auth/verify-email",
   "/auth/resend-verification",
   "/auth/password/forgot",

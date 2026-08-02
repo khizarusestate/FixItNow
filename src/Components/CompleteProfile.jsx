@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   X,
   Upload,
@@ -20,10 +20,7 @@ import { uploadUserProfilePicture } from "../utils/profilePictureUpload.js";
 import PhoneInput from "./shared/PhoneInput.jsx";
 import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
-import {
-  getMissingProfileFields,
-  workerNeedsProfessionalSignup,
-} from "../utils/profileCompletion.js";
+import { getMissingProfileFields } from "../utils/profileCompletion.js";
 
 export default function CompleteProfile() {
   const { t } = useI18n();
@@ -65,10 +62,6 @@ export default function CompleteProfile() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    // No longer switching to workerProfessional - signup form is now single source of truth
-  }, []);
 
   if (activeModal !== "completeProfile") return null;
 
