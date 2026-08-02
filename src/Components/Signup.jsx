@@ -4,6 +4,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
+  Clock,
   ArrowRight,
   User,
   Briefcase,
@@ -285,12 +286,18 @@ export default function Signup() {
                   <CheckCircle className="h-8 w-8 text-emerald-600" />
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                {t("signup.successTitle")}
+              <h3 className="text-lg font-bold text-slate-900 mb-1">
+                {t("worker.pendingApprovalTitle")}
               </h3>
-              <p className="text-sm text-slate-600 mb-5">
-                {t("signup.successBody")}
+              <p className="text-sm text-slate-500 mb-4">
+                {t("worker.accountCreated")}
               </p>
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-left mb-5">
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <p className="text-sm font-medium leading-relaxed text-amber-900">
+                  {t("worker.pendingApprovalBody")}
+                </p>
+              </div>
               <button
                 onClick={() => switchModal("login")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
