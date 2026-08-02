@@ -49,6 +49,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    if (user?.type === 'worker') return;
     let cancelled = false;
     servicesService
       .getAll()
@@ -64,7 +65,7 @@ export default function Header() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.type]);
 
   useEffect(() => {
     if (!servicesMenuOpen) return;
@@ -123,6 +124,7 @@ export default function Header() {
             <button onClick={() => scrollToSection('home')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
               <Home size={24} /> <span className="truncate text-blue-900">{t('nav.home')}</span>
             </button>
+            {user?.type !== 'worker' && (
             <div className="relative" ref={servicesMenuRef}>
               <button
                 onClick={() => setServicesMenuOpen((open) => !open)}
@@ -179,6 +181,7 @@ export default function Header() {
                 </div>
               )}
             </div>
+            )}
             <button onClick={() => openModal('about')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
               <Info size={24} /> <span className="truncate text-blue-900">{t('nav.about')}</span>
             </button>
@@ -308,6 +311,7 @@ export default function Header() {
             <button onClick={() => { scrollToSection('home'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
               <Home size={16} className="text-orange-500" /> {t('nav.home')}
             </button>
+            {user?.type !== 'worker' && (
             <div className="rounded-lg border border-slate-200 overflow-hidden">
               <button
                 onClick={() => setMobileServicesOpen((open) => !open)}
@@ -364,6 +368,7 @@ export default function Header() {
                 )
               )}
             </div>
+            )}
             <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
               <Info size={16} className="text-orange-500" /> {t('nav.about')}
             </button>
