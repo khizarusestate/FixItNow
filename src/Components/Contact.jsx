@@ -40,6 +40,7 @@ export default function Contact() {
                     <Phone size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">Call</span>
+                  <span className="text-[11px] text-slate-500">+92 325 6776142</span>
                 </div>
               </a>
 
@@ -52,6 +53,7 @@ export default function Contact() {
                     <Mail size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">Email</span>
+                  <span className="text-[11px] text-slate-500 break-all">khizarusestate@gmail.com</span>
                 </div>
               </a>
 
@@ -61,6 +63,7 @@ export default function Contact() {
                     <Clock size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">24/7</span>
+                  <span className="text-[11px] text-slate-500">Always available</span>
                 </div>
               </div>
 
@@ -75,6 +78,7 @@ export default function Contact() {
                     <MapPin size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">Map</span>
+                  <span className="text-[11px] text-slate-500">Gujranwala, Punjab</span>
                 </div>
               </a>
             </div>
