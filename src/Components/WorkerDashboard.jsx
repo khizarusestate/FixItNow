@@ -12,6 +12,7 @@ import {
   Upload,
   Banknote,
   Smartphone,
+  HelpCircle,
 } from "lucide-react";
 
 import { apiRequestWithAuth } from "../services/api.js";
@@ -28,6 +29,7 @@ import {
 } from "../utils/platformPayment.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import AdvertisementForm from "./AdvertisementForm.jsx";
+import ServiceRequestModal from "./ServiceRequestModal.jsx";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -210,6 +212,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   const [completing, setCompleting] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [claimSuccess, setClaimSuccess] = useState(false);
+  const [serviceRequestModalOpen, setServiceRequestModalOpen] = useState(false);
   const fetchInFlightRef = useRef(false);
   const hasLoadedRef = useRef(false);
   const refreshTimerRef = useRef(null);
@@ -566,6 +569,19 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
                         <p className="text-3xl font-bold">
                           {completedMyJobs.length}
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setServiceRequestModalOpen(true)}
+                        className="border rounded-xl p-5 hover:shadow-lg transition-all hover:border-blue-300 hover:bg-blue-50 text-left"
+                      >
+                        <HelpCircle className="text-blue-500 mb-3" size={24} />
+
+                        <p className="text-sm text-slate-500">Can't find your trade?</p>
+
+                        <p className="text-base font-semibold text-slate-900">
+                          Request a New Service
                         </p>
                       </button>
                     </div>
@@ -935,6 +951,12 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           )}
         </div>
       </div>
+
+      <ServiceRequestModal
+        open={serviceRequestModalOpen}
+        onClose={() => setServiceRequestModalOpen(false)}
+        categories={[]}
+      />
     </div>
   );
 }

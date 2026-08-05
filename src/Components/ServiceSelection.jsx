@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, X, Plus, Loader2 } from "lucide-react";
+import { Search, X, Plus, Loader2, HelpCircle } from "lucide-react";
 import { servicesService } from "../services/api";
+import { getActiveSessionRole } from "../utils/jwt.js";
+import ServiceRequestModal from "./ServiceRequestModal.jsx";
 
 function getServiceId(service) {
   return String(service?.id || service?._id || service?.serviceId || "");
@@ -17,6 +19,8 @@ export default function ServiceSelection({
   const [search, setSearch] = useState("");
   const [pendingId, setPendingId] = useState("");
   const [pickerOpen, setPickerOpen] = useState(true);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const isWorkerLoggedIn = getActiveSessionRole() === "worker";
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +54,10 @@ export default function ServiceSelection({
   }, [selectedServices.length]);
 
   const atMax = selectedServices.length >= maxSelection;
+
+  const categoryOptions = useMemo(() => {
+    return [...new Set(services.map((s) => s.category).filter(Boolean))];
+  }, [services]);
 
   const availableServices = useMemo(() => {
     const selectedIds = new Set(
@@ -113,8 +121,32 @@ export default function ServiceSelection({
 
   if (services.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-        No services available
+      <div className="space-y-3">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+          No services available
+        </div>
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
+          {isWorkerLoggedIn ? (
+            <button
+              type="button"
+              onClick={() => setRequestModalOpen(true)}
+              className="flex w-full items-center gap-2 text-xs font-medium text-orange-700 hover:text-orange-800"
+            >
+              <HelpCircle size={14} />
+              Request a new service type
+            </button>
+          ) : (
+            <p className="flex items-start gap-2 text-xs text-slate-500">
+              <HelpCircle size={14} className="mt-0.5 shrink-0" />
+              Once your account is approved, you can request a new service type from your dashboard.
+            </p>
+          )}
+        </div>
+        <ServiceRequestModal
+          open={requestModalOpen}
+          onClose={() => setRequestModalOpen(false)}
+          categories={[]}
+        />
       </div>
     );
   }
@@ -219,6 +251,31 @@ export default function ServiceSelection({
       <p className="text-xs text-slate-500">
         {selectedServices.length} of {maxSelection} services selected
       </p>
+
+      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
+        {isWorkerLoggedIn ? (
+          <button
+            type="button"
+            onClick={() => setRequestModalOpen(true)}
+            className="flex w-full items-center gap-2 text-xs font-medium text-orange-700 hover:text-orange-800"
+          >
+            <HelpCircle size={14} />
+            Can't find your trade? Request a new service type
+          </button>
+        ) : (
+          <p className="flex items-start gap-2 text-xs text-slate-500">
+            <HelpCircle size={14} className="mt-0.5 shrink-0" />
+            Can't find your trade? Pick the closest match for now — once your account is
+            approved, you can request a new service type from your dashboard.
+          </p>
+        )}
+      </div>
+
+      <ServiceRequestModal
+        open={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+        categories={categoryOptions}
+      />
     </div>
   );
 }
