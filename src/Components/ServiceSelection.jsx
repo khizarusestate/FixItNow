@@ -35,7 +35,7 @@ export default function ServiceSelection({
       } catch (err) {
         console.error("Error loading services:", err);
         if (!cancelled) {
-          setError("Failed to load services");
+          setError(err?.message || "Failed to load services");
           setServices([]);
         }
       } finally {

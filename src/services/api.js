@@ -555,10 +555,10 @@ export const bookingService = {
 
 // Services endpoints
 export const servicesService = {
-  getAll: () => apiRequest("/public/services"),
-  getCategories: () => apiRequest("/public/services/categories"),
+  getAll: () => apiRequest("/public/services", { skipAuth: true }),
+  getCategories: () => apiRequest("/public/services/categories", { skipAuth: true }),
   getByCategory: (category) =>
-    apiRequest(`/public/services?category=${category}`),
+    apiRequest(`/public/services?category=${category}`, { skipAuth: true }),
 };
 
 // Advertisement endpoints
