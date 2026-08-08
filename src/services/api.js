@@ -564,7 +564,7 @@ export const servicesService = {
 // Advertisement endpoints
 export const advertisementService = {
   getMyAds: () => apiRequestWithAuth("/advertisements/my"),
-  getActiveAds: () => apiRequest("/advertisements/active"),
+  getActiveAds: () => apiRequest("/advertisements/active", { skipAuth: true }),
   submit: (formData, role = getActiveSessionRole()) => {
     if (role === "customer" || role === "worker") {
       return apiRequestWithAuth("/advertisements", {
@@ -586,7 +586,7 @@ export const advertisementService = {
 // App review endpoints
 export const appReviewService = {
   getMy: () => apiRequestWithAuth("/app-reviews/my"),
-  getActive: () => apiRequest("/app-reviews/active"),
+  getActive: () => apiRequest("/app-reviews/active", { skipAuth: true }),
   submit: (payload, role = getActiveSessionRole()) =>
     apiRequestWithAuth("/app-reviews", {
       method: "POST",
