@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Megaphone, ChevronLeft, ChevronRight, Phone, Clock } from "lucide-react";
 import { apiRequest, advertisementService } from "../services/api.js";
 import { resolveUploadMediaUrl, optimizeMediaUrl } from "../utils/mediaUrl.js";
@@ -10,31 +10,23 @@ const getImageUrl = (url) => optimizeMediaUrl(resolveUploadMediaUrl(url), { widt
 const ADS_PER_PAGE = 3;
 
 function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
-  const videoRef = useRef(null);
-  const files = ad?.adFileUrls || [];
+  const files = ad?.images || [];
   const safeIndex = Math.min(fileIndex, Math.max(0, files.length - 1));
   const url = files[safeIndex];
+  const submitter = ad?.workerId || ad?.customerId || null;
+  const advertiserName = submitter?.fullName || "Advertiser";
+  const advertiserPhone = ad?.phoneNumber?.trim() || submitter?.phoneNumber || submitter?.phone || "";
+  const advertiserPicture = submitter?.profilePicture || null;
 
   return (
     <div className="service-card animate-scaleIn flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl">
       <div className="relative aspect-[4/3] bg-slate-100">
         {url ? (
-          ad?.adType === "image" ? (
-            <LazyImage
-              src={getImageUrl(url)}
-              alt={ad?.purpose || "Advertisement"}
-              className="h-full w-full"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-slate-900">
-              <video
-                ref={videoRef}
-                src={getImageUrl(url)}
-                controls
-                className="h-full w-full object-contain"
-              />
-            </div>
-          )
+          <LazyImage
+            src={getImageUrl(url)}
+            alt={ad?.title || "Advertisement"}
+            className="h-full w-full"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-slate-400">
             <span className="text-sm">No media</span>
@@ -68,28 +60,28 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
 
       <div className="flex flex-1 flex-col border-t border-slate-100 p-4">
         <p className="line-clamp-2 text-xs font-medium text-slate-600">
-          {ad?.purpose}
+          {ad?.description}
         </p>
         <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3">
-          {ad?.submitterProfilePicture ? (
+          {advertiserPicture ? (
             <img
-              src={getImageUrl(ad.submitterProfilePicture)}
+              src={getImageUrl(advertiserPicture)}
               alt=""
               className="h-10 w-10 shrink-0 rounded-full border-2 border-orange-100 object-cover"
             />
           ) : (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-sm font-bold text-white">
-              {ad?.name?.charAt(0)?.toUpperCase() || "?"}
+              {advertiserName.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-slate-900">
-              {ad?.name || "Advertiser"}
+              {advertiserName}
             </p>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-600">
               <Phone size={12} className="shrink-0 text-orange-500" />
               <span className="truncate font-medium text-slate-800">
-                {ad?.phone?.trim() || "—"}
+                {advertiserPhone || "—"}
               </span>
             </div>
           </div>
