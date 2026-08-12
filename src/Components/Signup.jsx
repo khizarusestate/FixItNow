@@ -85,7 +85,7 @@ export default function Signup() {
       setIsError(true);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 2 * 1024 * 1024) {
       setMessage(t("worker.photoSize"));
       setIsError(true);
       return;
