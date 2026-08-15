@@ -10,7 +10,6 @@ import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import Contact from "./Components/Contact";
-
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -20,6 +19,7 @@ const Login = lazy(() => import("./Components/Login"));
 const Signup = lazy(() => import("./Components/Signup"));
 const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
+import Footer from "./Components/Footer"; 
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
 const WorkerApprovalPending = lazy(
@@ -65,6 +65,7 @@ export default function App() {
                         <WorkerModal />
                         <WorkerApprovalPending />
                         <CompleteProfile />
+                        <Footer />
                       </Suspense>
                     </div>
                   </LegalProvider>
