@@ -17,25 +17,42 @@ export default function Footer() {
     <footer className="mt-auto border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 lg:px-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-
-          {/* Brand */}
+          {/* Brand & Contact */}
+          <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <img
-              src="/Assets/Logo.png"
-              alt="FixItNow"
-              className="h-11 w-auto"
-            />
+        <img
+      src="/Assets/Logo.png"
+      alt="FixItNow"
+      className="h-11 w-auto"
+    />
 
-            <div>
-              <p className="text-sm font-bold text-blue-900">
-                FixItNow
-              </p>
-              <p className="max-w-xs text-xs text-slate-500">
-                Reliable help for your everyday home services.
-              </p>
-            </div>
-          </div>
+    <div>
+      <p className="text-sm font-bold text-blue-900">
+        FixItNow
+      </p>
+      <p className="max-w-xs text-xs text-slate-500">
+        Reliable help for your everyday home services.
+      </p>
+    </div>
+  </div>
 
+  {/* Contact Information */}
+  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500">
+    <a
+      href="tel:03256776142"
+      className="transition-colors hover:text-orange-600"
+    >
+      📞 0325 6776142
+    </a>
+
+    <a
+      href="mailto:supportfixitnow@gmail.com"
+      className="transition-colors hover:text-orange-600"
+    >
+      ✉ supportfixitnow@gmail.com
+    </a>
+  </div>
+</div>
           {/* Links */}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <button
