@@ -1,3 +1,5 @@
+import { Link } from "react-scroll";
+
 const Footer = () => {
   return (
     <footer className="mt-10 overflow-hidden rounded-t-2xl bg-slate-500 text-white">
@@ -17,17 +19,60 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Services */}
+          {/* Quick Links */}
           <div>
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide">
-              Services
+              Quick Links
             </h3>
 
             <ul className="space-y-3 text-sm text-slate-200">
-              <li>Plumbing</li>
-              <li>Electrician</li>
-              <li>AC Repair</li>
-              <li>Home Cleaning</li>
+              <li>
+                <Link
+                  to="home"
+                  smooth={true}
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-white"
+                >
+                  Home
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="about"
+                  smooth={true}
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-white"
+                >
+                  About Us
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="services"
+                  smooth={true}
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-white"
+                >
+                  Services
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="contact"
+                  smooth={true}
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-white"
+                >
+                  Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -47,7 +92,7 @@ const Footer = () => {
                 <span>✉️</span>
                 <a
                   href="mailto:supportfixitnow@gmail.com"
-                  className="hover:text-white"
+                  className="transition hover:text-white"
                 >
                   supportfixitnow@gmail.com
                 </a>
@@ -57,7 +102,7 @@ const Footer = () => {
                 <span>📞</span>
                 <a
                   href="tel:03256776142"
-                  className="hover:text-white"
+                  className="transition hover:text-white"
                 >
                   0325 6776142
                 </a>
@@ -109,7 +154,7 @@ const Footer = () => {
               </a>
             </div>
 
-            {/* Admin Login Button */}
+            {/* Admin Login */}
             <a
               href="https://fixitnow.cloud"
               target="_blank"
@@ -120,7 +165,6 @@ const Footer = () => {
               Login as Admin
             </a>
           </div>
-
         </div>
       </div>
 
