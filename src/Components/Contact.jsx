@@ -85,28 +85,6 @@ export default function Contact() {
           </div>
         </div>
       </section>
-
-      <footer className="border-t border-slate-200 bg-white text-slate-900">
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
-          <div className="flex flex-col items-center gap-6 text-center">
-            <img
-              src="/Assets/Logo.png"
-              alt="Fix It Now"
-              className="h-11 w-auto rounded-lg"
-            />
-            <p className="max-w-sm text-sm leading-relaxed text-slate-600">
-              Book trusted workers for repairs, cleaning, and more — or list your
-              skills as a pro.
-            </p>
-          </div>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 border-t border-slate-200 pt-6">
-            <p className="text-xs text-slate-500">
-              © {year} FixItNow. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </>
   );
 }
