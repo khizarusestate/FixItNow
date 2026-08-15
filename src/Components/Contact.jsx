@@ -40,7 +40,7 @@ export default function Contact() {
                     <Phone size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">Call</span>
-                  <span className="text-[11px] text-slate-500">+92 325 6776142</span>
+                  <span className="text-[11px] text-slate-500">+92 3012220345</span>
                 </div>
               </a>
 
@@ -53,7 +53,7 @@ export default function Contact() {
                     <Mail size={18} />
                   </div>
                   <span className="text-xs font-semibold text-blue-900">Email</span>
-                  <span className="text-[11px] text-slate-500 break-all">khizarusestate@gmail.com</span>
+                  <span className="text-[11px] text-slate-500 break-all">supportfixitnow@gmail.com</span>
                 </div>
               </a>
 
