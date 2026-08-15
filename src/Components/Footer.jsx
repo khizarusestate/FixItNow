@@ -71,42 +71,54 @@ const Footer = () => {
               Follow Us
             </h3>
 
+            {/* Social Icons */}
             <div className="flex flex-wrap gap-3">
               <a
                 href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-bold hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-bold transition hover:scale-110"
               >
                 f
               </a>
 
               <a
                 href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-400 font-bold hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-400 font-bold transition hover:scale-110"
               >
                 𝕏
               </a>
 
               <a
                 href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 font-bold hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 font-bold transition hover:scale-110"
               >
                 ◎
               </a>
 
               <a
                 href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-700 font-bold hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-700 font-bold transition hover:scale-110"
               >
                 in
               </a>
 
               <a
                 href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 font-bold hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 font-bold transition hover:scale-110"
               >
                 Git
               </a>
             </div>
+
+            {/* Admin Login Button */}
+            <a
+              href="https://fixitnow.cloud"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/60 bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md"
+            >
+              <span>🔐</span>
+              Login as Admin
+            </a>
           </div>
 
         </div>
