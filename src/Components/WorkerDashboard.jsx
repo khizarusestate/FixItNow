@@ -28,7 +28,6 @@ import {
   PAYMENT_METHOD_VALUES,
 } from "../utils/platformPayment.js";
 import { useI18n } from "../context/I18nContext.jsx";
-import AdvertisementForm from "./AdvertisementForm.jsx";
 import ServiceRequestModal from "./ServiceRequestModal.jsx";
 
 function jobPhone(job) {
@@ -467,7 +466,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
         className="absolute inset-0 bg-transparent pointer-events-none"
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-6xl max-h-[calc(100vh-4rem)] overflow-hidden rounded-[28px] bg-white shadow-2xl border border-slate-200">
+      <div className="relative flex h-[calc(100vh-4rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
         <div className="absolute right-4 top-4 z-10">
           <button
             type="button"
@@ -478,7 +477,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
             <X size={18} />
           </button>
         </div>
-        <div className="flex flex-col min-h-[24rem] overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 
           {/* TABS */}
           <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto shrink-0 min-h-[58px]">
@@ -498,10 +497,6 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                   key: "my-jobs",
                   label: `${t("dashboard.myJobs")}${myJobs.length > 0 ? ` (${myJobs.length})` : ""}`,
                 },
-                {
-                  key: "advertise",
-                  label: "Submit Advertisement",
-                },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -518,7 +513,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           </div>
 
           {/* BODY */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
             {
               loading ? (
                 <div className="flex flex-col items-center py-20">
@@ -815,20 +810,6 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                     </div>
                   )}
 
-                  {activeTab === "advertise" && (
-                    <div className="max-w-2xl mx-auto">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                        Submit Advertisement
-                      </h3>
-                      <p className="text-sm text-slate-600 mb-6">
-                        Promote your services to customers on FixItNow.
-                      </p>
-                      <AdvertisementForm
-                        onClose={() => setActiveTab("overview")}
-                        onSuccess={() => setActiveTab("overview")}
-                      />
-                    </div>
-                  )}
                 </>
               )
             }
