@@ -56,96 +56,95 @@ import { useI18n } from "../context/I18nContext.jsx";
 /* =========================================================
    CATEGORY IMAGES
    =========================================================
-   Images are intentionally mapped by category name.
-
-   The fallback image is used if a category is not listed here.
-   You can add more categories later without changing the UI.
+   Each category uses a category-specific Unsplash source.
+   The image does NOT need to contain a worker.
+   It only needs to visually represent the category.
 ========================================================= */
 
 const CATEGORY_IMAGES = {
   "AC Repair":
-    "https://images.unsplash.com/photo-1631545806609-6e0a6c0d8f3f?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?air-conditioner,ac,repair",
 
   "Air Conditioning":
-    "https://images.unsplash.com/photo-1631545806609-6e0a6c0d8f3f?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?air-conditioner,air-conditioning",
 
   HVAC:
-    "https://images.unsplash.com/photo-1631545806609-6e0a6c0d8f3f?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?hvac,air-conditioner",
 
   Plumbing:
-    "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?plumbing,pipe,plumber",
 
   Electrical:
-    "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?electrician,electrical,wiring",
 
   "Car Repair":
-    "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?car,mechanic,auto-repair",
 
   Automotive:
-    "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?automotive,car,mechanic",
 
   Painting:
-    "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?painting,paint,wall,roller",
 
   Cleaning:
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?cleaning,cleaning-service,house-cleaning",
 
   "Home Cleaning":
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?home-cleaning,house-cleaning",
 
   Carpentry:
-    "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?carpentry,woodworking,carpenter",
 
   "Home Repair":
-    "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?home-repair,tools,home-improvement",
 
   Gardening:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?gardening,garden,plants",
 
   "Pest Control":
-    "https://images.unsplash.com/photo-1628151015968-3a7b9a5c9c6e?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?pest-control,insect-control",
 
   "Appliance Repair":
-    "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?appliance-repair,home-appliance",
 
   Electronics:
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?electronics,electronic-repair",
 
   "Computer Repair":
-    "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?computer-repair,laptop-repair",
 
   "Mobile Repair":
-    "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?phone-repair,smartphone-repair",
 
   Locksmith:
-    "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?locksmith,lock,key",
 
   Moving:
-    "https://images.unsplash.com/photo-1600510349682-d24e6f9c3f1b?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?moving,boxes,moving-house",
 
   "Car Wash":
-    "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?car-wash,car-cleaning",
 
   "Bike Repair":
-    "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?motorcycle-repair,bike-repair",
 
   Welding:
-    "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?welding,welding-machine,welder",
 
   Roofing:
-    "https://images.unsplash.com/photo-1632759145351-1d592919f522?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?roofing,roof,construction",
 
   Flooring:
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?flooring,tiles,floor",
 
   Laundry:
-    "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?laundry,washing-machine,clothes",
 
   Beauty:
-    "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?beauty,hair,styling",
 
   Salon:
-    "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=85",
+    "https://source.unsplash.com/900x700/?salon,haircut,hair-styling",
 };
 
 /* =========================================================
@@ -154,7 +153,7 @@ const CATEGORY_IMAGES = {
 
 const getCategoryImage = (category) => {
   if (!category) {
-    return "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=85";
+    return "https://source.unsplash.com/900x700/?home-repair,tools,service";
   }
 
   if (CATEGORY_IMAGES[category]) {
@@ -297,7 +296,7 @@ const getCategoryImage = (category) => {
     return CATEGORY_IMAGES["Beauty"];
   }
 
-  return "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=85";
+  return "https://source.unsplash.com/900x700/?home-repair,tools,service";
 };
 
 /* =========================================================
@@ -1511,14 +1510,14 @@ export default function BookingSection() {
                               src={
                                 categoryImage
                               }
-                              alt={`${category} professional`}
+                              alt={`${category} service`}
                               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                               loading="lazy"
                               onError={(
                                 e,
                               ) => {
                                 e.currentTarget.src =
-                                  "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=85";
+                                  "https://source.unsplash.com/900x700/?home-repair,tools,service";
                               }}
                             />
 
@@ -1534,15 +1533,8 @@ export default function BookingSection() {
 
                                 <div className="min-w-0">
 
-                                  <p className="mb-1 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-orange-200">
-                                    Professional
-                                    Service
-                                  </p>
-
                                   <h4 className="font-bold text-white text-base sm:text-xl leading-snug pr-2 drop-shadow-sm">
-                                    {
-                                      category
-                                    }
+                                    {category}
                                   </h4>
 
                                 </div>
@@ -1683,6 +1675,7 @@ export default function BookingSection() {
                                   <div className="flex items-start gap-4 sm:gap-5 p-4 sm:p-5">
 
                                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shrink-0">
+
                                       <ServiceIcon
                                         size={
                                           24
@@ -1691,6 +1684,7 @@ export default function BookingSection() {
                                           2.25
                                         }
                                       />
+
                                     </div>
 
                                     <div className="flex-1 min-w-0">
