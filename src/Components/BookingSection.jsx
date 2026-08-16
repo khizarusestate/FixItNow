@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Search,
   X,
@@ -17,7 +17,6 @@ import {
   Home,
   Paintbrush,
   Calendar,
-  MapPin,
   Phone,
   Mail,
   User,
@@ -37,20 +36,224 @@ import { bookingService, servicesService } from "../services/api.js";
 import { getActiveSessionRole } from "../utils/jwt.js";
 import LocationPicker from "./LocationPicker.jsx";
 import { geoFromUser, hasLocation } from "../utils/location.js";
-import { loadFormDraft, saveFormDraft, clearFormDraft } from "../utils/formDraft.js";
-import MenuPagination, { MENU_PAGE_SIZE } from "./shared/MenuPagination.jsx";
+import {
+  loadFormDraft,
+  saveFormDraft,
+  clearFormDraft,
+} from "../utils/formDraft.js";
+import MenuPagination, {
+  MENU_PAGE_SIZE,
+} from "./shared/MenuPagination.jsx";
 import TermsAgreement from "./shared/TermsAgreement.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { CATEGORY_ICONS, CATEGORY_COLORS } from "../utils/categoryIcons.js";
+import { CATEGORY_COLORS } from "../utils/categoryIcons.js";
 
-// =======================
-// CATEGORY ICONS
-// =======================
+// ============================================================
+// CATEGORY IMAGES
+// ============================================================
+//
+// Category cards now use real images instead of Lucide icons.
+//
+// Images are loaded directly from Unsplash CDN.
+// Services themselves still use their existing service icons.
+//
+// ============================================================
 
+const CATEGORY_IMAGES = {
+  // Air conditioning / HVAC
+  "AC": "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  "AC Repair":
+    "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  "Air Conditioning":
+    "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  "Air Conditioner":
+    "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  "HVAC":
+    "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  "HVAC Repair":
+    "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+
+  // Electrical
+  "Electrical":
+    "https://images.unsplash.com/photo-1495462911434-be47104d70fa?auto=format&fit=crop&w=900&q=85",
+  "Electrical Repair":
+    "https://images.unsplash.com/photo-1495462911434-be47104d70fa?auto=format&fit=crop&w=900&q=85",
+  "Electrician":
+    "https://images.unsplash.com/photo-1495462911434-be47104d70fa?auto=format&fit=crop&w=900&q=85",
+  "Electrical Services":
+    "https://images.unsplash.com/photo-1495462911434-be47104d70fa?auto=format&fit=crop&w=900&q=85",
+
+  // Plumbing
+  "Plumbing":
+    "https://images.unsplash.com/photo-1669829264745-33f0a82cad27?auto=format&fit=crop&w=900&q=85",
+  "Plumber":
+    "https://images.unsplash.com/photo-1669829264745-33f0a82cad27?auto=format&fit=crop&w=900&q=85",
+  "Plumbing Repair":
+    "https://images.unsplash.com/photo-1669829264745-33f0a82cad27?auto=format&fit=crop&w=900&q=85",
+  "Plumbing Services":
+    "https://images.unsplash.com/photo-1669829264745-33f0a82cad27?auto=format&fit=crop&w=900&q=85",
+
+  // Automotive
+  "Car":
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+  "Car Repair":
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+  "Auto Repair":
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+  "Automotive":
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+  "Mechanic":
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+
+  // Painting
+  "Painting":
+    "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=85",
+  "Painter":
+    "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=85",
+  "House Painting":
+    "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=85",
+
+  // Carpentry
+  "Carpentry":
+    "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=900&q=85",
+  "Carpenter":
+    "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=900&q=85",
+  "Woodwork":
+    "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=900&q=85",
+
+  // Cleaning
+  "Cleaning":
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+  "Cleaner":
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+  "House Cleaning":
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+
+  // Appliances
+  "Appliance Repair":
+    "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=85",
+  "Appliances":
+    "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=85",
+
+  // Electronics / Computer
+  "Electronics":
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85",
+  "Computer":
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85",
+  "Computer Repair":
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85",
+  "IT":
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85",
+
+  // Handyman / General
+  "Handyman":
+    "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=85",
+  "General":
+    "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=85",
+  "Home Repair":
+    "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=85",
+
+  // Home services
+  "Home Services":
+    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=85",
+  "Home Maintenance":
+    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=85",
+};
+
+// Normalize category names so small differences in capitalization
+// don't prevent an image from being found.
+const normalizeCategoryName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+// More flexible keyword-based fallback.
+// This means a backend category such as "AC Installation & Repair"
+// can still get the correct type of image without requiring
+// an exact key in CATEGORY_IMAGES.
+const CATEGORY_IMAGE_KEYWORDS = [
+  {
+    keywords: ["ac", "air condition", "air-condition", "hvac"],
+    image:
+      "https://images.unsplash.com/photo-1500264345546-767369bbd93c?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["electric", "electrician", "wiring", "electrical"],
+    image:
+      "https://images.unsplash.com/photo-1495462911434-be47104d70fa?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["plumb", "pipe", "water"],
+    image:
+      "https://images.unsplash.com/photo-1669829264745-33f0a82cad27?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["car", "auto", "automotive", "mechanic", "vehicle"],
+    image:
+      "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["paint", "painter"],
+    image:
+      "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["carpent", "wood", "furniture"],
+    image:
+      "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["clean", "janitor", "housekeeping"],
+    image:
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["computer", "laptop", "it", "technology", "electronic"],
+    image:
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["appliance", "washing machine", "refrigerator", "fridge"],
+    image:
+      "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=85",
+  },
+  {
+    keywords: ["handyman", "repair", "maintenance", "home repair"],
+    image:
+      "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=85",
+  },
+];
+
+const DEFAULT_CATEGORY_IMAGE =
+  "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=85";
+
+const getCategoryImage = (category) => {
+  if (!category) return DEFAULT_CATEGORY_IMAGE;
+
+  const normalized = normalizeCategoryName(category);
+
+  const exactEntry = Object.entries(CATEGORY_IMAGES).find(
+    ([key]) => normalizeCategoryName(key) === normalized,
+  );
+
+  if (exactEntry) {
+    return exactEntry[1];
+  }
+
+  const keywordEntry = CATEGORY_IMAGE_KEYWORDS.find(({ keywords }) =>
+    keywords.some((keyword) => normalized.includes(keyword)),
+  );
+
+  return keywordEntry?.image || DEFAULT_CATEGORY_IMAGE;
+};
 
 // =======================
 // ICON MAPPER
 // =======================
+//
+// These icons are STILL used by individual services.
+// Category cards no longer use them.
 
 const getIconComponent = (iconName) => {
   const icons = {
@@ -78,13 +281,17 @@ const getIconComponent = (iconName) => {
 function BookingForm({ service, onClose, onSuccess }) {
   const { t } = useI18n();
   const { user, isAuthenticated } = useAuth();
+
   const draftKey = `fixitnow_draft_booking_${service?.id || "service"}`;
   const savedDraft = loadFormDraft(draftKey, {});
-  const hadDraft = Boolean(savedDraft.name || savedDraft.email || savedDraft.phone);
+  const hadDraft = Boolean(
+    savedDraft.name || savedDraft.email || savedDraft.phone,
+  );
 
   const [geo, setGeo] = useState(() =>
     savedDraft.geo ? savedDraft.geo : geoFromUser(user),
   );
+
   const [form, setForm] = useState({
     name: savedDraft.name ?? user?.fullName ?? user?.name ?? "",
     phone: savedDraft.phone ?? user?.phone ?? user?.phoneNumber ?? "",
@@ -92,14 +299,19 @@ function BookingForm({ service, onClose, onSuccess }) {
     notes: savedDraft.notes ?? "",
     serviceCategory: service?.category || "",
   });
-  const [termsAgreed, setTermsAgreed] = useState(savedDraft.termsAgreed ?? false);
+
+  const [termsAgreed, setTermsAgreed] = useState(
+    savedDraft.termsAgreed ?? false,
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user || hadDraft) return;
+
     setGeo(geoFromUser(user));
+
     setForm((prev) => ({
       ...prev,
       name: user?.fullName || user?.name || prev.name,
@@ -128,6 +340,7 @@ function BookingForm({ service, onClose, onSuccess }) {
       geo,
       termsAgreed,
     });
+
     onClose();
   };
 
@@ -172,9 +385,11 @@ function BookingForm({ service, onClose, onSuccess }) {
         email: form.email.trim(),
         notes: form.notes.trim(),
       };
+
       if (geo.location?.trim()) {
         payload.location = geo.location.trim();
         payload.address = geo.location.trim();
+
         if (geo.latitude != null) payload.latitude = geo.latitude;
         if (geo.longitude != null) payload.longitude = geo.longitude;
         if (geo.placeId) payload.placeId = geo.placeId;
@@ -253,6 +468,7 @@ function BookingForm({ service, onClose, onSuccess }) {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {t("booking.price")}
               </p>
+
               <p className="mt-1 text-2xl font-bold text-orange-600">
                 PKR {service.price}
               </p>
@@ -288,6 +504,7 @@ function BookingForm({ service, onClose, onSuccess }) {
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {t("booking.phone")} *
               </label>
+
               <PhoneInput
                 value={form.phone}
                 onChange={(v) => update("phone", v)}
@@ -338,7 +555,6 @@ function BookingForm({ service, onClose, onSuccess }) {
             />
           </div>
 
-
           {/* ERROR */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3">
@@ -375,7 +591,6 @@ function BookingForm({ service, onClose, onSuccess }) {
           </button>
         </form>
       </div>
-
     </div>
   );
 }
@@ -412,9 +627,10 @@ export default function BookingSection() {
       setLoading(true);
       setError("");
 
-      // One request: categories + all active services (avoids N+1 and rate limits)
+      // One request: categories + all active services
       const response = await servicesService.getAll();
       const shaped = shapeServiceCatalog(response);
+
       setCategories(shaped.categories);
       setServices(shaped.services);
     } catch (err) {
@@ -435,21 +651,28 @@ export default function BookingSection() {
       setPendingBookingCount(0);
       return;
     }
+
     let cancelled = false;
+
     bookingService
       .getMyBookings()
       .then((res) => {
         if (cancelled) return;
+
         const list = res?.data || [];
+
         setPendingBookingCount(
           list.filter(
-            (b) => b.status === "pending" || b.status === "pending-confirmation",
+            (b) =>
+              b.status === "pending" ||
+              b.status === "pending-confirmation",
           ).length,
         );
       })
       .catch(() => {
         if (!cancelled) setPendingBookingCount(0);
       });
+
     return () => {
       cancelled = true;
     };
@@ -457,10 +680,12 @@ export default function BookingSection() {
 
   useEffect(() => {
     const role = getActiveSessionRole();
+
     if (role === "worker" || user?.type === "worker") {
       setLoading(false);
       return;
     }
+
     if (bootstrapCatalog?.categories?.length) {
       setCategories(bootstrapCatalog.categories);
       setServices(bootstrapCatalog.services || {});
@@ -468,6 +693,7 @@ export default function BookingSection() {
       setError("");
       return;
     }
+
     fetchCatalog();
   }, [fetchCatalog, user?.type, bootstrapCatalog]);
 
@@ -486,7 +712,11 @@ export default function BookingSection() {
         icon: service?.icon,
       };
 
-      if (isAuthenticated && user?.type === "customer" && !hasLocation(user)) {
+      if (
+        isAuthenticated &&
+        user?.type === "customer" &&
+        !hasLocation(user)
+      ) {
         openModal("completeProfile");
         return;
       }
@@ -506,10 +736,16 @@ export default function BookingSection() {
   useEffect(() => {
     const handler = (e) => {
       const service = e?.detail?.service;
-      if (service) handleSelectService(service);
+
+      if (service) {
+        handleSelectService(service);
+      }
     };
+
     window.addEventListener("fixitnow:select-service", handler);
-    return () => window.removeEventListener("fixitnow:select-service", handler);
+
+    return () =>
+      window.removeEventListener("fixitnow:select-service", handler);
   }, [handleSelectService]);
 
   // =======================
@@ -518,7 +754,7 @@ export default function BookingSection() {
 
   const sortServicesByName = useCallback((list) => {
     return [...list].sort((a, b) =>
-      (a?.name || "").localeCompare(b?.name || "", undefined, {
+      (a?.name || "").localeCompare(a?.name || "", undefined, {
         sensitivity: "base",
       }),
     );
@@ -528,14 +764,17 @@ export default function BookingSection() {
 
   const categoryCounts = useMemo(() => {
     const counts = {};
+
     categories.forEach((cat) => {
       counts[cat] = (services?.[cat] || []).length;
     });
+
     return counts;
   }, [categories, services]);
 
   const filteredServices = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!browsingServices) return [];
 
     const matchesQuery = (s) =>
@@ -550,11 +789,15 @@ export default function BookingSection() {
     }
 
     const allServices = [];
+
     categories.forEach((cat) => {
       (services?.[cat] || []).forEach((s) => {
-        if (matchesQuery(s)) allServices.push(s);
+        if (matchesQuery(s)) {
+          allServices.push(s);
+        }
       });
     });
+
     return sortServicesByName(allServices);
   }, [
     browsingServices,
@@ -588,6 +831,7 @@ export default function BookingSection() {
 
   const pagedCategories = useMemo(() => {
     const start = (categoryPage - 1) * MENU_PAGE_SIZE;
+
     return categories.slice(start, start + MENU_PAGE_SIZE);
   }, [categories, categoryPage]);
 
@@ -604,6 +848,7 @@ export default function BookingSection() {
 
   const pagedServices = useMemo(() => {
     const start = (servicePage - 1) * MENU_PAGE_SIZE;
+
     return filteredServices.slice(start, start + MENU_PAGE_SIZE);
   }, [filteredServices, servicePage]);
 
@@ -613,14 +858,16 @@ export default function BookingSection() {
     }
   }, [servicePage, serviceTotalPages]);
 
-  // Workers don't book through this section — hide UI only after all hooks run
-  // (early return above caused "Rendered fewer hooks than expected".)
+  // Workers don't book through this section.
   if (user?.type === "worker") {
     return null;
   }
 
   return (
-    <section id="booking" className="bg-gradient-to-br from-slate-50 via-white to-orange-50/30 px-5 py-20">
+    <section
+      id="booking"
+      className="bg-gradient-to-br from-slate-50 via-white to-orange-50/30 px-5 py-20"
+    >
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -681,30 +928,41 @@ export default function BookingSection() {
       `}</style>
 
       <div className="mx-auto max-w-7xl">
-        {isAuthenticated && user?.type === "customer" && pendingBookingCount > 0 && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-3 shadow-sm ring-1 ring-amber-100/80">
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                <Clock size={18} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-amber-900">
-                  {pendingBookingCount} booking{pendingBookingCount > 1 ? "s" : ""} awaiting admin confirmation
-                </p>
-                <p className="text-xs text-amber-800/90 mt-0.5">
-                  You can track status anytime from My Bookings.
-                </p>
+        {isAuthenticated &&
+          user?.type === "customer" &&
+          pendingBookingCount > 0 && (
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-3 shadow-sm ring-1 ring-amber-100/80">
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                  <Clock size={18} />
+                </span>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-amber-900">
+                    {pendingBookingCount} booking
+                    {pendingBookingCount > 1 ? "s" : ""} awaiting admin
+                    confirmation
+                  </p>
+
+                  <p className="text-xs text-amber-800/90 mt-0.5">
+                    You can track status anytime from My Bookings.
+                  </p>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("open-my-bookings"),
+                  )
+                }
+                className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
+              >
+                View bookings
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-my-bookings"))}
-              className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
-            >
-              View bookings
-            </button>
-          </div>
-        )}
+          )}
 
         {/* HEADER */}
         <div className="text-center mb-12 animate-fadeIn">
@@ -748,7 +1006,10 @@ export default function BookingSection() {
           <div className="py-8 sm:py-12">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+                >
                   <div className="w-12 h-12 bg-slate-200 rounded-xl mb-3 animate-pulse" />
                   <div className="h-4 bg-slate-200 rounded animate-pulse mb-2" />
                   <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
@@ -765,7 +1026,7 @@ export default function BookingSection() {
           </div>
         )}
 
-        {/* CONTENT — open menu: categories, then services */}
+        {/* CONTENT */}
         {!loading && !error && (
           <div className="animate-slideUp w-full">
             {!browsingServices ? (
@@ -775,36 +1036,69 @@ export default function BookingSection() {
                     Choose a category
                   </h3>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4 sm:gap-5">
                   {pagedCategories.map((category, idx) => {
-                    const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                    const catColor =
-                      CATEGORY_COLORS[category] || "from-slate-400 to-slate-600";
+                    const categoryImage = getCategoryImage(category);
+
                     return (
                       <button
                         key={category}
                         type="button"
                         onClick={() => openCategory(category)}
                         aria-label={`Open ${category}`}
-                        className="category-btn group text-left rounded-2xl bg-white/90 p-5 sm:p-6 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn"
-                        style={{ animationDelay: `${idx * 40}ms` }}
+                        className="category-btn group overflow-hidden text-left rounded-2xl bg-white/90 hover:bg-orange-50/80 hover:shadow-md hover:-translate-y-0.5 transition-all animate-scaleIn"
+                        style={{
+                          animationDelay: `${idx * 40}ms`,
+                        }}
                       >
-                        <div
-                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shadow-sm mb-4`}
-                        >
-                          <CategoryIcon size={28} strokeWidth={2.25} />
+                        {/* CATEGORY IMAGE */}
+                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100">
+                          <img
+                            src={categoryImage}
+                            alt={`${category} professional service`}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => {
+                              if (
+                                e.currentTarget.src !==
+                                DEFAULT_CATEGORY_IMAGE
+                              ) {
+                                e.currentTarget.src =
+                                  DEFAULT_CATEGORY_IMAGE;
+                              }
+                            }}
+                          />
+
+                          {/* IMAGE OVERLAY */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent" />
+
+                          {/* CATEGORY LABEL */}
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-700 shadow-sm backdrop-blur-sm">
+                              Professional Service
+                            </span>
+                          </div>
                         </div>
-                        <h4 className="font-bold text-blue-900 text-base sm:text-lg leading-snug pr-6">
-                          {category}
-                        </h4>
-                        <ChevronRight
-                          size={18}
-                          className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform mt-2"
-                        />
+
+                        {/* CATEGORY CONTENT */}
+                        <div className="p-4 sm:p-5">
+                          <div className="flex items-center justify-between gap-3">
+                            <h4 className="font-bold text-blue-900 text-base sm:text-lg leading-snug">
+                              {category}
+                            </h4>
+
+                            <ChevronRight
+                              size={18}
+                              className="text-orange-500 shrink-0 group-hover:translate-x-0.5 transition-transform"
+                            />
+                          </div>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
+
                 {categories.length === 0 ? (
                   <p className="text-center text-slate-500 py-12 text-base">
                     No categories available yet.
@@ -830,17 +1124,22 @@ export default function BookingSection() {
                       <ChevronLeft size={18} />
                       Categories
                     </button>
+
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
                         {search.trim() && !selectedCategory
                           ? "Search results"
                           : "Services"}
                       </p>
+
                       <h3 className="font-bold text-blue-900 text-lg sm:text-xl truncate">
                         {selectedCategory ||
-                          (search.trim() ? `“${search.trim()}”` : "All services")}
+                          (search.trim()
+                            ? `“${search.trim()}”`
+                            : "All services")}
                       </h3>
                     </div>
+
                     {filteredServices.length > 0 && (
                       <span className="shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800">
                         {filteredServices.length}
@@ -855,47 +1154,63 @@ export default function BookingSection() {
                       <ul className="space-y-3">
                         {pagedServices.map((service, idx) => {
                           const ServiceIcon = getIconComponent(service?.icon);
+
                           const catColor =
                             CATEGORY_COLORS[service?.category] ||
                             "from-slate-400 to-slate-600";
+
                           return (
                             <li
                               key={service?._id || service?.id}
                               className="animate-scaleIn rounded-2xl bg-white/90 hover:bg-orange-50/50 transition-colors"
-                              style={{ animationDelay: `${idx * 20}ms` }}
+                              style={{
+                                animationDelay: `${idx * 20}ms`,
+                              }}
                             >
                               <div className="flex items-start gap-4 sm:gap-5 p-4 sm:p-5">
                                 <div
                                   className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${catColor} flex items-center justify-center text-white shrink-0`}
                                 >
-                                  <ServiceIcon size={24} strokeWidth={2.25} />
+                                  <ServiceIcon
+                                    size={24}
+                                    strokeWidth={2.25}
+                                  />
                                 </div>
+
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-bold text-blue-900 text-base sm:text-lg leading-snug">
                                     {service?.name}
                                   </h4>
+
                                   {service?.price > 0 && (
                                     <p className="mt-1.5 inline-block rounded-lg bg-orange-100 px-2.5 py-1 text-sm font-bold text-orange-700">
                                       PKR {service.price}
                                     </p>
                                   )}
+
                                   {service?.description && (
                                     <p className="mt-1.5 text-sm text-slate-600 line-clamp-2 leading-relaxed">
                                       {service.description}
                                     </p>
                                   )}
-                                  {!selectedCategory && service?.category && (
-                                    <p className="mt-1.5 text-[11px] uppercase tracking-wider text-orange-600/90 font-semibold">
-                                      {service.category}
-                                    </p>
-                                  )}
+
+                                  {!selectedCategory &&
+                                    service?.category && (
+                                      <p className="mt-1.5 text-[11px] uppercase tracking-wider text-orange-600/90 font-semibold">
+                                        {service.category}
+                                      </p>
+                                    )}
                                 </div>
+
                                 <button
                                   type="button"
-                                  onClick={() => handleSelectService(service)}
+                                  onClick={() =>
+                                    handleSelectService(service)
+                                  }
                                   className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 sm:px-5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-bold group mt-0.5 shadow-sm"
                                 >
                                   Book
+
                                   <ArrowRight
                                     size={16}
                                     className="group-hover:translate-x-0.5 transition-transform hidden sm:block"
@@ -906,6 +1221,7 @@ export default function BookingSection() {
                           );
                         })}
                       </ul>
+
                       <MenuPagination
                         page={servicePage}
                         totalPages={serviceTotalPages}
@@ -916,13 +1232,18 @@ export default function BookingSection() {
                   ) : (
                     <div className="text-center py-16 px-4 rounded-2xl bg-white/60">
                       <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                        <Search className="text-slate-400" size={28} />
+                        <Search
+                          className="text-slate-400"
+                          size={28}
+                        />
                       </div>
+
                       <p className="text-slate-600 font-medium text-base">
                         {search.trim()
                           ? "No services match your search"
                           : "No services in this category yet"}
                       </p>
+
                       {search.trim() && (
                         <button
                           type="button"
@@ -948,14 +1269,17 @@ export default function BookingSection() {
           onClose={() => setSelectedService(null)}
           onSuccess={() => {
             setSelectedService(null);
-
             setBookingDone(true);
 
-            if (isAuthenticated && user?.type === "customer") {
+            if (
+              isAuthenticated &&
+              user?.type === "customer"
+            ) {
               bookingService
                 .getMyBookings()
                 .then((res) => {
                   const list = res?.data || [];
+
                   setPendingBookingCount(
                     list.filter(
                       (b) =>
