@@ -9,7 +9,6 @@ import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
-import Contact from "./Components/Contact";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -54,7 +53,6 @@ export default function App() {
                           <AdvertiseSection />
                           <ReviewsSection />
                         </Suspense>
-                        <Contact />
                       </main>
                       <Suspense fallback={null}>
                         <About />
