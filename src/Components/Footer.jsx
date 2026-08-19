@@ -4,13 +4,16 @@ import {
   Phone,
   LockKeyhole,
   Globe2,
-  Camera,
-  BriefcaseBusiness,
-  Code2,
-  Share2,
   CreditCard,
 } from "lucide-react";
 import { Link } from "react-scroll";
+import {
+  FaInstagram,
+  FaFacebookF,
+  FaLinkedinIn,
+  FaGithub,
+  FaYoutube,
+} from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -19,13 +22,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Company */}
           <div>
-            <h3 className="mb-4">
+            <div className="mb-4 inline-flex rounded-lg bg-white px-3 py-2">
               <img
                 src="/Assets/Logo.png"
                 alt="FixItNow"
                 className="h-10 w-auto object-contain"
               />
-            </h3>
+            </div>
 
             <p className="max-w-xs text-sm leading-7 text-slate-300">
               Find trusted professionals for your home services.
@@ -144,42 +147,42 @@ const Footer = () => {
             <div className="flex flex-wrap gap-3">
               <a
                 href="#"
-                aria-label="Website"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
-              >
-                <Globe2 size={19} />
-              </a>
-
-              <a
-                href="#"
-                aria-label="Social"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
-              >
-                <Share2 size={19} />
-              </a>
-
-              <a
-                href="#"
                 aria-label="Instagram"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
               >
-                <Camera size={19} />
+                <FaInstagram size={18} />
               </a>
 
               <a
                 href="#"
-                aria-label="Professional Profile"
+                aria-label="Facebook"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
               >
-                <BriefcaseBusiness size={19} />
+                <FaFacebookF size={17} />
               </a>
 
               <a
                 href="#"
-                aria-label="Code"
+                aria-label="LinkedIn"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
               >
-                <Code2 size={19} />
+                <FaLinkedinIn size={18} />
+              </a>
+
+              <a
+                href="#"
+                aria-label="GitHub"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
+                <FaGithub size={19} />
+              </a>
+
+              <a
+                href="#"
+                aria-label="YouTube"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
+                <FaYoutube size={19} />
               </a>
             </div>
 
