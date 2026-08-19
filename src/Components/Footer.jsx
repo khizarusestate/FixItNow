@@ -116,7 +116,7 @@ const Footer = () => {
                   href="mailto:supportfixitnow@gmail.com"
                   className="transition hover:text-[#F4C542]"
                 >
-                  supportfixitnow@gmail.com
+                  support@fixitnow.com
                 </a>
               </li>
 
