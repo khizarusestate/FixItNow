@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   Code2,
   Share2,
+  CreditCard,
 } from "lucide-react";
 import { Link } from "react-scroll";
 
@@ -18,9 +19,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Company */}
           <div>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">
-              FixItNow
+            <h3 className="mb-4">
+              <img
+                src="/Assets/Logo.png"
+                alt="FixItNow"
+                className="h-10 w-auto object-contain"
+              />
             </h3>
+
             <p className="max-w-xs text-sm leading-7 text-slate-300">
               Find trusted professionals for your home services.
               Book reliable workers quickly and easily with FixItNow.
@@ -32,11 +38,55 @@ const Footer = () => {
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">
               Quick Links
             </h3>
+
             <ul className="space-y-3 text-sm text-slate-300">
-              <li><Link to="home" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Home</Link></li>
-              <li><Link to="about" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">About Us</Link></li>
-              <li><Link to="services" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Services</Link></li>
-              <li><Link to="contact" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Contact Us</Link></li>
+              <li>
+                <Link
+                  to="home"
+                  smooth
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-[#F4C542]"
+                >
+                  Home
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="about"
+                  smooth
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-[#F4C542]"
+                >
+                  About Us
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="services"
+                  smooth
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-[#F4C542]"
+                >
+                  Services
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="contact"
+                  smooth
+                  duration={500}
+                  offset={-80}
+                  className="cursor-pointer transition hover:text-[#F4C542]"
+                >
+                  Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -45,21 +95,41 @@ const Footer = () => {
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">
               Contact
             </h3>
+
             <ul className="space-y-4 text-sm text-slate-300">
               <li className="flex items-center gap-3">
-                <MapPin size={18} className="shrink-0 text-[#F4C542]" />
+                <MapPin
+                  size={18}
+                  className="shrink-0 text-[#F4C542]"
+                />
                 <span>Serving All Over Pakistan</span>
               </li>
+
               <li className="flex items-center gap-3">
-                <Mail size={18} className="shrink-0 text-[#F4C542]" />
-                <a href="mailto:supportfixitnow@gmail.com" className="transition hover:text-[#F4C542]">
+                <Mail
+                  size={18}
+                  className="shrink-0 text-[#F4C542]"
+                />
+
+                <a
+                  href="mailto:supportfixitnow@gmail.com"
+                  className="transition hover:text-[#F4C542]"
+                >
                   supportfixitnow@gmail.com
                 </a>
               </li>
+
               <li className="flex items-center gap-3">
-                <Phone size={18} className="shrink-0 text-[#F4C542]" />
-                <a href="tel:03256776142" className="transition hover:text-[#F4C542]">
-                  0325 6776142
+                <Phone
+                  size={18}
+                  className="shrink-0 text-[#F4C542]"
+                />
+
+                <a
+                  href="tel:03012220345"
+                  className="transition hover:text-[#F4C542]"
+                >
+                  0301 2220345
                 </a>
               </li>
             </ul>
@@ -70,20 +140,45 @@ const Footer = () => {
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">
               Follow Us
             </h3>
+
             <div className="flex flex-wrap gap-3">
-              <a href="#" aria-label="Website" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]">
+              <a
+                href="#"
+                aria-label="Website"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
                 <Globe2 size={19} />
               </a>
-              <a href="#" aria-label="Social" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]">
+
+              <a
+                href="#"
+                aria-label="Social"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
                 <Share2 size={19} />
               </a>
-              <a href="#" aria-label="Instagram" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]">
+
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
                 <Camera size={19} />
               </a>
-              <a href="#" aria-label="Professional Profile" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]">
+
+              <a
+                href="#"
+                aria-label="Professional Profile"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
                 <BriefcaseBusiness size={19} />
               </a>
-              <a href="#" aria-label="Code" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]">
+
+              <a
+                href="#"
+                aria-label="Code"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#F4C542]/30 bg-white/5 text-[#F4C542] transition hover:-translate-y-1 hover:bg-[#F4C542] hover:text-[#0B1F3A]"
+              >
                 <Code2 size={19} />
               </a>
             </div>
@@ -102,11 +197,35 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Copyright */}
-      <div className="border-t border-white/10 bg-[#08182E] px-6 py-4 text-center">
-        <p className="text-sm text-slate-300">
-          © {new Date().getFullYear()} FixItNow. All rights reserved.
-        </p>
+      {/* Copyright & Payment Methods */}
+      <div className="border-t border-white/10 bg-[#08182E] px-6 py-4">
+        <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <p className="text-sm text-slate-300">
+            © {new Date().getFullYear()} FixItNow. All rights reserved.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="mr-1 flex items-center gap-2 text-sm text-slate-300">
+              <CreditCard
+                size={17}
+                className="text-[#F4C542]"
+              />
+              <span>We Accept</span>
+            </div>
+
+            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold italic tracking-wide text-[#1434CB]">
+              VISA
+            </span>
+
+            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold text-[#E31837]">
+              JazzCash
+            </span>
+
+            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold text-[#00A651]">
+              easypaisa
+            </span>
+          </div>
+        </div>
       </div>
     </footer>
   );
