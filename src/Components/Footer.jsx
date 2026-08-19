@@ -21,14 +21,16 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Company */}
           <div>
-            <div className="mb-4 inline-flex items-center gap-3 rounded-lg bg-white px-3 py-2">
-              <img
-                src="/Assets/Logo.png"
-                alt="FixItNow"
-                className="h-10 w-auto object-contain"
-              />
+            <div className="mb-4 flex items-center gap-3">
+              <div className="inline-flex rounded-lg bg-white px-3 py-2">
+                <img
+                  src="/Assets/Logo.png"
+                  alt="FixItNow"
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
 
-              <span className="text-lg font-bold tracking-tight text-[#0B1F3A]">
+              <span className="text-lg font-bold tracking-tight text-orange-400">
                 Fix It Now
               </span>
             </div>
