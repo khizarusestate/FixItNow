@@ -21,12 +21,16 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Company */}
           <div>
-            <div className="mb-4 inline-flex rounded-lg bg-white px-3 py-2">
+            <div className="mb-4 inline-flex items-center gap-3 rounded-lg bg-white px-3 py-2">
               <img
                 src="/Assets/Logo.png"
                 alt="FixItNow"
                 className="h-10 w-auto object-contain"
               />
+
+              <span className="text-lg font-bold tracking-tight text-[#0B1F3A]">
+                Fix It Now
+              </span>
             </div>
 
             <p className="max-w-xs text-sm leading-7 text-slate-300">
@@ -193,51 +197,54 @@ const Footer = () => {
               <LockKeyhole size={17} strokeWidth={2.2} />
               Login as Admin
             </a>
+
+            {/* Payment Methods */}
+            <div className="mt-5">
+              <div className="mb-2 flex items-center gap-2 text-sm text-slate-300">
+                <CreditCard
+                  size={17}
+                  className="text-[#F4C542]"
+                />
+                <span>We Accept</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Visa */}
+                <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2.5">
+                  <span className="text-xs font-bold italic tracking-wide text-[#1434CB]">
+                    VISA
+                  </span>
+                </span>
+
+                {/* JazzCash */}
+                <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
+                  <img
+                    src="/Assets/JazzCash.png"
+                    alt="JazzCash"
+                    className="max-h-6 w-auto object-contain"
+                  />
+                </span>
+
+                {/* Easypaisa */}
+                <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
+                  <img
+                    src="/Assets/EasyPaisa.png"
+                    alt="Easypaisa"
+                    className="max-h-6 w-auto object-contain"
+                  />
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Copyright & Payment Methods */}
+      {/* Copyright */}
       <div className="border-t border-white/10 bg-[#08182E] px-6 py-4">
-        <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+        <div className="flex items-center justify-center text-center">
           <p className="text-sm text-slate-300">
             © {new Date().getFullYear()} FixItNow. All rights reserved.
           </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <div className="mr-1 flex items-center gap-2 text-sm text-slate-300">
-              <CreditCard
-                size={17}
-                className="text-[#F4C542]"
-              />
-              <span>We Accept</span>
-            </div>
-
-            {/* Visa */}
-            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2.5">
-              <span className="text-xs font-bold italic tracking-wide text-[#1434CB]">
-                VISA
-              </span>
-            </span>
-
-            {/* JazzCash */}
-            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
-              <img
-                src="/Assets/JazzCash.png"
-                alt="JazzCash"
-                className="max-h-6 w-auto object-contain"
-              />
-            </span>
-
-            {/* Easypaisa */}
-            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
-              <img
-                src="/Assets/EasyPaisa.png"
-                alt="Easypaisa"
-                className="max-h-6 w-auto object-contain"
-              />
-            </span>
-          </div>
         </div>
       </div>
     </footer>
