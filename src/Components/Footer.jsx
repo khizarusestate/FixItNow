@@ -3,7 +3,6 @@ import {
   Mail,
   Phone,
   LockKeyhole,
-  Globe2,
   CreditCard,
 } from "lucide-react";
 import { Link } from "react-scroll";
@@ -113,7 +112,6 @@ const Footer = () => {
                   size={18}
                   className="shrink-0 text-[#F4C542]"
                 />
-
                 <a
                   href="mailto:supportfixitnow@gmail.com"
                   className="transition hover:text-[#F4C542]"
@@ -127,7 +125,6 @@ const Footer = () => {
                   size={18}
                   className="shrink-0 text-[#F4C542]"
                 />
-
                 <a
                   href="tel:03012220345"
                   className="transition hover:text-[#F4C542]"
@@ -216,16 +213,29 @@ const Footer = () => {
               <span>We Accept</span>
             </div>
 
-            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold italic tracking-wide text-[#1434CB]">
-              VISA
+            {/* Visa */}
+            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2.5">
+              <span className="text-xs font-bold italic tracking-wide text-[#1434CB]">
+                VISA
+              </span>
             </span>
 
-            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold text-[#E31837]">
-              JazzCash
+            {/* JazzCash */}
+            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
+              <img
+                src="/Assets/JazzCash.png"
+                alt="JazzCash"
+                className="max-h-6 w-auto object-contain"
+              />
             </span>
 
-            <span className="rounded-md border border-white/10 bg-white px-2.5 py-1 text-xs font-bold text-[#00A651]">
-              easypaisa
+            {/* Easypaisa */}
+            <span className="flex h-8 items-center rounded-md border border-white/10 bg-white px-2">
+              <img
+                src="/Assets/EasyPaisa.png"
+                alt="Easypaisa"
+                className="max-h-6 w-auto object-contain"
+              />
             </span>
           </div>
         </div>
