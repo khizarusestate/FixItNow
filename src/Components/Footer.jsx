@@ -30,7 +30,7 @@ const Footer = () => {
                 />
               </div>
 
-              <span className="text-lg font-bold tracking-tight text-orange-400">
+              <span className="text-lg font-bold tracking-tight text-white">
                 Fix It Now
               </span>
             </div>
