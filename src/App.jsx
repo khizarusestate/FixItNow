@@ -9,6 +9,7 @@ import { ModalProvider } from "./context/ModalContext";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
+import WorkerLiveLocationPublisher from "./Components/shared/WorkerLiveLocationPublisher.jsx";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -40,6 +41,7 @@ export default function App() {
         <I18nProvider>
           <OAuthConfigProvider>
             <AuthProvider>
+              <WorkerLiveLocationPublisher />
               <GuideProvider>
                 <ModalProvider>
                   <LegalProvider>
@@ -67,7 +69,6 @@ export default function App() {
                       </Suspense>
                     </div>
                   </LegalProvider>
-
                 </ModalProvider>
               </GuideProvider>
             </AuthProvider>
