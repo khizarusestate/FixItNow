@@ -7,7 +7,7 @@ import { SOCKET_URL } from "../../config/env.js";
 import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
 
-const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "in-progress"]);
+const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
 
 function isValidPoint(point) {
   return Number.isFinite(Number(point?.latitude)) && Number.isFinite(Number(point?.longitude));
