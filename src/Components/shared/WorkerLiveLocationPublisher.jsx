@@ -5,7 +5,7 @@ import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
-const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "in-progress"]);
+const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
 const JOB_REFRESH_MS = 15000;
 
 export default function WorkerLiveLocationPublisher() {
