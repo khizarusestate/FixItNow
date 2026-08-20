@@ -10,6 +10,7 @@ import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import WorkerLiveLocationPublisher from "./Components/shared/WorkerLiveLocationPublisher.jsx";
+import CustomerLiveTrackingHost from "./Components/shared/CustomerLiveTrackingHost.jsx";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -42,6 +43,7 @@ export default function App() {
           <OAuthConfigProvider>
             <AuthProvider>
               <WorkerLiveLocationPublisher />
+              <CustomerLiveTrackingHost />
               <GuideProvider>
                 <ModalProvider>
                   <LegalProvider>
