@@ -1,25 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { SOCKET_URL } from "../../config/env.js";
 import { apiRequestWithAuth } from "../../services/api.js";
-import { getActiveSessionRole, getToken, getUserData } from "../../utils/jwt.js";
+import { getToken } from "../../utils/jwt.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const ACTIVE_STATUSES = new Set(["worker-assigned", "in-progress"]);
 const JOB_REFRESH_MS = 15000;
 
 export default function WorkerLiveLocationPublisher() {
+  const { user, isAuthenticated } = useAuth();
   const socketRef = useRef(null);
   const watchIdRef = useRef(null);
   const jobsRef = useRef([]);
   const lastSentRef = useRef(0);
   const refreshTimerRef = useRef(null);
-  const [workerSession, setWorkerSession] = useState(false);
-
-  useEffect(() => {
-    const role = getActiveSessionRole();
-    const user = role === "worker" ? getUserData("worker") : null;
-    setWorkerSession(Boolean(role === "worker" && (user?.id || user?._id)));
-  }, []);
+  const workerSession = Boolean(isAuthenticated && user?.type === "worker");
 
   useEffect(() => {
     if (!workerSession) return undefined;
