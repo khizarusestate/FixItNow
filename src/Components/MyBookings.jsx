@@ -340,7 +340,7 @@ export default function MyBookings({ isOpen, onClose }) {
                   b.status === "pending" || b.status === "pending-confirmation";
                 const canMarkDone =
                   Boolean(b.worker) &&
-                  ["assigned", "on-the-way", "in-progress"].includes(b.status) &&
+                  ["in-progress"].includes(b.status) &&
                   !b.customerMarkedDone;
                 const waitingWorker =
                   b.customerMarkedDone &&
