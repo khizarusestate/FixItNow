@@ -20,7 +20,7 @@ const Login = lazy(() => import("./Components/Login"));
 const Signup = lazy(() => import("./Components/Signup"));
 const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
-import Footer from "./Components/Footer"; 
+import Footer from "./Components/Footer";
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
 const WorkerApprovalPending = lazy(
@@ -66,7 +66,6 @@ export default function App() {
                         <VerifyEmail />
                         <WorkerModal />
                         <WorkerApprovalPending />
-                        <CompleteProfile />
                         <Footer />
                       </Suspense>
                     </div>
