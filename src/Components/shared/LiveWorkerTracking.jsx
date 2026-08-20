@@ -7,7 +7,7 @@ import { SOCKET_URL } from "../../config/env.js";
 import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
 
-const ACTIVE_STATUSES = new Set(["worker-assigned", "in-progress"]);
+const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "in-progress"]);
 
 function isValidPoint(point) {
   return Number.isFinite(Number(point?.latitude)) && Number.isFinite(Number(point?.longitude));
@@ -25,7 +25,6 @@ export default function LiveWorkerTracking({ bookingId }) {
   useEffect(() => {
     if (!bookingId) return undefined;
     let cancelled = false;
-
     const loadInitial = async () => {
       try {
         const response = await apiRequestWithAuth(`/live-tracking/customer/${bookingId}`, { role: "customer" });
@@ -34,7 +33,6 @@ export default function LiveWorkerTracking({ bookingId }) {
         if (!cancelled) setError(err?.message || "Unable to load live tracking.");
       }
     };
-
     loadInitial();
     return () => { cancelled = true; };
   }, [bookingId]);
@@ -43,13 +41,11 @@ export default function LiveWorkerTracking({ bookingId }) {
     if (!bookingId) return undefined;
     const token = getToken("customer");
     if (!token) return undefined;
-
     const socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       withCredentials: true,
       autoConnect: true,
     });
-
     socket.on("connect", () => socket.emit("join-user", { token }));
     socket.on("worker-location-update", (location) => {
       if (String(location?.bookingId) !== String(bookingId)) return;
@@ -61,13 +57,11 @@ export default function LiveWorkerTracking({ bookingId }) {
       }));
       setLastUpdated(location.updatedAt || new Date().toISOString());
     });
-
     return () => socket.disconnect();
   }, [bookingId]);
 
   useEffect(() => {
     if (!mapNodeRef.current || !data?.destination || !isValidPoint(data.destination)) return undefined;
-
     const destination = [Number(data.destination.latitude), Number(data.destination.longitude)];
     const worker = isValidPoint(data.worker)
       ? [Number(data.worker.latitude), Number(data.worker.longitude)]
@@ -105,7 +99,6 @@ export default function LiveWorkerTracking({ bookingId }) {
       padding: [35, 35],
       maxZoom: 15,
     });
-
     return undefined;
   }, [data]);
 
