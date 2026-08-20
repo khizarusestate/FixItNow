@@ -5,7 +5,7 @@ import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
-const ACTIVE_STATUSES = new Set(["worker-assigned", "in-progress"]);
+const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "in-progress"]);
 const JOB_REFRESH_MS = 15000;
 
 export default function WorkerLiveLocationPublisher() {
@@ -33,13 +33,9 @@ export default function WorkerLiveLocationPublisher() {
 
     const syncJobs = async () => {
       try {
-        const response = await apiRequestWithAuth("/worker-jobs/my-jobs", {
-          role: "worker",
-        });
+        const response = await apiRequestWithAuth("/worker-jobs/my-jobs", { role: "worker" });
         if (cancelled) return;
-        jobsRef.current = (response?.data || []).filter((job) =>
-          ACTIVE_STATUSES.has(job.status),
-        );
+        jobsRef.current = (response?.data || []).filter((job) => ACTIVE_STATUSES.has(job.status));
       } catch {
         // Tracking should never break the dashboard if the refresh fails.
       }
@@ -72,11 +68,7 @@ export default function WorkerLiveLocationPublisher() {
         () => {
           // Browser permission/GPS errors are intentionally non-fatal.
         },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000,
-          timeout: 15000,
-        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
       );
     };
 
