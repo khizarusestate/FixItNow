@@ -15,12 +15,14 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
+  Radio,
 } from "lucide-react";
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
 import CompletionTicks from "./CompletionTicks";
 import { jobLocationText, profileFieldText } from "../utils/profileFieldDisplay.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import LiveWorkerTracking from "./shared/LiveWorkerTracking.jsx";
 
 const STATUS_CONFIG = {
   pending: {
@@ -53,6 +55,14 @@ const STATUS_CONFIG = {
     bg: "bg-purple-50",
     border: "border-purple-200",
     label: "Worker Assigned",
+    priority: 0,
+  },
+  "on-the-way": {
+    icon: Radio,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    label: "On The Way",
     priority: 0,
   },
   "in-progress": {
@@ -100,6 +110,7 @@ export default function MyBookings({ isOpen, onClose }) {
   const [hoveredStar, setHoveredStar] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [statusNotice, setStatusNotice] = useState("");
+  const [trackingBookingId, setTrackingBookingId] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -329,7 +340,7 @@ export default function MyBookings({ isOpen, onClose }) {
                   b.status === "pending" || b.status === "pending-confirmation";
                 const canMarkDone =
                   Boolean(b.worker) &&
-                  ["assigned", "in-progress"].includes(b.status) &&
+                  ["assigned", "on-the-way", "in-progress"].includes(b.status) &&
                   !b.customerMarkedDone;
                 const waitingWorker =
                   b.customerMarkedDone &&
@@ -404,6 +415,19 @@ export default function MyBookings({ isOpen, onClose }) {
                                 {b.worker.fullName}
                               </p>
                             </div>
+                          )}
+                          {b.worker && ["on-the-way", "in-progress"].includes(b.status) && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setTrackingBookingId(b.id);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                            >
+                              <Radio size={14} />
+                              Live Tracking
+                            </button>
                           )}
                           <button className="text-slate-400 hover:text-slate-600 transition-colors p-1">
                             {isExpanded ? (
@@ -611,6 +635,34 @@ export default function MyBookings({ isOpen, onClose }) {
             </div>
           )}
         </div>
+
+        {trackingBookingId && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 py-6">
+            <button
+              type="button"
+              onClick={() => setTrackingBookingId(null)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              aria-label="Close live tracking"
+            />
+            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Live Tracking</p>
+                  <p className="text-xs text-slate-500">Your worker's live location</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTrackingBookingId(null)}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Close live tracking"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <LiveWorkerTracking bookingId={trackingBookingId} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
