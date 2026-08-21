@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, UserPlus, LogIn, User, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown, ChevronLeft } from 'lucide-react';
+import { Menu, X, UserPlus, LogIn, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown, ChevronLeft } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { setUserData } from '../utils/jwt.js';
@@ -381,7 +381,7 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 {user?.type === 'worker' ? (
-                  <button onClick={() => { setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 relative">
+                  <button onClick={() => { markUpdatesSeen?.(); setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 relative">
                     <ClipboardList size={16} /> {t('nav.dashboard')}
                     {user?.jobCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -390,7 +390,7 @@ export default function Header() {
                     )}
                   </button>
                 ) : (
-                  <button type="button" onClick={() => { setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50">
+                  <button type="button" onClick={() => { markUpdatesSeen?.(); setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50">
                     <ClipboardList size={16} /> {t('nav.bookings')}
                   </button>
                 )}
