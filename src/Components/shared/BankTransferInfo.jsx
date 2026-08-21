@@ -13,6 +13,9 @@ export default function BankTransferInfo({ className = "" }) {
         <p className="font-semibold">Pay via bank transfer</p>
         <ul className="mt-2 space-y-1 text-xs sm:text-sm text-indigo-800">
           <li>
+            <span className="font-medium">Account holder:</span> Tahir Ayyub
+          </li>
+          <li>
             <span className="font-medium">Bank:</span> {bank.bankName}
           </li>
           <li>
