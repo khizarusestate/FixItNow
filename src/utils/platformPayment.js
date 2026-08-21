@@ -1,10 +1,11 @@
 /** MSISDN for JazzCash (set in `.env` — never commit real secrets). */
 export function getJazzcashMsisdn() {
-  return String(
+  const number = String(
     import.meta.env.VITE_PLATFORM_JAZZCASH_MSISDN ||
       import.meta.env.VITE_PLATFORM_WALLET_MSISDN ||
       "",
   ).trim();
+  return number ? `Tahir Ayyub — ${number}` : "Tahir Ayyub";
 }
 
 /** Bank transfer details from env (demo / production account info). */
