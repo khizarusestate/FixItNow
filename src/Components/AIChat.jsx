@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Bot, User, Loader2, X, MessageCircle } from "lucide-react";
-import { aiService } from "../services/api.js";
+import { aiService } from "../services/aiService.js";
 
 const INITIAL_MESSAGE = {
   role: "assistant",
