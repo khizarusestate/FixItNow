@@ -34,6 +34,7 @@ export default function VoiceCallPanel() {
   const answerRequestedRef = useRef(false);
   const answeringRef = useRef(false);
   const answerSentRef = useRef(false);
+  const applyingRemoteAnswerRef = useRef(false);
   const timeoutRef = useRef(null);
   const durationRef = useRef(null);
 
@@ -60,6 +61,7 @@ export default function VoiceCallPanel() {
     answerRequestedRef.current = false;
     answeringRef.current = false;
     answerSentRef.current = false;
+    applyingRemoteAnswerRef.current = false;
     callRef.current = null;
     setCall(null);
     setStatus("idle");
@@ -89,9 +91,20 @@ export default function VoiceCallPanel() {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       throw new Error("Microphone calls require HTTPS and browser microphone support.");
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+      video: false,
+    });
     localStreamRef.current = stream;
-    stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = true;
+      pc.addTrack(track, stream);
+    });
     return stream;
   }, []);
 
@@ -121,6 +134,7 @@ export default function VoiceCallPanel() {
       const stream = event.streams?.[0];
       if (!remoteAudioRef.current || !stream) return;
       remoteAudioRef.current.srcObject = stream;
+      remoteAudioRef.current.volume = 1;
       remoteAudioRef.current.play().catch(() => {});
     };
 
@@ -233,7 +247,6 @@ export default function VoiceCallPanel() {
       setError("");
       setStatus("incoming");
       armTimeout();
-      // IMPORTANT: never auto-answer. The green button is the only action that accepts the call.
     };
 
     const onSignal = async (event) => {
@@ -256,11 +269,17 @@ export default function VoiceCallPanel() {
 
         if (data.signal.type === "answer") {
           const pc = pcRef.current;
-          if (!pc || pc.signalingState !== "have-local-offer") return;
-          await pc.setRemoteDescription(data.signal.sdp);
-          await flushIce(pc);
-          setStatus("connecting");
-          armTimeout();
+          if (!pc || pc.signalingState !== "have-local-offer" || applyingRemoteAnswerRef.current) return;
+          applyingRemoteAnswerRef.current = true;
+          try {
+            if (pc.signalingState !== "have-local-offer") return;
+            await pc.setRemoteDescription(data.signal.sdp);
+            await flushIce(pc);
+            setStatus("connecting");
+            armTimeout();
+          } finally {
+            applyingRemoteAnswerRef.current = false;
+          }
         }
       } catch (err) {
         setError(err?.message || "Voice connection negotiation failed.");
@@ -328,7 +347,7 @@ export default function VoiceCallPanel() {
             <div className="mt-8 flex items-center justify-center gap-4">
               {connected && <button type="button" onClick={toggleMute} className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/10 transition hover:bg-white/15" aria-label={muted ? "Unmute microphone" : "Mute microphone"}>{muted ? <MicOff size={21} /> : <Mic size={21} />}</button>}
               {incoming && <button type="button" onClick={answer} disabled={answeringRef.current} className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 transition hover:scale-105 hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60" aria-label="Answer call"><Check size={25} /></button>}
-              <button type="button" onClick={() => cleanup(true)} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/25 transition hover:scale-105 hover:bg-red-400" aria-label={incoming ? "Decline call" : "End call"}><PhoneOff size={23} /></button>
+              <button type="button" onClick={() => cleanup(true)} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/25 transition hover:scale-105 hover:bg-red-400" aria-label="End call"><PhoneOff size={24} /></button>
             </div>
           </div>
         </div>
