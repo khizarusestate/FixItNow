@@ -29,6 +29,11 @@ import {
 } from "../utils/platformPayment.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import ServiceRequestModal from "./ServiceRequestModal.jsx";
+import {
+  canWorkerMarkDone,
+  sortWorkerJobs,
+  getWorkerStatusLabel,
+} from "../utils/workerDashboardState.js";
 
 function jobPhone(job) {
   return job?.phone || job?.customerPhone || "-";
@@ -275,13 +280,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
       setAvailableJobs(sortedAvailableJobs);
       setAllAvailableJobs(sortedAvailableJobs);
 
-      const sortedMyJobs = (myJobsResponse.data || []).sort((a, b) => {
-        const aActive = a.status === "assigned" || a.status === "in-progress";
-        const bActive = b.status === "assigned" || b.status === "in-progress";
-        if (aActive && !bActive) return -1;
-        if (!aActive && bActive) return 1;
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      });
+      const sortedMyJobs = sortWorkerJobs(myJobsResponse.data || []);
 
       setMyJobs(sortedMyJobs);
       const profileData = profileRes.data || null;
@@ -727,15 +726,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                             const isClaimPending =
                               job.claimPending ||
                               job.status === "claim-pending";
-                            const canMarkDone =
-                              !isClaimPending &&
-                              job.status !== "completed" &&
-                              !job.workerMarkedDone &&
-                              [
-                                "assigned",
-                                "worker-assigned",
-                                "in-progress",
-                              ].includes(job.status);
+                            const canMarkDone = canWorkerMarkDone(job);
                             const isGuestJob = Boolean(job.isGuest);
                             const waitingCustomer =
                               !isGuestJob &&
@@ -765,12 +756,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                     ) : (
                                       <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
                                         <Briefcase size={12} />
-                                        {job.status === "assigned" ||
-                                          job.status === "worker-assigned"
-                                          ? t("dashboard.assigned")
-                                          : job.status === "in-progress"
-                                            ? t("dashboard.inProgress")
-                                            : t("dashboard.active")}
+                                        {getWorkerStatusLabel(job.status, t)}
                                       </span>
                                     )}
                                   </div>
