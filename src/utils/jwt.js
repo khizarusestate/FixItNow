@@ -128,17 +128,6 @@ export const applySessionPolicy = (role, rememberMe) => {
   }
 };
 
-export const getToken = (role) => {
-  if (role) {
-    return localStorage.getItem(TOKEN_KEYS[role]);
-  }
-  // Customer app: never pick admin token for API calls
-  return (
-    localStorage.getItem(TOKEN_KEYS.worker) ||
-    localStorage.getItem(TOKEN_KEYS.customer)
-  );
-};
-
 export const setToken = (token, role) => {
   if (!role) {
     console.warn("setToken requires a role parameter");
@@ -172,7 +161,10 @@ export const getUserData = (role) => {
     const userData = localStorage.getItem(USER_DATA_KEYS[role]);
     return userData ? JSON.parse(userData) : null;
   }
-  // Backward compatibility: prefer admin data, then worker, then customer
+  // Backward compatibility: prefer the active session, then admin, worker, customer.
+  const activeRole = getActiveSessionRole();
+  if (activeRole) return getUserData(activeRole);
+
   const adminData = localStorage.getItem(USER_DATA_KEYS.admin);
   const workerData = localStorage.getItem(USER_DATA_KEYS.worker);
   const customerData = localStorage.getItem(USER_DATA_KEYS.customer);
@@ -214,15 +206,31 @@ export const getWorkerData = () => getUserData("worker");
 export const setCustomerData = (data) => setUserData(data, "customer");
 export const setWorkerData = (data) => setUserData(data, "worker");
 
+/**
+ * Resolve the token from the active role only. Never silently prefer a worker
+ * token over a customer/admin token when multiple role sessions exist.
+ */
+export const getToken = (role) => {
+  if (role) {
+    return TOKEN_KEYS[role]
+      ? localStorage.getItem(TOKEN_KEYS[role])
+      : null;
+  }
+
+  const activeRole = getActiveSessionRole();
+  return activeRole ? getToken(activeRole) : null;
+};
+
 export const isAuthenticated = () => {
-  const token = getToken();
-  const userData = getUserData();
   const role = getActiveSessionRole();
-  return !!(token && userData && role);
+  if (!role) return false;
+  const token = getToken(role);
+  const userData = getUserData(role);
+  return !!(token && userData);
 };
 
 /**
- * Same session priority as AuthContext (admin → worker → customer),
+ * Same session priority as AuthContext (explicit cookie role → admin → worker → customer),
  * resolved synchronously from storage. Use to avoid firing customer-only
  * API bursts before React state has hydrated (e.g. worker on home page).
  */
@@ -312,12 +320,12 @@ export const isTokenExpiringSoon = (token, minutes = 5) => {
 
 export const getRefreshToken = (role) => {
   if (role) {
-    return localStorage.getItem(REFRESH_TOKEN_KEYS[role]);
+    return REFRESH_TOKEN_KEYS[role]
+      ? localStorage.getItem(REFRESH_TOKEN_KEYS[role])
+      : null;
   }
-  return (
-    localStorage.getItem(REFRESH_TOKEN_KEYS.worker) ||
-    localStorage.getItem(REFRESH_TOKEN_KEYS.customer)
-  );
+  const activeRole = getActiveSessionRole();
+  return activeRole ? getRefreshToken(activeRole) : null;
 };
 
 export const setRefreshToken = (token, role) => {
@@ -338,7 +346,8 @@ export const logout = (role) => {
 };
 
 export const getAuthHeaders = () => {
-  const token = getToken();
+  const role = getActiveSessionRole();
+  const token = role ? getToken(role) : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -351,7 +360,8 @@ export const decodeToken = (token) => {
 };
 
 export const getTokenCreationDate = () => {
-  const token = getToken();
+  const role = getActiveSessionRole();
+  const token = role ? getToken(role) : null;
   if (!token) return null;
   const decoded = decodeToken(token);
   if (!decoded?.iat) return null;
