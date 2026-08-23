@@ -17,10 +17,8 @@ export function canWorkerMarkDone(job) {
   return Boolean(
     job &&
       !job.claimPending &&
-      job.status !== "claim-pending" &&
-      job.status !== "completed" &&
-      !job.workerMarkedDone &&
-      WORKER_ACTIVE_STATUSES.has(job.status),
+      job.status === "in-progress" &&
+      !job.workerMarkedDone,
   );
 }
 
