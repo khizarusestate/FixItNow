@@ -1,0 +1,63 @@
+name: Temporary Worker Dashboard Patch
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'apply worker dashboard state patch') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply targeted worker dashboard state fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/Components/WorkerDashboard.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          old = 'import ServiceRequestModal from "./ServiceRequestModal.jsx";\n'
+          new = old + 'import { canWorkerMarkDone, sortWorkerJobs, getWorkerStatusLabel } from "../utils/workerDashboardState.js";\n'
+          if old not in text:
+              raise SystemExit('Import anchor not found')
+          if 'workerDashboardState.js' not in text:
+              text = text.replace(old, new, 1)
+
+          old = '''      const sortedMyJobs = (myJobsResponse.data || []).sort((a, b) => {\n        const aActive = a.status === "assigned" || a.status === "in-progress";\n        const bActive = b.status === "assigned" || b.status === "in-progress";\n        if (aActive && !bActive) return -1;\n        if (!aActive && bActive) return 1;\n        return new Date(b.createdAt) - new Date(a.createdAt);\n      });\n'''
+          new = '''      const sortedMyJobs = sortWorkerJobs(myJobsResponse.data || []);\n'''
+          if old not in text:
+              raise SystemExit('Sorting block not found')
+          text = text.replace(old, new, 1)
+
+          old = '''                            const canMarkDone =\n                              !isClaimPending &&\n                              job.status !== "completed" &&\n                              !job.workerMarkedDone &&\n                              [\n                                "assigned",\n                                "worker-assigned",\n                                "in-progress",\n                              ].includes(job.status);\n'''
+          new = '''                            const canMarkDone = canWorkerMarkDone(job);\n'''
+          if old not in text:
+              raise SystemExit('canMarkDone block not found')
+          text = text.replace(old, new, 1)
+
+          old = '''                                          ? t("dashboard.assigned")\n                                          : job.status === "in-progress"\n                                            ? t("dashboard.inProgress")\n                                            : t("dashboard.active")}
+'''
+          new = '''                                          ? t("dashboard.assigned")\n                                          : getWorkerStatusLabel(job.status, t)}</span>}
+'''
+          # Preserve the existing conditional structure by replacing only the inner label expression.
+          if old in text:
+              text = text.replace(old, '''                                          ? t("dashboard.assigned")\n                                          : getWorkerStatusLabel(job.status, t)}\n''', 1)
+          else:
+              raise SystemExit('status label block not found')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit targeted patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/Components/WorkerDashboard.jsx
+          git diff --cached --check
+          git diff --cached -- src/Components/WorkerDashboard.jsx
+          git commit -m "fix: normalize worker dashboard job states"
+          git push
