@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { messengerService } from "../services/messenger.js";
+import { PhoneCall } from "lucide-react";
+import VoiceCallPanel from "./VoiceCallPanel.jsx";
 
 function formatTime(value) {
   if (!value) return "";
@@ -96,6 +98,18 @@ export default function Messenger() {
     loadConversations();
   }, [loadConversations]);
 
+  useEffect(() => {
+    const openBooking = (event) => {
+      const bookingId = event.detail?.bookingId;
+      if (!bookingId) return;
+      setOpen(true);
+      setSelectedBookingId(String(bookingId));
+      loadMessages(String(bookingId));
+    };
+    window.addEventListener("fixitnow-open-messenger", openBooking);
+    return () => window.removeEventListener("fixitnow-open-messenger", openBooking);
+  }, [loadMessages]);
+
   // Real-time message handling. AuthContext already owns the single Socket.IO
   // connection and converts notification-new into this browser event, so the
   // messenger does not create another socket connection.
@@ -179,21 +193,6 @@ export default function Messenger() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-[70] flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 font-semibold text-white shadow-xl transition hover:bg-orange-600"
-        aria-label="Open messages"
-      >
-        <span className="text-lg">💬</span>
-        <span>Messages</span>
-        {totalUnread > 0 && (
-          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-orange-600">
-            {totalUnread > 99 ? "99+" : totalUnread}
-          </span>
-        )}
-      </button>
-
       {open && (
         <div className="fixed inset-0 z-[80] bg-slate-950/45 p-3 sm:p-6" onMouseDown={() => setOpen(false)}>
           <div
@@ -257,10 +256,21 @@ export default function Messenger() {
                   <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
                     <button type="button" onClick={closeConversation} className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 sm:hidden">←</button>
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-lg">👤</div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="truncate font-bold text-slate-900">{booking?.participant?.name || (user.type === "customer" ? "Worker" : "Customer")}</div>
                       <div className="truncate text-xs text-slate-500">{booking?.serviceTitle || "Booking"} · {booking?.status || ""}</div>
                     </div>
+                    {booking?.participant?.id && booking?.status !== "completed" && (
+                      <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent("fixitnow-start-voice-call", { detail: { bookingId: String(booking.id), targetUserId: String(booking.participant.id), participantName: booking.participant.name || (user.type === "customer" ? "Worker" : "Customer") } }))}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                        title="Start voice call"
+                      >
+                        <PhoneCall size={15} />
+                        Call
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-4">
@@ -310,6 +320,7 @@ export default function Messenger() {
           </div>
         </div>
       )}
+      <VoiceCallPanel />
     </>
   );
 }

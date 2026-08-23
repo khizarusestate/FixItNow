@@ -16,6 +16,7 @@ import {
   ChevronUp,
   AlertTriangle,
   Radio,
+  MessageCircle,
 } from "lucide-react";
 import { bookingService, apiRequestWithAuth } from "../services/api";
 import { shouldRefreshBookings } from "../utils/apiError";
@@ -415,6 +416,19 @@ export default function MyBookings({ isOpen, onClose }) {
                                 {b.worker.fullName}
                               </p>
                             </div>
+                          )}
+                          {b.worker && ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(b.status) && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                window.dispatchEvent(new CustomEvent("fixitnow-open-messenger", { detail: { bookingId: String(b.id) } }));
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-orange-600"
+                            >
+                              <MessageCircle size={14} />
+                              Chat with Worker
+                            </button>
                           )}
                           {b.worker && ["on-the-way", "in-progress"].includes(b.status) && (
                             <button

@@ -609,11 +609,29 @@ export function AuthProvider({ children }) {
       );
     });
 
+    const forwardVoiceSignal = (eventName) => (data) => {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: data }));
+    };
+    socket.on("voice-call-incoming", forwardVoiceSignal("fixitnow-voice-call-incoming"));
+    socket.on("voice-call-signal", forwardVoiceSignal("fixitnow-voice-call-signal"));
+    socket.on("voice-call-ended", forwardVoiceSignal("fixitnow-voice-call-ended"));
+    socket.on("voice-call-error", forwardVoiceSignal("fixitnow-voice-call-error"));
+
+    const sendVoiceStart = (event) => socket.emit("voice-call-start", event.detail || {});
+    const sendVoiceSignal = (event) => socket.emit("voice-call-signal", event.detail || {});
+    const sendVoiceEnd = (event) => socket.emit("voice-call-end", event.detail || {});
+    window.addEventListener("fixitnow-voice-call-start-send", sendVoiceStart);
+    window.addEventListener("fixitnow-voice-call-signal-send", sendVoiceSignal);
+    window.addEventListener("fixitnow-voice-call-end-send", sendVoiceEnd);
+
     socket.on("disconnect", () => {
       // Disconnected from server
     });
 
     return () => {
+      window.removeEventListener("fixitnow-voice-call-start-send", sendVoiceStart);
+      window.removeEventListener("fixitnow-voice-call-signal-send", sendVoiceSignal);
+      window.removeEventListener("fixitnow-voice-call-end-send", sendVoiceEnd);
       socket.close();
     };
   }, [isAuthenticated, user?._id, user?.id]);

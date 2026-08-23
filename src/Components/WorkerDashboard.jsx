@@ -13,6 +13,7 @@ import {
   Banknote,
   Smartphone,
   HelpCircle,
+  MessageCircle,
 } from "lucide-react";
 
 import { apiRequestWithAuth } from "../services/api.js";
@@ -730,6 +731,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                               job.workerMarkedDone &&
                               !job.customerMarkedDone &&
                               job.status !== "completed";
+                            const chatEligible = !isClaimPending && ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(job.status);
 
                             return (
                               <JobCard key={job.id} job={job} limitedInfo={isClaimPending} t={t}>
@@ -757,6 +759,19 @@ export default function WorkerDashboard({ isOpen, onClose }) {
                                       </span>
                                     )}
                                   </div>
+                                  {chatEligible && (
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        window.dispatchEvent(new CustomEvent("fixitnow-open-messenger", { detail: { bookingId: String(job.id) } }));
+                                      }}
+                                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-orange-600"
+                                    >
+                                      <MessageCircle size={16} />
+                                      Chat with Customer
+                                    </button>
+                                  )}
                                   {waitingCustomer && (
                                     <p className="text-xs text-blue-700 font-medium text-right">
                                       {t("dashboard.waitingRating")}
