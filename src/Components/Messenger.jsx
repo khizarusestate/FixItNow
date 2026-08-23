@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { messengerService } from "../services/messenger.js";
 import VoiceCallPanel from "./VoiceCallPanel.jsx";
+import { startVoiceCallSocketBridge } from "../services/voiceCallSocketBridge.js";
 
 function formatTime(value) {
   if (!value) return "";
@@ -30,6 +31,11 @@ export default function Messenger() {
   const [error, setError] = useState("");
   const messagesEndRef = useRef(null);
   const messagesRequestRef = useRef(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?._id && !user?.id || !["customer", "worker"].includes(user?.type)) return undefined;
+    return startVoiceCallSocketBridge(user);
+  }, [isAuthenticated, user]);
 
   const loadMessages = useCallback(async (bookingId, markRead = true) => {
     if (!bookingId) return;
@@ -74,8 +80,6 @@ export default function Messenger() {
     return () => window.removeEventListener("fixitnow-open-messenger", openBooking);
   }, [loadMessages]);
 
-  // AuthContext owns the single Socket.IO connection. The messenger only
-  // reacts to message notifications for the currently open booking.
   useEffect(() => {
     const handleNotification = (event) => {
       const data = event.detail || {};
