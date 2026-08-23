@@ -33,6 +33,7 @@ import {
   canWorkerMarkDone,
   sortWorkerJobs,
   getWorkerStatusLabel,
+  isWorkerActiveJob,
 } from "../utils/workerDashboardState.js";
 
 function jobPhone(job) {
@@ -451,9 +452,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const activeMyJobs = (myJobs || []).filter(
-    (job) => job.status !== "completed"
-  );
+  const activeMyJobs = (myJobs || []).filter(isWorkerActiveJob);
 
   const completedMyJobs = (myJobs || []).filter(
     (job) => job.status === "completed"
