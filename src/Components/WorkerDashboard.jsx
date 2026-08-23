@@ -268,39 +268,35 @@ export default function WorkerDashboard({ isOpen, onClose }) {
           : new Error("Cannot reach the server.");
       }
 
-      const jobsResponse =
-        jobsResult.status === "fulfilled" ? jobsResult.value : { data: [] };
-      const myJobsResponse =
-        myJobsResult.status === "fulfilled" ? myJobsResult.value : { data: [] };
-      const profileRes =
-        profileResult.status === "fulfilled"
-          ? profileResult.value
-          : { data: null };
-
-      const sortedAvailableJobs = jobsResponse.data || [];
-      setAvailableJobs(sortedAvailableJobs);
-      setAllAvailableJobs(sortedAvailableJobs);
-
-      const sortedMyJobs = sortWorkerJobs(myJobsResponse.data || []);
-
-      setMyJobs(sortedMyJobs);
-      const profileData = profileRes.data || null;
-      setProfile(profileData);
-
-      if (profileData && updateUser) {
-        updateUser({
-          ...profileData,
-          id: profileData.id || profileData._id,
-          _id: profileData._id || profileData.id,
-          email: profileData.emailAddress || profileData.email,
-          emailAddress: profileData.emailAddress || profileData.email,
-          phone: profileData.phoneNumber || profileData.phone,
-          phoneNumber: profileData.phoneNumber || profileData.phone,
-          type: "worker",
-        });
+      if (jobsResult.status === "fulfilled") {
+        const sortedAvailableJobs = jobsResult.value?.data || [];
+        setAvailableJobs(sortedAvailableJobs);
+        setAllAvailableJobs(sortedAvailableJobs);
+        updateJobCountRef.current?.(sortedAvailableJobs.length);
       }
 
-      updateJobCountRef.current?.(sortedAvailableJobs.length);
+      if (myJobsResult.status === "fulfilled") {
+        const sortedMyJobs = sortWorkerJobs(myJobsResult.value?.data || []);
+        setMyJobs(sortedMyJobs);
+      }
+
+      if (profileResult.status === "fulfilled" && profileResult.value?.data) {
+        const profileData = profileResult.value.data;
+        setProfile(profileData);
+
+        if (updateUser) {
+          updateUser({
+            ...profileData,
+            id: profileData.id || profileData._id,
+            _id: profileData._id || profileData.id,
+            email: profileData.emailAddress || profileData.email,
+            emailAddress: profileData.emailAddress || profileData.email,
+            phone: profileData.phoneNumber || profileData.phone,
+            phoneNumber: profileData.phoneNumber || profileData.phone,
+            type: "worker",
+          });
+        }
+      }
     } catch (err) {
       if (!silent) {
         const msg = err?.message || "";
