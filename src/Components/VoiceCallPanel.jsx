@@ -16,12 +16,7 @@ function getIceServers() {
 }
 
 const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
-
-function durationText(seconds) {
-  return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60)
-    .toString()
-    .padStart(2, "0")}`;
-}
+const durationText = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 
 export default function VoiceCallPanel() {
   const [call, setCall] = useState(null);
@@ -37,12 +32,12 @@ export default function VoiceCallPanel() {
   const remoteAudioRef = useRef(null);
   const pendingIceRef = useRef([]);
   const answerRequestedRef = useRef(false);
+  const answeringRef = useRef(false);
+  const answerSentRef = useRef(false);
   const timeoutRef = useRef(null);
   const durationRef = useRef(null);
 
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+  useEffect(() => { statusRef.current = status; }, [status]);
 
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -51,32 +46,27 @@ export default function VoiceCallPanel() {
     durationRef.current = null;
   }, []);
 
-  const cleanup = useCallback(
-    (notify = false) => {
-      const current = callRef.current;
-      clearTimers();
-      if (notify && current?.bookingId && current?.targetUserId) {
-        emit("fixitnow-voice-call-end-send", {
-          bookingId: current.bookingId,
-          targetUserId: current.targetUserId,
-          callId: current.callId,
-        });
-      }
-      pcRef.current?.close();
-      pcRef.current = null;
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = null;
-      pendingIceRef.current = [];
-      answerRequestedRef.current = false;
-      callRef.current = null;
-      setCall(null);
-      setStatus("idle");
-      setMuted(false);
-      setDuration(0);
-      setError("");
-    },
-    [clearTimers],
-  );
+  const cleanup = useCallback((notify = false) => {
+    const current = callRef.current;
+    clearTimers();
+    if (notify && current?.bookingId && current?.targetUserId) {
+      emit("fixitnow-voice-call-end-send", { bookingId: current.bookingId, targetUserId: current.targetUserId, callId: current.callId });
+    }
+    pcRef.current?.close();
+    pcRef.current = null;
+    localStreamRef.current?.getTracks().forEach((track) => track.stop());
+    localStreamRef.current = null;
+    pendingIceRef.current = [];
+    answerRequestedRef.current = false;
+    answeringRef.current = false;
+    answerSentRef.current = false;
+    callRef.current = null;
+    setCall(null);
+    setStatus("idle");
+    setMuted(false);
+    setDuration(0);
+    setError("");
+  }, [clearTimers]);
 
   const armTimeout = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -108,122 +98,119 @@ export default function VoiceCallPanel() {
   const flushIce = useCallback(async (pc) => {
     const candidates = pendingIceRef.current.splice(0);
     for (const candidate of candidates) {
-      try {
-        await pc.addIceCandidate(candidate);
-      } catch {
-        // Candidate may belong to an already closed negotiation.
-      }
+      try { await pc.addIceCandidate(candidate); } catch { /* stale candidate */ }
     }
   }, []);
 
-  const createPeer = useCallback(
-    async (current) => {
-      pcRef.current?.close();
-      const pc = new RTCPeerConnection({ iceServers: getIceServers() });
-      pcRef.current = pc;
+  const createPeer = useCallback(async (current) => {
+    pcRef.current?.close();
+    const pc = new RTCPeerConnection({ iceServers: getIceServers() });
+    pcRef.current = pc;
 
-      pc.onicecandidate = (event) => {
-        if (!event.candidate) return;
-        emit("fixitnow-voice-call-signal-send", {
-          bookingId: current.bookingId,
-          targetUserId: current.targetUserId,
-          callId: current.callId,
-          signal: { type: "ice-candidate", candidate: event.candidate.toJSON() },
-        });
-      };
+    pc.onicecandidate = (event) => {
+      if (!event.candidate) return;
+      emit("fixitnow-voice-call-signal-send", {
+        bookingId: current.bookingId,
+        targetUserId: current.targetUserId,
+        callId: current.callId,
+        signal: { type: "ice-candidate", candidate: event.candidate.toJSON() },
+      });
+    };
 
-      pc.ontrack = (event) => {
-        const stream = event.streams?.[0];
-        if (!remoteAudioRef.current || !stream) return;
-        remoteAudioRef.current.srcObject = stream;
-        const play = () => remoteAudioRef.current?.play().catch(() => {});
-        play();
-      };
+    pc.ontrack = (event) => {
+      const stream = event.streams?.[0];
+      if (!remoteAudioRef.current || !stream) return;
+      remoteAudioRef.current.srcObject = stream;
+      remoteAudioRef.current.play().catch(() => {});
+    };
 
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") {
-          clearTimers();
-          setStatus("connected");
-          startTimer();
-        } else if (["failed", "closed"].includes(pc.connectionState)) {
-          setError("Voice connection was lost.");
-          setTimeout(() => cleanup(false), 900);
-        }
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === "failed") {
-          setError("Network negotiation failed. A TURN server may be required on restrictive networks.");
-        }
-      };
-
-      return pc;
-    },
-    [cleanup, clearTimers, startTimer],
-  );
-
-  const acceptIncoming = useCallback(
-    async (incoming) => {
-      if (!incoming?.offer) {
-        answerRequestedRef.current = true;
-        setError("Preparing the call…");
-        return;
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") {
+        clearTimers();
+        setStatus("connected");
+        startTimer();
+      } else if (["failed", "closed"].includes(pc.connectionState)) {
+        setError("Voice connection was lost.");
+        setTimeout(() => cleanup(false), 900);
       }
+    };
 
-      try {
-        setError("");
-        const pc = await createPeer(incoming);
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === "failed") setError("Network negotiation failed. A TURN server may be required on restrictive networks.");
+    };
+
+    return pc;
+  }, [cleanup, clearTimers, startTimer]);
+
+  const acceptIncoming = useCallback(async (incoming) => {
+    if (!incoming) return;
+    answerRequestedRef.current = true;
+    if (!incoming.offer) {
+      setError("Preparing the call…");
+      return;
+    }
+    if (answeringRef.current || answerSentRef.current) return;
+
+    answeringRef.current = true;
+    try {
+      setError("");
+      let pc = pcRef.current;
+      if (!pc) pc = await createPeer(incoming);
+
+      if (pc.signalingState !== "stable") {
+        if (pc.signalingState !== "have-remote-offer") {
+          throw new Error(`Call negotiation is already in progress (${pc.signalingState}).`);
+        }
+      } else {
         await pc.setRemoteDescription(incoming.offer);
-        await getMicrophone(pc);
-        await flushIce(pc);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        emit("fixitnow-voice-call-signal-send", {
-          bookingId: incoming.bookingId,
-          targetUserId: incoming.targetUserId,
-          callId: incoming.callId,
-          signal: { type: "answer", sdp: answer },
-        });
-        answerRequestedRef.current = false;
-        setStatus("connecting");
-        armTimeout();
-      } catch (err) {
-        setError(err?.name === "NotAllowedError" ? "Microphone permission was denied." : err?.message || "Could not answer the call.");
       }
-    },
-    [armTimeout, createPeer, flushIce, getMicrophone],
-  );
 
-  const startOutgoing = useCallback(
-    async (detail) => {
-      try {
-        setError("");
-        const pc = await createPeer(detail);
-        await getMicrophone(pc);
-        setStatus("calling");
-        armTimeout();
-        emit("fixitnow-voice-call-start-send", {
-          bookingId: detail.bookingId,
-          targetUserId: detail.targetUserId,
-          callId: detail.callId,
-          participantName: detail.participantName,
-        });
-        const offer = await pc.createOffer({ offerToReceiveAudio: true });
-        await pc.setLocalDescription(offer);
-        emit("fixitnow-voice-call-signal-send", {
-          bookingId: detail.bookingId,
-          targetUserId: detail.targetUserId,
-          callId: detail.callId,
-          signal: { type: "offer", sdp: offer },
-        });
-      } catch (err) {
-        const message = err?.name === "NotAllowedError" ? "Microphone permission was denied. Allow microphone access and try again." : err?.message || "Could not start the call.";
-        setError(message);
-        setTimeout(() => cleanup(false), 1800);
+      if (pc.signalingState !== "have-remote-offer") {
+        if (pc.remoteDescription?.type !== "offer") throw new Error("Incoming call offer is no longer valid.");
       }
-    },
-    [armTimeout, cleanup, createPeer, getMicrophone],
-  );
+
+      await getMicrophone(pc);
+      await flushIce(pc);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      answerSentRef.current = true;
+      emit("fixitnow-voice-call-signal-send", {
+        bookingId: incoming.bookingId,
+        targetUserId: incoming.targetUserId,
+        callId: incoming.callId,
+        signal: { type: "answer", sdp: answer },
+      });
+      answerRequestedRef.current = false;
+      setStatus("connecting");
+      armTimeout();
+    } catch (err) {
+      setError(err?.name === "NotAllowedError" ? "Microphone permission was denied." : err?.message || "Could not answer the call.");
+    } finally {
+      answeringRef.current = false;
+    }
+  }, [armTimeout, createPeer, flushIce, getMicrophone]);
+
+  const startOutgoing = useCallback(async (detail) => {
+    try {
+      setError("");
+      const pc = await createPeer(detail);
+      await getMicrophone(pc);
+      setStatus("calling");
+      armTimeout();
+      emit("fixitnow-voice-call-start-send", { bookingId: detail.bookingId, targetUserId: detail.targetUserId, callId: detail.callId, participantName: detail.participantName });
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
+      await pc.setLocalDescription(offer);
+      emit("fixitnow-voice-call-signal-send", {
+        bookingId: detail.bookingId,
+        targetUserId: detail.targetUserId,
+        callId: detail.callId,
+        signal: { type: "offer", sdp: offer },
+      });
+    } catch (err) {
+      setError(err?.name === "NotAllowedError" ? "Microphone permission was denied. Allow microphone access and try again." : err?.message || "Could not start the call.");
+      setTimeout(() => cleanup(false), 1800);
+    }
+  }, [armTimeout, cleanup, createPeer, getMicrophone]);
 
   useEffect(() => {
     const onStart = (event) => {
@@ -240,17 +227,13 @@ export default function VoiceCallPanel() {
     const onIncoming = (event) => {
       const data = event.detail || {};
       if (!data.callId || callRef.current) return;
-      const next = {
-        ...data,
-        targetUserId: String(data.callerId),
-        offer: data.signal?.sdp || data.offer || null,
-      };
+      const next = { ...data, targetUserId: String(data.callerId), offer: data.signal?.sdp || data.offer || null };
       callRef.current = next;
       setCall(next);
       setError("");
       setStatus("incoming");
       armTimeout();
-      if (next.offer) void acceptIncoming(next);
+      // IMPORTANT: never auto-answer. The green button is the only action that accepts the call.
     };
 
     const onSignal = async (event) => {
@@ -261,24 +244,21 @@ export default function VoiceCallPanel() {
       try {
         if (data.signal.type === "offer") {
           current.offer = data.signal.sdp;
-          if (statusRef.current === "incoming" && (answerRequestedRef.current || !pcRef.current)) {
-            await acceptIncoming(current);
-          }
+          if (statusRef.current === "incoming" && answerRequestedRef.current) await acceptIncoming(current);
           return;
         }
 
         if (data.signal.type === "ice-candidate") {
-          if (!pcRef.current || !pcRef.current.remoteDescription) {
-            pendingIceRef.current.push(data.signal.candidate);
-          } else {
-            await pcRef.current.addIceCandidate(data.signal.candidate);
-          }
+          if (!pcRef.current || !pcRef.current.remoteDescription) pendingIceRef.current.push(data.signal.candidate);
+          else await pcRef.current.addIceCandidate(data.signal.candidate);
           return;
         }
 
-        if (data.signal.type === "answer" && pcRef.current) {
-          await pcRef.current.setRemoteDescription(data.signal.sdp);
-          await flushIce(pcRef.current);
+        if (data.signal.type === "answer") {
+          const pc = pcRef.current;
+          if (!pc || pc.signalingState !== "have-local-offer") return;
+          await pc.setRemoteDescription(data.signal.sdp);
+          await flushIce(pc);
           setStatus("connecting");
           armTimeout();
         }
@@ -302,7 +282,6 @@ export default function VoiceCallPanel() {
     window.addEventListener("fixitnow-voice-call-signal", onSignal);
     window.addEventListener("fixitnow-voice-call-ended", onEnded);
     window.addEventListener("fixitnow-voice-call-error", onError);
-
     return () => {
       window.removeEventListener("fixitnow-start-voice-call", onStart);
       window.removeEventListener("fixitnow-voice-call-incoming", onIncoming);
@@ -314,7 +293,6 @@ export default function VoiceCallPanel() {
   }, [acceptIncoming, armTimeout, cleanup, flushIce, startOutgoing]);
 
   const answer = () => void acceptIncoming(callRef.current);
-
   const toggleMute = () => {
     const track = localStreamRef.current?.getAudioTracks?.()[0];
     if (!track) return;
@@ -327,13 +305,7 @@ export default function VoiceCallPanel() {
   const connected = status === "connected";
   const incoming = status === "incoming";
   const name = call.callerName || call.participantName || "Voice call";
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+  const initials = name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   return (
     <>
@@ -344,50 +316,19 @@ export default function VoiceCallPanel() {
           <div className="relative text-center">
             <div className="mb-8 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
               <span>FixItNow Voice</span>
-              <span className="flex items-center gap-1.5 normal-case tracking-normal">
-                <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "animate-pulse bg-orange-400"}`} />
-                {connected ? "Connected" : incoming ? "Incoming" : "Connecting"}
-              </span>
+              <span className="flex items-center gap-1.5 normal-case tracking-normal"><span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "animate-pulse bg-orange-400"}`} />{connected ? "Connected" : incoming ? "Incoming" : "Connecting"}</span>
             </div>
-
             <div className="relative mx-auto mb-5 flex h-28 w-28 items-center justify-center">
               {!connected && <span className="absolute inset-0 animate-ping rounded-full bg-orange-500/10" />}
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-orange-400 to-orange-600 text-2xl font-bold shadow-[0_0_45px_rgba(249,115,22,0.25)]">
-                {initials || <Phone size={28} />}
-              </div>
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-orange-400 to-orange-600 text-2xl font-bold shadow-[0_0_45px_rgba(249,115,22,0.25)]">{initials || <Phone size={28} />}</div>
             </div>
-
             <h3 className="text-2xl font-bold tracking-tight">{name}</h3>
-            <p className="mt-1 text-sm text-white/50">
-              {connected ? durationText(duration) : incoming ? "Incoming voice call" : status === "calling" ? "Calling…" : "Connecting…"}
-            </p>
-
-            {error ? (
-              <div className="mx-auto mt-5 rounded-2xl border border-red-400/15 bg-red-400/10 px-4 py-3 text-xs leading-5 text-red-200">
-                {error}
-              </div>
-            ) : (
-              <div className="mt-6 flex items-center justify-center gap-2 text-xs text-white/35">
-                <Volume2 size={14} /> Voice only · No camera
-              </div>
-            )}
-
+            <p className="mt-1 text-sm text-white/50">{connected ? durationText(duration) : incoming ? "Incoming voice call" : status === "calling" ? "Calling…" : "Connecting…"}</p>
+            {error ? <div className="mx-auto mt-5 rounded-2xl border border-red-400/15 bg-red-400/10 px-4 py-3 text-xs leading-5 text-red-200">{error}</div> : <div className="mt-6 flex items-center justify-center gap-2 text-xs text-white/35"><Volume2 size={14} /> Voice only · No camera</div>}
             <div className="mt-8 flex items-center justify-center gap-4">
-              {connected && (
-                <button type="button" onClick={toggleMute} className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/10 transition hover:bg-white/15" aria-label={muted ? "Unmute microphone" : "Mute microphone"}>
-                  {muted ? <MicOff size={21} /> : <Mic size={21} />}
-                </button>
-              )}
-
-              {incoming && (
-                <button type="button" onClick={answer} className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 transition hover:scale-105 hover:bg-emerald-400" aria-label="Answer call">
-                  <Check size={25} />
-                </button>
-              )}
-
-              <button type="button" onClick={() => cleanup(true)} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/25 transition hover:scale-105 hover:bg-red-400" aria-label={incoming ? "Decline call" : "End call"}>
-                <PhoneOff size={25} />
-              </button>
+              {connected && <button type="button" onClick={toggleMute} className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/10 transition hover:bg-white/15" aria-label={muted ? "Unmute microphone" : "Mute microphone"}>{muted ? <MicOff size={21} /> : <Mic size={21} />}</button>}
+              {incoming && <button type="button" onClick={answer} disabled={answeringRef.current} className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 transition hover:scale-105 hover:bg-emerald-400 disabled:cursor-wait disabled:opacity-60" aria-label="Answer call"><Check size={25} /></button>}
+              <button type="button" onClick={() => cleanup(true)} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/25 transition hover:scale-105 hover:bg-red-400" aria-label={incoming ? "Decline call" : "End call"}><PhoneOff size={23} /></button>
             </div>
           </div>
         </div>
