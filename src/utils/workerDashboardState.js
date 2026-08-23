@@ -32,21 +32,26 @@ export function sortWorkerJobs(jobs = []) {
   });
 }
 
+function translateOrFallback(t, key, fallback) {
+  const value = t?.(key);
+  return value && value !== key ? value : fallback;
+}
+
 export function getWorkerStatusLabel(status, t) {
   if (status === "assigned" || status === "worker-assigned") {
-    return t?.("dashboard.assigned") || "Assigned";
+    return translateOrFallback(t, "dashboard.assigned", "Assigned");
   }
   if (status === "on-the-way") {
-    return t?.("dashboard.onTheWay") || "On the way";
+    return translateOrFallback(t, "dashboard.onTheWay", "On the way");
   }
   if (status === "in-progress") {
-    return t?.("dashboard.inProgress") || "In progress";
+    return translateOrFallback(t, "dashboard.inProgress", "In progress");
   }
   if (status === "claim-pending") {
-    return t?.("dashboard.claimPending") || "Claim pending";
+    return translateOrFallback(t, "dashboard.claimPending", "Claim pending");
   }
   if (status === "completed") {
-    return t?.("dashboard.completed") || "Completed";
+    return translateOrFallback(t, "dashboard.completed", "Completed");
   }
-  return t?.("dashboard.active") || "Active";
+  return translateOrFallback(t, "dashboard.active", "Active");
 }
