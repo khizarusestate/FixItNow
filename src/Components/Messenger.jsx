@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { messengerService } from "../services/messenger.js";
 
@@ -25,6 +25,9 @@ export default function Messenger() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const messagesEndRef = useRef(null);
+  const conversationsRequestRef = useRef(false);
+  const messagesRequestRef = useRef(null);
 
   const totalUnread = useMemo(
     () => conversations.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0),
@@ -32,7 +35,16 @@ export default function Messenger() {
   );
 
   const loadConversations = useCallback(async () => {
-    if (!isAuthenticated || !user?.type || (user.type !== "customer" && user.type !== "worker")) return;
+    if (
+      !isAuthenticated ||
+      !user?.type ||
+      (user.type !== "customer" && user.type !== "worker") ||
+      conversationsRequestRef.current
+    ) {
+      return;
+    }
+
+    conversationsRequestRef.current = true;
     setLoadingList(true);
     try {
       const response = await messengerService.getConversations();
@@ -41,46 +53,70 @@ export default function Messenger() {
     } catch (err) {
       setError(err?.message || "Unable to load messages.");
     } finally {
+      conversationsRequestRef.current = false;
       setLoadingList(false);
     }
   }, [isAuthenticated, user?.type]);
 
   const loadMessages = useCallback(async (bookingId, markRead = true) => {
     if (!bookingId) return;
+
+    const requestId = String(bookingId);
+    if (messagesRequestRef.current === requestId) return;
+    messagesRequestRef.current = requestId;
     setLoadingMessages(true);
+
     try {
       const response = await messengerService.getMessages(bookingId);
       setBooking(response?.data?.booking || null);
       setMessages(response?.data?.messages || []);
       setError("");
+
       if (markRead) {
         await messengerService.markRead(bookingId).catch(() => {});
         setConversations((current) =>
           current.map((item) =>
-            item.bookingId === bookingId ? { ...item, unreadCount: 0 } : item,
+            String(item.bookingId) === String(bookingId)
+              ? { ...item, unreadCount: 0 }
+              : item,
           ),
         );
       }
     } catch (err) {
       setError(err?.message || "Unable to load this conversation.");
     } finally {
+      messagesRequestRef.current = null;
       setLoadingMessages(false);
     }
   }, []);
 
+  // Initial load only. New messages are delivered through the existing
+  // AuthContext Socket.IO connection via fixitnow-notification-new.
   useEffect(() => {
     loadConversations();
-    const timer = setInterval(loadConversations, 5000);
-    return () => clearInterval(timer);
   }, [loadConversations]);
 
+  // Real-time message handling. AuthContext already owns the single Socket.IO
+  // connection and converts notification-new into this browser event, so the
+  // messenger does not create another socket connection.
   useEffect(() => {
     const handleNotification = (event) => {
       const data = event.detail || {};
       if (data.type !== "message") return;
-      loadConversations();
-      if (selectedBookingId && data.relatedEntityId === selectedBookingId) {
-        loadMessages(selectedBookingId, false);
+
+      const relatedBookingId = data.relatedEntityId || data.bookingId;
+      if (
+        selectedBookingId &&
+        relatedBookingId &&
+        String(relatedBookingId) === String(selectedBookingId)
+      ) {
+        // The conversation is open, so immediately fetch the new message and
+        // mark it read. This keeps the active chat real-time without polling.
+        loadMessages(selectedBookingId, true);
+      } else {
+        // Conversation is closed; refresh only the lightweight conversation
+        // list so the unread badge and last-message preview update.
+        loadConversations();
       }
     };
 
@@ -93,9 +129,15 @@ export default function Messenger() {
     loadConversations();
   }, [open, loadConversations]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loadingMessages]);
+
   const openConversation = async (conversation) => {
-    setSelectedBookingId(conversation.bookingId);
-    await loadMessages(conversation.bookingId);
+    const bookingId = conversation.bookingId;
+    setSelectedBookingId(bookingId);
+    setError("");
+    await loadMessages(bookingId);
   };
 
   const closeConversation = () => {
@@ -115,9 +157,17 @@ export default function Messenger() {
     setError("");
     try {
       const response = await messengerService.sendMessage(selectedBookingId, value);
-      if (response?.data) setMessages((current) => [...current, response.data]);
+      if (response?.data) {
+        setMessages((current) => {
+          const incomingId = String(response.data._id || "");
+          if (incomingId && current.some((item) => String(item._id) === incomingId)) {
+            return current;
+          }
+          return [...current, response.data];
+        });
+      }
       setText("");
-      loadConversations();
+      await loadConversations();
     } catch (err) {
       setError(err?.message || "Message could not be sent.");
     } finally {
@@ -231,22 +281,29 @@ export default function Messenger() {
                         );
                       })
                     )}
+                    <div ref={messagesEndRef} />
                   </div>
 
                   {error && <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600">{error}</div>}
 
-                  <form onSubmit={send} className="flex gap-2 border-t border-slate-200 bg-white p-3">
-                    <input
-                      value={text}
-                      onChange={(event) => setText(event.target.value)}
-                      maxLength={2000}
-                      placeholder="Type a message…"
-                      className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                    />
-                    <button type="submit" disabled={!text.trim() || sending || booking?.status === "completed"} className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">
-                      {sending ? "…" : "Send"}
-                    </button>
-                  </form>
+                  {booking?.status === "completed" ? (
+                    <div className="border-t border-slate-200 bg-white px-4 py-3 text-center text-xs text-slate-500">
+                      This booking is completed. Messaging is closed.
+                    </div>
+                  ) : (
+                    <form onSubmit={send} className="flex gap-2 border-t border-slate-200 bg-white p-3">
+                      <input
+                        value={text}
+                        onChange={(event) => setText(event.target.value)}
+                        maxLength={2000}
+                        placeholder="Type a message…"
+                        className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                      />
+                      <button type="submit" disabled={!text.trim() || sending} className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">
+                        {sending ? "…" : "Send"}
+                      </button>
+                    </form>
+                  )}
                 </>
               )}
             </section>
