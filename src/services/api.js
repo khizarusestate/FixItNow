@@ -48,7 +48,7 @@ function clearBrokenAuthSession(role) {
 }
 
 function isAuthFailureStatus(status) {
-  return status === 401 || status === 403 || status === 429;
+  return status === 401;
 }
 
 const REQUEST_TIMEOUT = 30000;
