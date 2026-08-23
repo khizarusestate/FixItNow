@@ -2,19 +2,24 @@ name: Apply booking messenger frontend upgrade
 on:
   push:
     branches: [feature/booking-messenger-voice-chat]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
 permissions:
   contents: write
 jobs:
   patch:
+    if: github.event.pull_request.head.ref == 'feature/booking-messenger-voice-chat' || github.ref_name == 'feature/booking-messenger-voice-chat'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: feature/booking-messenger-voice-chat
           fetch-depth: 0
       - name: Apply patch
         run: node tools/apply-booking-messenger-upgrade.mjs
       - name: Remove one-time patch tooling
-        run: rm -f tools/apply-booking-messenger-upgrade.mjs .github/workflows/apply-booking-messenger-upgrade.yml
+        run: rm -f tools/apply-booking-messenger-upgrade.mjs .github/workflows/apply-booking-messenger-upgrade.yml tools/.messenger-upgrade-trigger
       - name: Commit generated changes
         run: |
           git config user.name "github-actions[bot]"
@@ -22,4 +27,4 @@ jobs:
           git add -A
           git diff --cached --quiet && exit 0
           git commit -m "Implement booking-scoped messenger UI and voice calling"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:feature/booking-messenger-voice-chat
