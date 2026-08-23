@@ -10,7 +10,15 @@ import { getToken } from "../../utils/jwt.js";
 const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
 
 function isValidPoint(point) {
-  return Number.isFinite(Number(point?.latitude)) && Number.isFinite(Number(point?.longitude));
+  const latitude = Number(point?.latitude);
+  const longitude = Number(point?.longitude);
+  return Number.isFinite(latitude)
+    && Number.isFinite(longitude)
+    && latitude >= -90
+    && latitude <= 90
+    && longitude >= -180
+    && longitude <= 180
+    && !(latitude === 0 && longitude === 0);
 }
 
 export default function LiveWorkerTracking({ bookingId }) {
@@ -49,12 +57,17 @@ export default function LiveWorkerTracking({ bookingId }) {
     socket.on("connect", () => socket.emit("join-user", { token }));
     socket.on("worker-location-update", (location) => {
       if (String(location?.bookingId) !== String(bookingId)) return;
+      if (!isValidPoint(location)) {
+        setError("Worker GPS location is unavailable or invalid.");
+        return;
+      }
       setData((current) => ({
         ...(current || {}),
         active: true,
         status: location.status || current?.status,
         worker: location,
       }));
+      setError("");
       setLastUpdated(location.updatedAt || new Date().toISOString());
     });
     return () => socket.disconnect();
@@ -114,7 +127,7 @@ export default function LiveWorkerTracking({ bookingId }) {
   if (!data.destination || !isValidPoint(data.destination)) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        Live tracking is active, but this booking does not have a map coordinate.
+        Live tracking is active, but this booking does not have a valid map coordinate.
       </div>
     );
   }
