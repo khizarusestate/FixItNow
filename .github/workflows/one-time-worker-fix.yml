@@ -1,3 +1,4 @@
+# Temporary migration workflow: applies the audited worker-dashboard fixes once.
 name: One-time worker dashboard fixes
 
 on:
@@ -14,63 +15,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Apply surgical worker fixes
         run: |
           python - <<'PY'
           from pathlib import Path
-
           path = Path('src/Components/WorkerDashboard.jsx')
           text = path.read_text()
-
           replacements = [
-            (
-              'if (fetchInFlightRef.current && silent) return;',
-              'if (fetchInFlightRef.current) return;',
-            ),
-            (
-              'const aActive = a.status === "assigned" || a.status === "in-progress";\n        const bActive = b.status === "assigned" || b.status === "in-progress";',
-              'const aActive = ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(a.status);\n        const bActive = ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(b.status);',
-            ),
-            (
-              'const profileData = profileRes.data || null;',
-              'const profileData =\n        profileResult.status === "fulfilled"\n          ? profileResult.value?.data || null\n          : profile;',
-            ),
-            (
-              'const sortedAvailableJobs = jobsResponse.data || [];\n      setAvailableJobs(sortedAvailableJobs);\n      setAllAvailableJobs(sortedAvailableJobs);',
-              'const sortedAvailableJobs = jobsResponse.data || [];\n      if (jobsResult.status === "fulfilled") {\n        setAvailableJobs(sortedAvailableJobs);\n        setAllAvailableJobs(sortedAvailableJobs);\n      }',
-            ),
-            (
-              '[\n                                "assigned",\n                                "worker-assigned",\n                                "in-progress",\n                              ].includes(job.status);',
-              '[\n                                "assigned",\n                                "worker-assigned",\n                                "on-the-way",\n                                "in-progress",\n                              ].includes(job.status);',
-            ),
-            (
-              'job.status === "assigned" ||\n                                          job.status === "worker-assigned"\n                                          ? t("dashboard.assigned")\n                                          : job.status === "in-progress"',
-              'job.status === "assigned" ||\n                                          job.status === "worker-assigned"\n                                          ? t("dashboard.assigned")\n                                          : job.status === "on-the-way"\n                                            ? "On the way"\n                                            : job.status === "in-progress"',
-            ),
-            (
-              'const activeMyJobs = (myJobs || []).filter(\n    (job) => job.status !== "completed"\n  );',
-              'const activeMyJobs = (myJobs || []).filter((job) =>\n    ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(job.status),\n  );',
-            ),
-            (
-              'updateJobCountRef.current?.(\n          availableJobs.filter((j) => j.id !== claimJob.id).length,\n        );',
-              'updateJobCountRef.current?.(\n          allAvailableJobs.filter((j) => j.id !== claimJob.id).length,\n        );',
-            ),
+            ('if (fetchInFlightRef.current && silent) return;', 'if (fetchInFlightRef.current) return;'),
+            ('const aActive = a.status === "assigned" || a.status === "in-progress";\n        const bActive = b.status === "assigned" || b.status === "in-progress";', 'const aActive = ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(a.status);\n        const bActive = ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(b.status);'),
+            ('const profileData = profileRes.data || null;', 'const profileData =\n        profileResult.status === "fulfilled"\n          ? profileResult.value?.data || null\n          : profile;'),
+            ('const sortedAvailableJobs = jobsResponse.data || [];\n      setAvailableJobs(sortedAvailableJobs);\n      setAllAvailableJobs(sortedAvailableJobs);', 'const sortedAvailableJobs = jobsResponse.data || [];\n      if (jobsResult.status === "fulfilled") {\n        setAvailableJobs(sortedAvailableJobs);\n        setAllAvailableJobs(sortedAvailableJobs);\n      }'),
+            ('[\n                                "assigned",\n                                "worker-assigned",\n                                "in-progress",\n                              ].includes(job.status);', '[\n                                "assigned",\n                                "worker-assigned",\n                                "on-the-way",\n                                "in-progress",\n                              ].includes(job.status);'),
+            ('job.status === "assigned" ||\n                                          job.status === "worker-assigned"\n                                          ? t("dashboard.assigned")\n                                          : job.status === "in-progress"', 'job.status === "assigned" ||\n                                          job.status === "worker-assigned"\n                                          ? t("dashboard.assigned")\n                                          : job.status === "on-the-way"\n                                            ? "On the way"\n                                            : job.status === "in-progress"'),
+            ('const activeMyJobs = (myJobs || []).filter(\n    (job) => job.status !== "completed"\n  );', 'const activeMyJobs = (myJobs || []).filter((job) =>\n    ["assigned", "worker-assigned", "on-the-way", "in-progress"].includes(job.status),\n  );'),
+            ('updateJobCountRef.current?.(\n          availableJobs.filter((j) => j.id !== claimJob.id).length,\n        );', 'updateJobCountRef.current?.(\n          allAvailableJobs.filter((j) => j.id !== claimJob.id).length,\n        );'),
           ]
-
           for old, new in replacements:
               if old not in text:
-                  raise SystemExit(f'Missing expected WorkerDashboard pattern: {old[:100]!r}')
+                  raise SystemExit(f'Missing expected pattern: {old[:100]!r}')
               text = text.replace(old, new, 1)
-
           path.write_text(text)
           PY
-
       - name: Verify frontend build
         run: |
           npm ci
           npm run build
-
       - name: Commit fixes and remove temporary workflow
         run: |
           git config user.name 'github-actions[bot]'
