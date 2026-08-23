@@ -417,11 +417,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
       if (response.success) {
         setClaimJob(null);
-        setAvailableJobs((prev) => prev.filter((j) => j.id !== claimJob.id));
-        setAllAvailableJobs((prev) => prev.filter((j) => j.id !== claimJob.id));
-        updateJobCountRef.current?.(
-          availableJobs.filter((j) => j.id !== claimJob.id).length,
-        );
+        await fetchData(true);
 
         // Show success toast notification
         setClaimSuccess(true);
