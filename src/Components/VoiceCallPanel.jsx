@@ -28,6 +28,11 @@ export default function VoiceCallPanel() {
   const remoteAudioRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
   const callRef = useRef(null);
+  const statusRef = useRef("idle");
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const cleanup = useCallback((notify = false) => {
     const current = callRef.current;
@@ -154,7 +159,7 @@ export default function VoiceCallPanel() {
       try {
         if (data.signal.type === "offer") {
           current.offer = data.signal.sdp;
-          if (status === "incoming") await acceptIncoming(current);
+          if (statusRef.current === "incoming") await acceptIncoming(current);
           return;
         }
         if (data.signal.type === "answer") {
@@ -191,7 +196,7 @@ export default function VoiceCallPanel() {
       window.removeEventListener("fixitnow-voice-call-error", onError);
       cleanup(false);
     };
-  }, [acceptIncoming, cleanup, flushCandidates, startOutgoing, status]);
+  }, [acceptIncoming, cleanup, flushCandidates, startOutgoing]);
 
   const answer = async () => {
     const current = callRef.current;

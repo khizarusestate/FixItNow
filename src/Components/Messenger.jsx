@@ -31,11 +31,6 @@ export default function Messenger() {
   const conversationsRequestRef = useRef(false);
   const messagesRequestRef = useRef(null);
 
-  const totalUnread = useMemo(
-    () => conversations.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0),
-    [conversations],
-  );
-
   const loadConversations = useCallback(async () => {
     if (
       !isAuthenticated ||
