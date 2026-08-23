@@ -31,5 +31,6 @@ export const messengerService = {
     apiRequestWithAuth(`/messages/bookings/${bookingId}/read`, {
       ...authOptions(),
       method: "PATCH",
+      body: {},
     }),
 };
