@@ -13,6 +13,7 @@ import {
   isClientSessionValid,
   applySessionPolicy,
   getActiveSessionRole,
+  getCookieSessionRole,
   markCookieSession,
   clearCookieSession,
 } from "../utils/jwt.js";
@@ -55,8 +56,22 @@ const REQUEST_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE = 1000;
 
-let isRefreshing = false;
-let refreshSubscribers = [];
+const refreshStates = new Map();
+
+function getRefreshState(role) {
+  if (!role) {
+    return { isRefreshing: false, subscribers: [] };
+  }
+
+  if (!refreshStates.has(role)) {
+    refreshStates.set(role, {
+      isRefreshing: false,
+      subscribers: [],
+    });
+  }
+
+  return refreshStates.get(role);
+}
 
 async function fetchWithTimeout(url, options, timeout = REQUEST_TIMEOUT) {
   const controller = new AbortController();
@@ -78,20 +93,25 @@ async function fetchWithTimeout(url, options, timeout = REQUEST_TIMEOUT) {
   }
 }
 
-function subscribeTokenRefresh(callback) {
-  refreshSubscribers.push(callback);
+function subscribeTokenRefresh(role, callback) {
+  getRefreshState(role).subscribers.push(callback);
 }
 
-function onTokenRefreshed(newToken, newRefreshToken, role) {
-  refreshSubscribers.forEach((callback) =>
+function onTokenRefreshed(role, newToken, newRefreshToken) {
+  const state = getRefreshState(role);
+  const waiting = state.subscribers;
+  state.subscribers = [];
+
+  waiting.forEach((callback) =>
     callback(newToken, newRefreshToken, role),
   );
-  refreshSubscribers = [];
 }
 
-function failTokenRefresh() {
-  const waiting = refreshSubscribers;
-  refreshSubscribers = [];
+function failTokenRefresh(role) {
+  const state = getRefreshState(role);
+  const waiting = state.subscribers;
+  state.subscribers = [];
+
   waiting.forEach((callback) => callback(null, null, null));
 }
 
@@ -112,9 +132,11 @@ export async function ensureAccessToken(role) {
     throw new Error("Authentication required. Please login.");
   }
 
-  if (isRefreshing) {
+  const refreshState = getRefreshState(role);
+
+  if (refreshState.isRefreshing) {
     return new Promise((resolve, reject) => {
-      subscribeTokenRefresh((newToken, _newRefresh, refreshedRole) => {
+      subscribeTokenRefresh(role, (newToken, _newRefresh, refreshedRole) => {
         if (!newToken || refreshedRole !== role) {
           reject(new Error("Session expired. Please login again."));
           return;
@@ -124,18 +146,18 @@ export async function ensureAccessToken(role) {
     });
   }
 
-  isRefreshing = true;
+  refreshState.isRefreshing = true;
   try {
     const { accessToken } = await refreshAccessToken(role);
-    onTokenRefreshed(accessToken, getRefreshToken(role), role);
+    onTokenRefreshed(role, accessToken, getRefreshToken(role));
     return accessToken;
   } catch (err) {
-    failTokenRefresh();
+    failTokenRefresh(role);
     if (isAuthFailureStatus(err?.status)) clearBrokenAuthSession(role);
     else clearAuthStorageIfSessionEnded(role);
     throw err;
   } finally {
-    isRefreshing = false;
+    refreshState.isRefreshing = false;
   }
 }
 
@@ -223,16 +245,18 @@ export async function apiRequest(path, options = {}, retryCount = 0, isRetry = f
       const refreshToken = getRefreshToken(role);
       const canRefresh = refreshToken || (USE_HTTPONLY_COOKIES && role);
 
-      if (canRefresh && !isRefreshing) {
-        isRefreshing = true;
+      const refreshState = getRefreshState(role);
+
+      if (canRefresh && !refreshState.isRefreshing) {
+        refreshState.isRefreshing = true;
         try {
           const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(role);
-          onTokenRefreshed(accessToken, newRefreshToken, role);
-          isRefreshing = false;
+          onTokenRefreshed(role, accessToken, newRefreshToken);
+          refreshState.isRefreshing = false;
           return apiRequest(path, options, retryCount, true);
         } catch (refreshError) {
-          isRefreshing = false;
-          failTokenRefresh();
+          refreshState.isRefreshing = false;
+          failTokenRefresh(role);
           console.error("Token refresh failed:", refreshError);
           if (isAuthFailureStatus(refreshError?.status)) clearBrokenAuthSession(role);
           else clearAuthStorageIfSessionEnded(role);
@@ -244,9 +268,9 @@ export async function apiRequest(path, options = {}, retryCount = 0, isRetry = f
           }
           throw new Error(errorMessage);
         }
-      } else if (canRefresh && isRefreshing) {
+      } else if (canRefresh && refreshState.isRefreshing) {
         return new Promise((resolve, reject) => {
-          subscribeTokenRefresh((newToken, _newRefreshToken, refreshedRole) => {
+          subscribeTokenRefresh(role, (newToken, _newRefreshToken, refreshedRole) => {
             if (!refreshedRole || refreshedRole !== role) {
               reject(new Error("Session expired. Please login again."));
               return;
