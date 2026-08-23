@@ -32,7 +32,6 @@ export function clearOtherRoleSessions(activeRole) {
   }
 }
 
-/** Wipe storage only when the client session window ended (e.g. 3-day remember-me). */
 function clearAuthStorageIfSessionEnded(role) {
   if (!role || isClientSessionValid(role)) return;
   removeToken(role);
@@ -40,12 +39,11 @@ function clearAuthStorageIfSessionEnded(role) {
   clearCookieSession();
 }
 
-/** Hard-clear a broken authenticated session so a failed refresh cannot loop forever. */
 function clearBrokenAuthSession(role) {
   if (!role) return;
+  // removeToken also removes the role's refresh token.
   removeToken(role);
   removeUserData(role);
-  setRefreshToken(null, role);
   clearCookieSession();
 }
 
@@ -53,9 +51,9 @@ function isAuthFailureStatus(status) {
   return status === 401 || status === 403 || status === 429;
 }
 
-const REQUEST_TIMEOUT = 30000; // 30 seconds
+const REQUEST_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
-const RETRY_DELAY_BASE = 1000; // 1 second
+const RETRY_DELAY_BASE = 1000;
 
 let isRefreshing = false;
 let refreshSubscribers = [];
@@ -167,7 +165,6 @@ async function refreshAccessToken(role) {
   const accessToken = data.accessToken || data.token;
   if (accessToken) setToken(accessToken, role);
   if (data.refreshToken) setRefreshToken(data.refreshToken, role);
-
   return { accessToken, refreshToken: data.refreshToken };
 }
 
@@ -215,7 +212,6 @@ export async function apiRequest(path, options = {}, retryCount = 0, isRetry = f
       headers,
     });
     const data = await response.json().catch(() => ({}));
-
     const skipAuthRefresh = options.skipAuthRefresh === true || isCredentialPath(path);
 
     if (response.status === 401 && !isRetry && skipAuthRefresh) {
@@ -275,9 +271,7 @@ export async function apiRequest(path, options = {}, retryCount = 0, isRetry = f
       return apiRequest(path, options, retryCount + 1, isRetry);
     }
 
-    if (!response.ok || data.success === false) {
-      throw createApiClientError(data, response.status);
-    }
+    if (!response.ok || data.success === false) throw createApiClientError(data, response.status);
     return data;
   } catch (error) {
     if (
@@ -288,6 +282,7 @@ export async function apiRequest(path, options = {}, retryCount = 0, isRetry = f
       await new Promise((r) => setTimeout(r, delay));
       return apiRequest(path, options, retryCount + 1, isRetry);
     }
+
     if (error.message === "Failed to fetch") {
       throw createApiClientError(
         { code: "NETWORK_ERROR", message: "Network error. Please check your internet connection." },
@@ -474,9 +469,7 @@ export const bookingService = {
     const isFormData = data instanceof FormData;
     const body = isFormData ? data : JSON.stringify(data);
     const headers = isFormData ? {} : { "Content-Type": "application/json" };
-    if (asGuest) {
-      return apiRequest("/bookings", { method: "POST", body, skipAuth: true, headers });
-    }
+    if (asGuest) return apiRequest("/bookings", { method: "POST", body, skipAuth: true, headers });
     return apiRequestWithAuth("/bookings", { method: "POST", body, role: "customer", headers });
   },
   getMyBookings: () => apiRequestWithAuth("/bookings/my", { role: "customer" }),
