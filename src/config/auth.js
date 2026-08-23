@@ -1,26 +1,12 @@
 /**
- * HttpOnly cookies only work when the app and API share the same site
- * (e.g. Vite proxy /api on localhost). Vercel + Railway are cross-origin;
- * browsers block third-party cookies, so we use Bearer tokens in localStorage.
+ * Authentication transport policy.
+ *
+ * FixItNow customer/worker/admin frontends are deployed as separate SPA
+ * origins from the API. Keep the client contract deterministic: use the
+ * access token in Authorization and the refresh token in the refresh request.
+ * The backend may still set HttpOnly cookies as an additional mechanism, but
+ * the SPA must not switch transport modes after a refresh or page reload.
  */
-function isCrossOriginApi() {
-  if (typeof window === "undefined") return false;
-  const raw = import.meta.env.VITE_API_BASE_URL?.trim() || "";
-  if (!raw.startsWith("http://") && !raw.startsWith("https://")) {
-    return false;
-  }
-  try {
-    const apiOrigin = new URL(raw.replace(/\/api\/?$/, "") || raw).origin;
-    return apiOrigin !== window.location.origin;
-  } catch {
-    return false;
-  }
-}
-
-const envPrefersCookies =
-  import.meta.env.VITE_USE_HTTPONLY_COOKIES !== "false";
-
-/** False on Vercel+Railway (cross-origin) so JWT is sent via Authorization header. */
-export const USE_HTTPONLY_COOKIES = envPrefersCookies && !isCrossOriginApi();
+export const USE_HTTPONLY_COOKIES = false;
 
 export const SESSION_ROLE_KEY = "fixitnow_session_role";
