@@ -8,6 +8,7 @@ import { apiRequestWithAuth } from "../lib/api";
 import {
   isPushSupported,
   setDevicePushEnabled,
+  fetchDevicePushPreference,
   cacheDevicePushPreference,
 } from "../utils/pushNotifications.js";
 
@@ -27,6 +28,29 @@ export default function ProfileSettings({
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
+    const syncPushPreference = async () => {
+      if (!userId || !isPushSupported()) return;
+      try {
+        const enabled = await fetchDevicePushPreference();
+        if (cancelled) return;
+        setDevicePushEnabledState(enabled);
+        cacheDevicePushPreference(userId, enabled);
+        onPreferenceChange?.({ devicePushEnabled: enabled });
+      } catch {
+        // Keep the authenticated user value as a safe UI fallback if the
+        // preference endpoint is temporarily unavailable.
+      }
+    };
+
+    syncPushPreference();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
     setDevicePushEnabledState(userData?.devicePushEnabled !== false);
   }, [userData?.devicePushEnabled, userId]);
 
@@ -34,28 +58,27 @@ export default function ProfileSettings({
     const next = !devicePushEnabled;
     setPushBusy(true);
     setError("");
+    setMessage("");
 
     try {
-      if (next) {
-        const result = await setDevicePushEnabled(true);
-        if (!result.ok) {
-          if (result.reason === "denied") {
-            setError("Notifications blocked in browser settings.");
-          } else if (result.reason === "disabled") {
-            setError("Push is not configured on the server yet.");
-          } else {
-            setError("Could not enable notifications.");
-          }
-          setPushBusy(false);
-          return;
+      const result = await setDevicePushEnabled(next);
+      if (!result?.ok) {
+        if (result.reason === "denied") {
+          setError("Notifications are blocked in browser settings. Allow notifications and try again.");
+        } else if (result.reason === "disabled") {
+          setError("Push notifications are not configured on the server yet.");
+        } else if (result.reason === "unsupported") {
+          setError("This browser does not support push notifications.");
+        } else {
+          setError("Could not enable notifications. Please try again.");
         }
-      } else {
-        await setDevicePushEnabled(false);
+        return;
       }
 
       setDevicePushEnabledState(next);
       cacheDevicePushPreference(userId, next);
       onPreferenceChange?.({ devicePushEnabled: next });
+      setMessage(next ? "Notifications enabled." : "Notifications disabled.");
     } catch (err) {
       setError(err.message || "Could not update notification setting.");
     } finally {
@@ -91,7 +114,14 @@ export default function ProfileSettings({
     <div className="space-y-6">
       <section className="rounded-xl border border-slate-200 overflow-hidden">
         <div className="p-4 flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-slate-900">Notifications</p>
+          <div>
+            <p className="text-sm font-medium text-slate-900">Notifications</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {devicePushEnabled
+                ? "Push notifications are enabled on this device."
+                : "Push notifications are disabled on this device."}
+            </p>
+          </div>
           <button
             type="button"
             role="switch"
