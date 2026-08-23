@@ -154,8 +154,13 @@ export default function VoiceCallPanel() {
       const data = event.detail || {};
       const current = callRef.current;
       if (!current || data.callId !== current.callId) return;
+      if (!data.signal) return;
+      if (data.signal.type === "ice-candidate" && !pcRef.current) {
+        pendingCandidatesRef.current.push(data.signal.candidate);
+        return;
+      }
       const pc = pcRef.current;
-      if (!pc || !data.signal) return;
+      if (!pc) return;
       try {
         if (data.signal.type === "offer") {
           current.offer = data.signal.sdp;
