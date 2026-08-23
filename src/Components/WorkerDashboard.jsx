@@ -243,7 +243,7 @@ export default function WorkerDashboard({ isOpen, onClose }) {
   }, [searchTerm, allAvailableJobs]);
 
   const fetchData = useCallback(async (silent = false) => {
-    if (fetchInFlightRef.current && silent) return;
+    if (fetchInFlightRef.current) return;
     fetchInFlightRef.current = true;
     if (!silent) {
       setLoading(true);
@@ -326,7 +326,13 @@ export default function WorkerDashboard({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!newJobNotification || !isOpen) return;
-    fetchData(true);
+
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(() => fetchData(true), 500);
+
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newJobNotification, isOpen]);
 
