@@ -49,6 +49,11 @@ export const clearCookieSession = () => {
 export const getCookieSessionRole = () =>
   localStorage.getItem(SESSION_ROLE_KEY);
 
+// Compatibility for legacy dashboard code that references this helper directly.
+if (typeof globalThis !== "undefined") {
+  globalThis.getCookieSessionRole = getCookieSessionRole;
+}
+
 export const setSessionExpiry = (expiresAt, role) => {
   if (!role) {
     console.warn("setSessionExpiry requires a role parameter");
