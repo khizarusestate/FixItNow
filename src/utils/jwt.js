@@ -252,11 +252,14 @@ export const getActiveSessionRole = () => {
   const lastRole = getCookieSessionRole();
   if (
     lastRole &&
-    (lastRole === "customer" || lastRole === "worker") &&
+    ["customer", "worker", "admin"].includes(lastRole) &&
     roleHasRestorableSession(lastRole)
   ) {
     return lastRole;
   }
+
+  // Prefer an explicitly restorable admin session, then worker/customer.
+  if (roleHasRestorableSession("admin")) return "admin";
   if (roleHasRestorableSession("worker")) return "worker";
   if (roleHasRestorableSession("customer")) return "customer";
   return null;
