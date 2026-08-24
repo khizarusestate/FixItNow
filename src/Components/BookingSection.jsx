@@ -1,3 +1,4 @@
+```jsx
 import React, {
   useState,
   useEffect,
@@ -54,101 +55,72 @@ import TermsAgreement from "./shared/TermsAgreement.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 
 /* =========================================================
-   CATEGORY IMAGES (Direct High-Quality Unsplash URLs)
-   ========================================================= */
+   CATEGORY IMAGES
+   Local images from /public/Assets
+========================================================= */
 
 const CATEGORY_IMAGES = {
-  "AC Repair":
-    "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80",
+  "AC Repair": "/Assets/AC.png",
+  "Air Conditioning": "/Assets/AC.png",
+  HVAC: "/Assets/AC.png",
 
-  "Air Conditioning":
-    "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80",
+  Plumbing: "/Assets/Plumbing.jpeg",
 
-  HVAC:
-    "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80",
+  Electrical: "/Assets/Electrical.jpeg",
 
-  Plumbing:
-    "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=900&q=80",
+  "Car Repair": "/Assets/HomeMaintenance.jpeg",
+  Automotive: "/Assets/HomeMaintenance.jpeg",
+  "Car Wash": "/Assets/HomeMaintenance.jpeg",
+  "Bike Repair": "/Assets/HomeMaintenance.jpeg",
 
-  Electrical:
-    "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=80",
+  Painting: "/Assets/Painting.jpeg",
 
-  "Car Repair":
-    "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=900&q=80",
+  Cleaning: "/Assets/Cleaning.jpeg",
+  "Home Cleaning": "/Assets/Cleaning.jpeg",
 
-  Automotive:
-    "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=900&q=80",
+  Carpentry: "/Assets/Carpentry.jpeg",
 
-  Painting:
-    "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=900&q=80",
+  "Home Repair": "/Assets/HomeMaintenance.jpeg",
+  "Home Maintenance": "/Assets/HomeMaintenance.jpeg",
+  "Home Maintenance & Repair": "/Assets/HomeMaintenance.jpeg",
 
-  Cleaning:
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
+  Gardening: "/Assets/Gardening.png",
 
-  "Home Cleaning":
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
+  "Pest Control": "/Assets/PestControl.jpeg",
 
-  Carpentry:
-    "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=80",
+  "Appliance Repair": "/Assets/ApplianceRepair.jpeg",
 
-  "Home Repair":
-    "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=900&q=80",
+  Electronics: "/Assets/IT.jpeg",
+  "Computer Repair": "/Assets/IT.jpeg",
+  "Mobile Repair": "/Assets/IT.jpeg",
+  IT: "/Assets/IT.jpeg",
 
-  Gardening:
-    "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=900&q=80",
+  Networking: "/Assets/Networking.jpeg",
 
-  "Pest Control":
-    "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?auto=format&fit=crop&w=900&q=80",
+  Locksmith: "/Assets/HomeMaintenance.jpeg",
 
-  "Appliance Repair":
-    "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=80",
+  Moving: "/Assets/Moving.jpeg",
 
-  Electronics:
-    "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=80",
+  Welding: "/Assets/Jointing.png",
+  Jointing: "/Assets/Jointing.png",
 
-  "Computer Repair":
-    "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=80",
+  Roofing: "/Assets/HomeMaintenance.jpeg",
+  Flooring: "/Assets/HomeMaintenance.jpeg",
 
-  "Mobile Repair":
-    "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?auto=format&fit=crop&w=900&q=80",
+  Laundry: "/Assets/Cleaning.jpeg",
 
-  Locksmith:
-    "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=900&q=80",
+  Beauty: "/Assets/IT.jpeg",
+  Salon: "/Assets/IT.jpeg",
 
-  Moving:
-    "https://images.unsplash.com/photo-1600518464441-9154a4dea21b?auto=format&fit=crop&w=900&q=80",
-
-  "Car Wash":
-    "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=900&q=80",
-
-  "Bike Repair":
-    "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=80",
-
-  Welding:
-    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=900&q=80",
-
-  Roofing:
-    "https://images.unsplash.com/photo-1632759145351-1d592919f522?auto=format&fit=crop&w=900&q=80",
-
-  Flooring:
-    "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?auto=format&fit=crop&w=900&q=80",
-
-  Laundry:
-    "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=900&q=80",
-
-  Beauty:
-    "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80",
-
-  Salon:
-    "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80",
+  Sewerage: "/Assets/Sewarage.jpeg",
+  Sewarage: "/Assets/Sewarage.jpeg",
 };
 
 /* =========================================================
    CATEGORY IMAGE RESOLVER
 ========================================================= */
 
-const DEFAULT_FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=900&q=80";
+const DEFAULT_FALLBACK_IMAGE = "/Assets/HomeMaintenance.jpeg";
 
 const getCategoryImage = (category) => {
   if (!category) {
@@ -192,6 +164,15 @@ const getCategoryImage = (category) => {
   }
 
   if (
+    normalized.includes("sewer") ||
+    normalized.includes("sewarage") ||
+    normalized.includes("drainage") ||
+    normalized.includes("drain")
+  ) {
+    return CATEGORY_IMAGES["Sewerage"];
+  }
+
+  if (
     normalized.includes("electric") ||
     normalized.includes("wiring") ||
     normalized.includes("light")
@@ -203,7 +184,9 @@ const getCategoryImage = (category) => {
     normalized.includes("car") ||
     normalized.includes("auto") ||
     normalized.includes("vehicle") ||
-    normalized.includes("mechanic")
+    normalized.includes("mechanic") ||
+    normalized.includes("bike") ||
+    normalized.includes("motorcycle")
   ) {
     return CATEGORY_IMAGES["Car Repair"];
   }
@@ -232,9 +215,20 @@ const getCategoryImage = (category) => {
   if (
     normalized.includes("computer") ||
     normalized.includes("laptop") ||
-    normalized.includes("pc")
+    normalized.includes("pc") ||
+    normalized.includes("electronic") ||
+    normalized.includes("technology") ||
+    normalized.includes("tech")
   ) {
-    return CATEGORY_IMAGES["Computer Repair"];
+    return CATEGORY_IMAGES["IT"];
+  }
+
+  if (
+    normalized.includes("network") ||
+    normalized.includes("wifi") ||
+    normalized.includes("internet")
+  ) {
+    return CATEGORY_IMAGES["Networking"];
   }
 
   if (
@@ -253,9 +247,19 @@ const getCategoryImage = (category) => {
 
   if (
     normalized.includes("pest") ||
-    normalized.includes("insect")
+    normalized.includes("insect") ||
+    normalized.includes("termite")
   ) {
     return CATEGORY_IMAGES["Pest Control"];
+  }
+
+  if (
+    normalized.includes("appliance") ||
+    normalized.includes("fridge") ||
+    normalized.includes("refrigerator") ||
+    normalized.includes("washing machine")
+  ) {
+    return CATEGORY_IMAGES["Appliance Repair"];
   }
 
   if (
@@ -265,7 +269,11 @@ const getCategoryImage = (category) => {
     return CATEGORY_IMAGES["Car Wash"];
   }
 
-  if (normalized.includes("weld")) {
+  if (
+    normalized.includes("weld") ||
+    normalized.includes("joint") ||
+    normalized.includes("fabricat")
+  ) {
     return CATEGORY_IMAGES["Welding"];
   }
 
@@ -293,6 +301,21 @@ const getCategoryImage = (category) => {
     normalized.includes("hair")
   ) {
     return CATEGORY_IMAGES["Beauty"];
+  }
+
+  if (
+    normalized.includes("move") ||
+    normalized.includes("relocat")
+    || normalized.includes("shifting")
+  ) {
+    return CATEGORY_IMAGES["Moving"];
+  }
+
+  if (
+    normalized.includes("lock") ||
+    normalized.includes("key")
+  ) {
+    return CATEGORY_IMAGES["Locksmith"];
   }
 
   return DEFAULT_FALLBACK_IMAGE;
@@ -535,13 +558,9 @@ function BookingForm({ service, onClose, onSuccess }) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slideUp">
 
-        {/* HEADER */}
-
         <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-6 z-10">
           <div className="flex items-start justify-between">
-
             <div className="flex items-center gap-4">
-
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white">
                 <Calendar size={24} />
               </div>
@@ -555,7 +574,6 @@ function BookingForm({ service, onClose, onSuccess }) {
                   {service?.title}
                 </h3>
               </div>
-
             </div>
 
             <button
@@ -565,22 +583,15 @@ function BookingForm({ service, onClose, onSuccess }) {
             >
               <X size={20} />
             </button>
-
           </div>
         </div>
-
-        {/* FORM */}
 
         <form
           onSubmit={handleSubmit}
           className="px-6 py-6 space-y-5"
         >
-
-          {/* PRICE */}
-
           {service?.price > 0 && (
             <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-3">
-
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 {t("booking.price")}
               </p>
@@ -588,23 +599,16 @@ function BookingForm({ service, onClose, onSuccess }) {
               <p className="mt-1 text-2xl font-bold text-orange-600">
                 PKR {service.price}
               </p>
-
             </div>
           )}
 
-          {/* INPUTS */}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* NAME */}
-
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {t("booking.name")} *
               </label>
 
               <div className="relative">
-
                 <User
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   size={18}
@@ -619,11 +623,8 @@ function BookingForm({ service, onClose, onSuccess }) {
                   className={`${inputCls} pl-10`}
                   required
                 />
-
               </div>
             </div>
-
-            {/* PHONE */}
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -639,15 +640,12 @@ function BookingForm({ service, onClose, onSuccess }) {
               />
             </div>
 
-            {/* EMAIL */}
-
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {t("booking.email")} *
               </label>
 
               <div className="relative">
-
                 <Mail
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   size={18}
@@ -662,7 +660,6 @@ function BookingForm({ service, onClose, onSuccess }) {
                   className={`${inputCls} pl-10`}
                   required
                 />
-
               </div>
             </div>
 
@@ -671,10 +668,7 @@ function BookingForm({ service, onClose, onSuccess }) {
               value={geo}
               onChange={setGeo}
             />
-
           </div>
-
-          {/* NOTES */}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -691,11 +685,8 @@ function BookingForm({ service, onClose, onSuccess }) {
             />
           </div>
 
-          {/* ERROR */}
-
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3">
-
               <AlertTriangle
                 className="text-red-500"
                 size={20}
@@ -704,7 +695,6 @@ function BookingForm({ service, onClose, onSuccess }) {
               <p className="text-sm text-red-700">
                 {error}
               </p>
-
             </div>
           )}
 
@@ -724,7 +714,6 @@ function BookingForm({ service, onClose, onSuccess }) {
             }
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-sm font-bold text-white disabled:opacity-60 hover:shadow-lg transition-all"
           >
-
             {submitting ? (
               <>
                 <Loader2
@@ -739,9 +728,7 @@ function BookingForm({ service, onClose, onSuccess }) {
                 {t("booking.submit")}
               </>
             )}
-
           </button>
-
         </form>
       </div>
     </div>
@@ -787,10 +774,6 @@ export default function BookingSection() {
   const [pendingBookingCount, setPendingBookingCount] =
     useState(0);
 
-  /* =======================================================
-     FETCH SERVICES
-  ======================================================= */
-
   const fetchCatalog = useCallback(async () => {
     try {
       setLoading(true);
@@ -804,7 +787,6 @@ export default function BookingSection() {
 
       setCategories(shaped.categories);
       setServices(shaped.services);
-
     } catch (err) {
       console.error("Fetch error:", err);
 
@@ -817,10 +799,6 @@ export default function BookingSection() {
       setLoading(false);
     }
   }, []);
-
-  /* =======================================================
-     PENDING BOOKINGS
-  ======================================================= */
 
   useEffect(() => {
     if (
@@ -864,10 +842,6 @@ export default function BookingSection() {
     user?.type,
   ]);
 
-  /* =======================================================
-     INITIAL CATALOG
-  ======================================================= */
-
   useEffect(() => {
     const role =
       getActiveSessionRole();
@@ -903,10 +877,6 @@ export default function BookingSection() {
     user?.type,
     bootstrapCatalog,
   ]);
-
-  /* =======================================================
-     SELECT SERVICE
-  ======================================================= */
 
   const handleSelectService =
     useCallback(
@@ -960,10 +930,6 @@ export default function BookingSection() {
       ],
     );
 
-  /* =======================================================
-     CUSTOM SERVICE EVENT
-  ======================================================= */
-
   useEffect(() => {
     const handler = (e) => {
       const service =
@@ -986,10 +952,6 @@ export default function BookingSection() {
       );
   }, [handleSelectService]);
 
-  /* =======================================================
-     SORT
-  ======================================================= */
-
   const sortServicesByName =
     useCallback((list) => {
       return [...list].sort(
@@ -1004,19 +966,11 @@ export default function BookingSection() {
       );
     }, []);
 
-  /* =======================================================
-     BROWSING STATE
-  ======================================================= */
-
   const browsingServices =
     Boolean(
       selectedCategory ||
         search.trim(),
     );
-
-  /* =======================================================
-     CATEGORY COUNTS
-  ======================================================= */
 
   const categoryCounts =
     useMemo(() => {
@@ -1036,10 +990,6 @@ export default function BookingSection() {
       categories,
       services,
     ]);
-
-  /* =======================================================
-     FILTER SERVICES
-  ======================================================= */
 
   const filteredServices =
     useMemo(() => {
@@ -1098,10 +1048,6 @@ export default function BookingSection() {
       sortServicesByName,
     ]);
 
-  /* =======================================================
-     CATEGORY NAVIGATION
-  ======================================================= */
-
   const openCategory =
     useCallback((category) => {
       setSelectedCategory(
@@ -1125,10 +1071,6 @@ export default function BookingSection() {
     search,
     selectedCategory,
   ]);
-
-  /* =======================================================
-     CATEGORY PAGINATION
-  ======================================================= */
 
   const categoryTotalPages =
     useMemo(
@@ -1172,10 +1114,6 @@ export default function BookingSection() {
     categoryTotalPages,
   ]);
 
-  /* =======================================================
-     SERVICE PAGINATION
-  ======================================================= */
-
   const serviceTotalPages =
     useMemo(
       () =>
@@ -1218,10 +1156,6 @@ export default function BookingSection() {
     serviceTotalPages,
   ]);
 
-  /* =======================================================
-     WORKER
-  ======================================================= */
-
   if (user?.type === "worker") {
     return null;
   }
@@ -1232,7 +1166,6 @@ export default function BookingSection() {
       className="bg-gradient-to-br from-slate-50 via-white to-orange-50/30 px-5 py-20"
     >
       <style>{`
-
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -1302,15 +1235,11 @@ export default function BookingSection() {
         .category-btn.active {
           transform: scale(1.05);
         }
-
       `}</style>
 
       <div className="mx-auto max-w-7xl">
 
-        {/* HEADER */}
-
         <div className="text-center mb-12 animate-fadeIn">
-
           <h2 className="text-4xl md:text-5xl font-bold text-blue-900 mb-3">
             Find the Perfect
             Service
@@ -1322,15 +1251,10 @@ export default function BookingSection() {
             services and book with
             confidence
           </p>
-
         </div>
 
-        {/* SEARCH */}
-
         <div className="max-w-3xl mx-auto mb-12 animate-slideUp">
-
           <div className="relative">
-
             <Search
               className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
               size={20}
@@ -1353,71 +1277,49 @@ export default function BookingSection() {
               }}
               className="w-full rounded-full border-2 border-slate-200 pl-14 pr-6 py-4 text-base outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition-all hover:border-slate-300"
             />
-
           </div>
-
         </div>
-
-        {/* LOADING */}
 
         {loading && (
           <div className="py-8 sm:py-12">
-
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-
               {[...Array(6)].map(
                 (_, i) => (
                   <div
                     key={i}
                     className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
                   >
-
                     <div className="w-12 h-12 bg-slate-200 rounded-xl mb-3 animate-pulse" />
 
                     <div className="h-4 bg-slate-200 rounded animate-pulse mb-2" />
 
                     <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
-
                   </div>
                 ),
               )}
-
             </div>
-
           </div>
         )}
-
-        {/* ERROR */}
 
         {error && !loading && (
           <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 text-center">
-
             <p className="text-red-700 font-medium">
               {error}
             </p>
-
           </div>
         )}
-
-        {/* CONTENT */}
 
         {!loading &&
           !error && (
             <div className="animate-slideUp w-full">
 
-              {/* =================================================
-                  CATEGORY VIEW
-              ================================================= */}
-
               {!browsingServices ? (
                 <div className="py-2 sm:py-4">
 
                   <div className="mb-8 text-center sm:text-left">
-
                     <h3 className="text-2xl sm:text-3xl font-bold text-blue-900">
                       Choose a category
                     </h3>
-
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 sm:gap-5">
@@ -1450,7 +1352,7 @@ export default function BookingSection() {
                             }}
                           >
 
-                            {/* IMAGE */}
+                            {/* LOCAL CATEGORY IMAGE */}
 
                             <img
                               src={
@@ -1462,41 +1364,39 @@ export default function BookingSection() {
                               onError={(
                                 e,
                               ) => {
+                                if (
+                                  e.currentTarget.src.endsWith(
+                                    DEFAULT_FALLBACK_IMAGE,
+                                  )
+                                ) {
+                                  return;
+                                }
+
                                 e.currentTarget.src =
                                   DEFAULT_FALLBACK_IMAGE;
                               }}
                             />
 
-                            {/* DARK OVERLAY */}
-
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-transparent" />
-
-                            {/* CONTENT */}
 
                             <div className="relative z-10 flex h-full min-h-[190px] sm:min-h-[220px] flex-col justify-end p-4 sm:p-6">
 
                               <div className="flex items-end justify-between gap-3">
 
                                 <div className="min-w-0">
-
                                   <h4 className="font-bold text-white text-base sm:text-xl leading-snug pr-2 drop-shadow-sm">
                                     {category}
                                   </h4>
-
                                 </div>
 
                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm text-white border border-white/20 group-hover:bg-orange-500 group-hover:border-orange-500 transition-all">
 
                                   <ChevronRight
-                                    size={
-                                      18
-                                    }
+                                    size={18}
                                   />
 
                                 </span>
-
                               </div>
-
                             </div>
 
                           </button>
@@ -1532,10 +1432,6 @@ export default function BookingSection() {
                 </div>
               ) : (
 
-                /* =================================================
-                   SERVICES VIEW
-                ================================================= */
-
                 <div className="flex flex-col w-full">
 
                   <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm py-4 mb-2">
@@ -1550,9 +1446,7 @@ export default function BookingSection() {
                         className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/80 hover:bg-orange-50 hover:ring-orange-200 transition-colors"
                       >
                         <ChevronLeft
-                          size={
-                            18
-                          }
+                          size={18}
                         />
                         Categories
                       </button>
@@ -1585,7 +1479,6 @@ export default function BookingSection() {
                       )}
 
                     </div>
-
                   </div>
 
                   <div className="w-full">
@@ -1623,12 +1516,8 @@ export default function BookingSection() {
                                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shrink-0">
 
                                       <ServiceIcon
-                                        size={
-                                          24
-                                        }
-                                        strokeWidth={
-                                          2.25
-                                        }
+                                        size={24}
+                                        strokeWidth={2.25}
                                       />
 
                                     </div>
@@ -1682,12 +1571,9 @@ export default function BookingSection() {
                                       Book
 
                                       <ArrowRight
-                                        size={
-                                          16
-                                        }
+                                        size={16}
                                         className="group-hover:translate-x-0.5 transition-transform hidden sm:block"
                                       />
-
                                     </button>
 
                                   </div>
@@ -1751,7 +1637,6 @@ export default function BookingSection() {
                     )}
 
                   </div>
-
                 </div>
               )}
 
@@ -1759,10 +1644,6 @@ export default function BookingSection() {
           )}
 
       </div>
-
-      {/* =====================================================
-          BOOKING MODAL
-      ===================================================== */}
 
       {selectedService && (
         <BookingForm
@@ -1812,10 +1693,6 @@ export default function BookingSection() {
         />
       )}
 
-      {/* =====================================================
-          SUCCESS TOAST
-      ===================================================== */}
-
       {bookingDone && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[70] animate-slideUp">
 
@@ -1831,10 +1708,10 @@ export default function BookingSection() {
             </span>
 
           </div>
-
         </div>
       )}
 
     </section>
   );
 }
+```
