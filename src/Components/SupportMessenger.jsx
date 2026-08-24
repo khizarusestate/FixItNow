@@ -3,7 +3,7 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supportMessengerService } from "../services/supportMessenger.js";
 
-export default function SupportMessenger({ adminId }) {
+export default function SupportMessenger() {
   const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [conversationId, setConversationId] = useState(null);
@@ -29,15 +29,10 @@ export default function SupportMessenger({ adminId }) {
   };
 
   const openChat = async () => {
-    if (!adminId) {
-      setError("No support admin is configured.");
-      setOpen(true);
-      return;
-    }
     setOpen(true);
     setError("");
     try {
-      const response = await supportMessengerService.open(adminId);
+      const response = await supportMessengerService.open();
       const id = response?.data?.conversationId;
       if (!id) throw new Error("Support conversation could not be opened.");
       setConversationId(String(id));
@@ -48,8 +43,7 @@ export default function SupportMessenger({ adminId }) {
   };
 
   useEffect(() => {
-    if (!open) return;
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
   const send = async (event) => {
