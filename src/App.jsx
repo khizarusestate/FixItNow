@@ -10,7 +10,6 @@ import ErrorBoundary from "./Components/ErrorBoundary";
 import Header from "./Components/Header";
 import Home from "./Components/Home";
 import WorkerLiveLocationPublisher from "./Components/shared/WorkerLiveLocationPublisher.jsx";
-import PushNotificationPrompt from "./Components/shared/PushNotificationPrompt.jsx";
 import AIChat from "./Components/AIChat";
 import Messenger from "./Components/Messenger.jsx";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
@@ -71,7 +70,6 @@ export default function App() {
                       </Suspense>
                     </div>
                     <Messenger />
-                    <PushNotificationPrompt />
                     <AIChat />
                   </LegalProvider>
                 </ModalProvider>
