@@ -12,6 +12,7 @@ import Home from "./Components/Home";
 import WorkerLiveLocationPublisher from "./Components/shared/WorkerLiveLocationPublisher.jsx";
 import AIChat from "./Components/AIChat";
 import Messenger from "./Components/Messenger.jsx";
+import SupportMessenger from "./Components/SupportMessenger.jsx";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -70,6 +71,7 @@ export default function App() {
                       </Suspense>
                     </div>
                     <Messenger />
+                    <SupportMessenger />
                     <AIChat />
                   </LegalProvider>
                 </ModalProvider>
