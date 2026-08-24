@@ -1,4 +1,3 @@
-```jsx
 import React, {
   useState,
   useEffect,
@@ -1714,4 +1713,3 @@ export default function BookingSection() {
     </section>
   );
 }
-```
