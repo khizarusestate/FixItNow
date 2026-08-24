@@ -12,6 +12,7 @@ import Home from "./Components/Home";
 import WorkerLiveLocationPublisher from "./Components/shared/WorkerLiveLocationPublisher.jsx";
 import AIChat from "./Components/AIChat";
 import Messenger from "./Components/Messenger.jsx";
+import SupportMessenger from "./Components/SupportMessenger.jsx";
 const BookingSection = lazy(() => import("./Components/BookingSection"));
 const ApprovedAds = lazy(() => import("./Components/ApprovedAds"));
 const AdvertiseSection = lazy(() => import("./Components/AdvertiseSection"));
@@ -24,9 +25,7 @@ const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
 import Footer from "./Components/Footer";
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
 const WorkerModal = lazy(() => import("./Components/WorkerModal"));
-const WorkerApprovalPending = lazy(
-  () => import("./Components/WorkerApprovalPending"),
-);
+const WorkerApprovalPending = lazy(() => import("./Components/WorkerApprovalPending"));
 
 function SectionFallback() {
   return (
@@ -62,7 +61,6 @@ export default function App() {
                         <About />
                         <Login />
                         <Signup />
-                        <ForgotPassword />
                         <VerifyEmail />
                         <WorkerModal />
                         <WorkerApprovalPending />
@@ -70,6 +68,7 @@ export default function App() {
                       </Suspense>
                     </div>
                     <Messenger />
+                    <SupportMessenger />
                     <AIChat />
                   </LegalProvider>
                 </ModalProvider>
