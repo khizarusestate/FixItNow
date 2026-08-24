@@ -100,7 +100,7 @@ export default function ProfileSettings({
         method: "DELETE",
         role: userData?.type === "worker" ? "worker" : "customer",
       });
-      setMessage("Account deleted successfully.");
+      setMessage("Account deleted successfully. Personal information has been removed.");
       setTimeout(() => onLogout(), 2000);
     } catch (err) {
       setError(err.message || "Failed to delete account");

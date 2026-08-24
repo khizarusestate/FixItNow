@@ -770,9 +770,6 @@ export default function BookingSection() {
   const [bookingDone, setBookingDone] =
     useState(false);
 
-  const [pendingBookingCount, setPendingBookingCount] =
-    useState(0);
-
   const fetchCatalog = useCallback(async () => {
     try {
       setLoading(true);
@@ -798,48 +795,6 @@ export default function BookingSection() {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (
-      !isAuthenticated ||
-      user?.type !== "customer"
-    ) {
-      setPendingBookingCount(0);
-      return;
-    }
-
-    let cancelled = false;
-
-    bookingService
-      .getMyBookings()
-      .then((res) => {
-        if (cancelled) return;
-
-        const list =
-          res?.data || [];
-
-        setPendingBookingCount(
-          list.filter(
-            (b) =>
-              b.status === "pending" ||
-              b.status ===
-                "pending-confirmation",
-          ).length,
-        );
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPendingBookingCount(0);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    isAuthenticated,
-    user?.type,
-  ]);
 
   useEffect(() => {
     const role =
@@ -1660,30 +1615,6 @@ export default function BookingSection() {
             );
 
             setBookingDone(true);
-
-            if (
-              isAuthenticated &&
-              user?.type ===
-                "customer"
-            ) {
-              bookingService
-                .getMyBookings()
-                .then((res) => {
-                  const list =
-                    res?.data || [];
-
-                  setPendingBookingCount(
-                    list.filter(
-                      (b) =>
-                        b.status ===
-                          "pending" ||
-                        b.status ===
-                          "pending-confirmation",
-                    ).length,
-                  );
-                })
-                .catch(() => {});
-            }
 
             setTimeout(() => {
               setBookingDone(false);
