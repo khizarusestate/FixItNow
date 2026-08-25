@@ -86,16 +86,6 @@ export default function SupportMessenger() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed top-3 right-24 z-[70] inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-sm backdrop-blur-md transition hover:bg-orange-50 hover:text-orange-600 lg:right-[11rem]"
-        aria-label="Contact admin support"
-        title="FixItNow Support"
-      >
-        <Headset size={20} />
-      </button>
-
       {open && (
         <div className="fixed inset-0 z-[90] bg-slate-950/45 p-3 sm:p-6" onMouseDown={() => setOpen(false)}>
           <div className="mx-auto flex h-[min(760px,calc(100vh-24px))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
@@ -104,7 +94,6 @@ export default function SupportMessenger() {
               <div className="flex-1"><div className="font-bold text-slate-900">FixItNow Support</div><div className="text-xs text-slate-500">Chat with an admin</div></div>
               <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close"><X size={19} /></button>
             </header>
-
             <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-4">
               {loading && messages.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-500">Loading support chat…</div>
@@ -116,7 +105,6 @@ export default function SupportMessenger() {
               })}
               <div ref={endRef} />
             </div>
-
             {error && <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600">{error}</div>}
             <form onSubmit={send} className="flex gap-2 border-t border-slate-200 bg-white p-3">
               <input value={text} onChange={(event) => setText(event.target.value)} maxLength={2000} placeholder="Type a message…" className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100" />
