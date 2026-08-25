@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, UserPlus, LogIn, ClipboardList, Home, Info, Mail, HelpCircle, Wrench, ChevronDown, ChevronLeft } from 'lucide-react';
+import { Menu, X, UserPlus, LogIn, ClipboardList, Home, Info, Mail, HelpCircle, Headset, Wrench, ChevronDown, ChevronLeft } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { setUserData } from '../utils/jwt.js';
@@ -59,50 +59,36 @@ export default function Header() {
         setCategories(shaped.categories);
         setServicesByCategory(shaped.services);
       })
-      .catch(() => {
-        /* nav dropdown simply won't show categories/services if this fails */
-      });
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [user?.type]);
 
   useEffect(() => {
     if (!servicesMenuOpen) return;
     const handleClickOutside = (e) => {
-      if (servicesMenuRef.current && !servicesMenuRef.current.contains(e.target)) {
-        setServicesMenuOpen(false);
-      }
+      if (servicesMenuRef.current && !servicesMenuRef.current.contains(e.target)) setServicesMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [servicesMenuOpen]);
 
-  useEffect(() => {
-    if (!servicesMenuOpen) setActiveCategory(null);
-  }, [servicesMenuOpen]);
-
-  useEffect(() => {
-    if (!mobileServicesOpen) setMobileActiveCategory(null);
-  }, [mobileServicesOpen]);
+  useEffect(() => { if (!servicesMenuOpen) setActiveCategory(null); }, [servicesMenuOpen]);
+  useEffect(() => { if (!mobileServicesOpen) setMobileActiveCategory(null); }, [mobileServicesOpen]);
 
   const close = () => setMenuOpen(false);
-  const openHelp = () => {
-    openGuide();
+  const openHelp = () => { openGuide(); close(); };
+  const openSupport = () => {
+    window.dispatchEvent(new CustomEvent('fixitnow-open-support'));
     close();
   };
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
   };
 
   const selectService = (service) => {
-    window.dispatchEvent(
-      new CustomEvent('fixitnow:select-service', { detail: { service } }),
-    );
+    window.dispatchEvent(new CustomEvent('fixitnow:select-service', { detail: { service } }));
     scrollToSection('booking');
     setServicesMenuOpen(false);
     setActiveCategory(null);
@@ -113,330 +99,91 @@ export default function Header() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center w-24">
-            <img src="/Assets/Logo.png" alt="Fix It Now" className="h-14 w-auto" />
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center w-24">
+              <img src="/Assets/Logo.png" alt="Fix It Now" className="h-14 w-auto" />
+            </div>
 
-          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
-            <button onClick={() => scrollToSection('home')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
-              <Home size={24} /> <span className="truncate text-blue-900">{t('nav.home')}</span>
-            </button>
-            {user?.type !== 'worker' && (
-            <div className="relative" ref={servicesMenuRef}>
-              <button
-                onClick={() => setServicesMenuOpen((open) => !open)}
-                aria-expanded={servicesMenuOpen}
-                className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer"
-              >
-                <Wrench size={24} /> <span className="truncate text-blue-900">{t('nav.services')}</span>
-                <ChevronDown
-                  size={16}
-                  className={`text-blue-900 transition-transform duration-300 ${servicesMenuOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {servicesMenuOpen && (
-                <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl animate-scaleIn max-h-96 overflow-y-auto">
-                  {!activeCategory ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {categories.map((category) => {
-                        const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                        return (
-                          <button
-                            key={category}
-                            onClick={() => setActiveCategory(category)}
-                            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-orange-50 hover:text-blue-900 hover:shadow-md"
-                          >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white">
-                              <CategoryIcon size={16} />
-                            </span>
-                            <span className="truncate">{category}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div>
-                      <button
-                        onClick={() => setActiveCategory(null)}
-                        className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50"
-                      >
-                        <ChevronLeft size={14} /> {activeCategory}
-                      </button>
-                      <div className="flex flex-col gap-1">
-                        {(servicesByCategory[activeCategory] || []).map((service) => (
-                          <button
-                            key={service?.id || service?._id}
-                            onClick={() => selectService(service)}
-                            className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:bg-orange-50 hover:text-blue-900"
-                          >
-                            {service?.name}
-                          </button>
-                        ))}
-                      </div>
+            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+              <button onClick={() => scrollToSection('home')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer"><Home size={24} /> <span className="truncate text-blue-900">{t('nav.home')}</span></button>
+              {user?.type !== 'worker' && (
+                <div className="relative" ref={servicesMenuRef}>
+                  <button onClick={() => setServicesMenuOpen((open) => !open)} aria-expanded={servicesMenuOpen} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
+                    <Wrench size={24} /> <span className="truncate text-blue-900">{t('nav.services')}</span><ChevronDown size={16} className={`text-blue-900 transition-transform duration-300 ${servicesMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {servicesMenuOpen && (
+                    <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-3 shadow-xl animate-scaleIn max-h-96 overflow-y-auto">
+                      {!activeCategory ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {categories.map((category) => {
+                            const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
+                            return <button key={category} onClick={() => setActiveCategory(category)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-orange-50 hover:text-blue-900 hover:shadow-md"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white"><CategoryIcon size={16} /></span><span className="truncate">{category}</span></button>;
+                          })}
+                        </div>
+                      ) : (
+                        <div>
+                          <button onClick={() => setActiveCategory(null)} className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50"><ChevronLeft size={14} /> {activeCategory}</button>
+                          <div className="flex flex-col gap-1">{(servicesByCategory[activeCategory] || []).map((service) => <button key={service?.id || service?._id} onClick={() => selectService(service)} className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:bg-orange-50 hover:text-blue-900">{service?.name}</button>)}</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
-            </div>
-            )}
-            <button onClick={() => openModal('about')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
-              <Info size={24} /> <span className="truncate text-blue-900">{t('nav.about')}</span>
-            </button>
-            <button onClick={() => scrollToSection('contact')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer">
-              <Mail size={24} /> <span className="truncate text-blue-900">{t('nav.contact')}</span>
-            </button>
-          </nav>
+              <button onClick={() => openModal('about')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer"><Info size={24} /> <span className="truncate text-blue-900">{t('nav.about')}</span></button>
+              <button onClick={() => scrollToSection('contact')} className="nav-link inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-orange-600 transition-all duration-300 whitespace-nowrap cursor-pointer"><Mail size={24} /> <span className="truncate text-blue-900">{t('nav.contact')}</span></button>
+            </nav>
 
-          <nav className="hidden lg:flex items-center gap-2 justify-end">
-            <select
-              value={locale}
-              onChange={(e) => setLocale(e.target.value)}
-              className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-orange-400 focus:outline-none"
-              aria-label="Language"
-            >
-              <option value="en">{t('lang.en')}</option>
-              <option value="ur">{t('lang.ur')}</option>
-            </select>
-            <button
-              type="button"
-              onClick={openHelp}
-              className="nav-link inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 transition-all whitespace-nowrap cursor-pointer"
-              aria-label="Help"
-            >
-              <HelpCircle size={16} />
-              <span className="truncate">{t('nav.help')}</span>
-            </button>
-            {isAuthenticated ? (
-              <>
-                <NotificationBell />
-                {user?.type === 'worker' ? (
-                  <button
-                    onClick={() => {
-                      markUpdatesSeen?.();
-                      setWorkerDashOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"
-                  >
-                    <ClipboardList size={14} /> <span className="truncate">{t('nav.dashboard')}</span>
-                    {displayBadge && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                        {displayBadge}
-                      </span>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      markUpdatesSeen?.();
-                      setBookingsOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"
-                  >
-                    <ClipboardList size={14} /> <span className="truncate">{t('nav.bookings')}</span>
-                    {displayBadge && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                        {displayBadge}
-                      </span>
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={() => setProfileOpen(true)}
-                  className="flex flex-col items-center gap-0.5 p-1 hover:bg-slate-100 rounded-lg transition-all duration-200"
-                >
-                  <ProfileAvatar
-                    src={user?.profilePicture}
-                    name={user?.fullName || user?.name}
-                    className="w-10 h-10"
-                  />
-                  <span className="text-[10px] text-slate-600 font-medium truncate max-w-[60px]">{user?.fullName?.split(' ')[0] || 'Profile'}</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button onClick={() => openModal('signup')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
-                  <UserPlus size={14} /> <span className="truncate">{t('nav.signup')}</span>
-                </button>
-                <button onClick={() => openModal('login')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-900 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
-                  <LogIn size={14} /> <span className="truncate">{t('nav.login')}</span>
-                </button>
-              </>
-            )}
-          </nav>
-
-          <div className="flex lg:hidden items-center gap-1">
-            <select
-              value={locale}
-              onChange={(e) => setLocale(e.target.value)}
-              className="rounded-lg border border-orange-200 bg-orange-50 px-2 py-1.5 text-xs font-bold text-blue-900 focus:border-orange-400 focus:outline-none max-w-[5.5rem]"
-              aria-label="Language"
-            >
-              <option value="en">EN</option>
-              <option value="ur">UR</option>
-            </select>
-            <button
-              type="button"
-              onClick={openHelp}
-              className="p-2 rounded-lg text-slate-700 hover:bg-orange-50"
-              aria-label="Help"
-            >
-              <HelpCircle size={22} />
-            </button>
-            {isAuthenticated && <NotificationBell />}
-            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-lg text-slate-700" aria-label="Toggle menu">
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {menuOpen && (
-          <nav className="lg:hidden py-4 border-t border-slate-200 flex flex-col gap-2">
-            <div className="px-4">
-              <label className="text-xs font-semibold text-slate-500 mb-1 block">
-                {t('lang.en')} / {t('lang.ur')}
-              </label>
-              <select
-                value={locale}
-                onChange={(e) => setLocale(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-orange-400 focus:outline-none"
-                aria-label="Language"
-              >
-                <option value="en">{t('lang.en')}</option>
-                <option value="ur">{t('lang.ur')}</option>
-              </select>
-            </div>
-            <button onClick={() => { scrollToSection('home'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
-              <Home size={16} className="text-orange-500" /> {t('nav.home')}
-            </button>
-            {user?.type !== 'worker' && (
-            <div className="rounded-lg border border-slate-200 overflow-hidden">
-              <button
-                onClick={() => setMobileServicesOpen((open) => !open)}
-                aria-expanded={mobileServicesOpen}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-blue-900 hover:bg-orange-50"
-              >
-                <span className="flex items-center gap-3">
-                  <Wrench size={16} className="text-orange-500" /> {t('nav.services')}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`text-orange-500 transition-transform duration-300 ${mobileServicesOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {mobileServicesOpen && (
-                !mobileActiveCategory ? (
-                  <div className="grid grid-cols-2 gap-2 bg-orange-50/40 p-2">
-                    {categories.map((category) => {
-                      const CategoryIcon = CATEGORY_ICONS[category] || Wrench;
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => setMobileActiveCategory(category)}
-                          className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 text-white">
-                            <CategoryIcon size={12} />
-                          </span>
-                          <span className="truncate">{category}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="bg-orange-50/40 p-2">
-                    <button
-                      onClick={() => setMobileActiveCategory(null)}
-                      className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-white"
-                    >
-                      <ChevronLeft size={14} /> {mobileActiveCategory}
-                    </button>
-                    <div className="flex flex-col gap-1">
-                      {(servicesByCategory[mobileActiveCategory] || []).map((service) => (
-                        <button
-                          key={service?.id || service?._id}
-                          onClick={() => selectService(service)}
-                          className="rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"
-                        >
-                          {service?.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )
+            <nav className="hidden lg:flex items-center gap-2 justify-end">
+              <select value={locale} onChange={(e) => setLocale(e.target.value)} className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-orange-400 focus:outline-none" aria-label="Language"><option value="en">{t('lang.en')}</option><option value="ur">{t('lang.ur')}</option></select>
+              <button type="button" onClick={openHelp} className="nav-link inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 transition-all whitespace-nowrap cursor-pointer" aria-label="Help"><HelpCircle size={16} /><span className="truncate">{t('nav.help')}</span></button>
+              {isAuthenticated ? (
+                <>
+                  {['customer', 'worker'].includes(user?.type) && <button type="button" onClick={openSupport} className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition-all" aria-label="Contact admin support" title="FixItNow Support"><Headset size={20} /></button>}
+                  <NotificationBell />
+                  {user?.type === 'worker' ? (
+                    <button onClick={() => { markUpdatesSeen?.(); setWorkerDashOpen(true); }} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"><ClipboardList size={14} /> <span className="truncate">{t('nav.dashboard')}</span>{displayBadge && <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{displayBadge}</span>}</button>
+                  ) : (
+                    <button onClick={() => { markUpdatesSeen?.(); setBookingsOpen(true); }} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border-2 border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 transition-all duration-300 hover:shadow-md whitespace-nowrap relative"><ClipboardList size={14} /> <span className="truncate">{t('nav.bookings')}</span>{displayBadge && <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{displayBadge}</span>}</button>
+                  )}
+                  <button onClick={() => setProfileOpen(true)} className="flex flex-col items-center gap-0.5 p-1 hover:bg-slate-100 rounded-lg transition-all duration-200"><ProfileAvatar src={user?.profilePicture} name={user?.fullName || user?.name} className="w-10 h-10" /><span className="text-[10px] text-slate-600 font-medium truncate max-w-[60px]">{user?.fullName?.split(' ')[0] || 'Profile'}</span></button>
+                </>
+              ) : (
+                <><button onClick={() => openModal('signup')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap"><UserPlus size={14} /> <span className="truncate">{t('nav.signup')}</span></button><button onClick={() => openModal('login')} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-900 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap"><LogIn size={14} /> <span className="truncate">{t('nav.login')}</span></button></>
               )}
+            </nav>
+
+            <div className="flex lg:hidden items-center gap-1">
+              <select value={locale} onChange={(e) => setLocale(e.target.value)} className="rounded-lg border border-orange-200 bg-orange-50 px-2 py-1.5 text-xs font-bold text-blue-900 focus:border-orange-400 focus:outline-none max-w-[5.5rem]" aria-label="Language"><option value="en">EN</option><option value="ur">UR</option></select>
+              <button type="button" onClick={openHelp} className="p-2 rounded-lg text-slate-700 hover:bg-orange-50" aria-label="Help"><HelpCircle size={22} /></button>
+              {isAuthenticated && ['customer', 'worker'].includes(user?.type) && <button type="button" onClick={openSupport} className="p-2 rounded-lg text-slate-700 hover:bg-orange-50 hover:text-orange-600" aria-label="Contact admin support" title="FixItNow Support"><Headset size={22} /></button>}
+              {isAuthenticated && <NotificationBell />}
+              <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-lg text-slate-700" aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
             </div>
-            )}
-            <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
-              <Info size={16} className="text-orange-500" /> {t('nav.about')}
-            </button>
-            <button onClick={() => { scrollToSection('contact'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
-              <Mail size={16} className="text-orange-500" /> {t('nav.contact')}
-            </button>
-            <button type="button" onClick={openHelp} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50">
-              <HelpCircle size={16} className="text-orange-500" /> {t('nav.help')}
-            </button>
-            {isAuthenticated ? (
-              <>
-                {user?.type === 'worker' ? (
-                  <button onClick={() => { markUpdatesSeen?.(); setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 relative">
-                    <ClipboardList size={16} /> {t('nav.dashboard')}
-                    {user?.jobCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                        {user.jobCount > 9 ? '9+' : user.jobCount}
-                      </span>
-                    )}
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => { markUpdatesSeen?.(); setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50">
-                    <ClipboardList size={16} /> {t('nav.bookings')}
-                  </button>
-                )}
-                <button onClick={() => { setProfileOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                  <ProfileAvatar
-                    src={user?.profilePicture}
-                    name={user?.fullName || user?.name}
-                    className="w-10 h-10"
-                  />
-                  <div className="text-left">
-                    <p className="font-semibold">{user?.fullName || 'Profile'}</p>
-                    <p className="text-xs text-slate-500">View Profile</p>
-                  </div>
-                </button>
-              </>
-            ) : (
-              <>
-                <button onClick={() => { openModal('signup'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-orange-500 text-white">
-                  <UserPlus size={16} /> {t('nav.signup')}
-                </button>
-                <button onClick={() => { openModal('login'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-blue-900 text-white">
-                  <LogIn size={16} /> {t('nav.login')}
-                </button>
-              </>
-            )}
-          </nav>
-        )}
-      </div>
-    </header>
-    <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} />
-    <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} />
-    <ProfileModal
-      isOpen={profileOpen}
-      onClose={() => setProfileOpen(false)}
-      userData={user}
-      onProfileUpdate={(updatedData) => {
-        setUser(updatedData);
-        if (updatedData?.type) {
-          setUserData(updatedData, updatedData.type);
-        }
-      }}
-      onLogout={() => {
-        logout();
-        setProfileOpen(false);
-      }}
-    />
+          </div>
+
+          {menuOpen && (
+            <nav className="lg:hidden py-4 border-t border-slate-200 flex flex-col gap-2">
+              <div className="px-4"><label className="text-xs font-semibold text-slate-500 mb-1 block">{t('lang.en')} / {t('lang.ur')}</label><select value={locale} onChange={(e) => setLocale(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-orange-400 focus:outline-none" aria-label="Language"><option value="en">{t('lang.en')}</option><option value="ur">{t('lang.ur')}</option></select></div>
+              <button onClick={() => { scrollToSection('home'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50"><Home size={16} className="text-orange-500" /> {t('nav.home')}</button>
+              {user?.type !== 'worker' && <div className="rounded-lg border border-slate-200 overflow-hidden"><button onClick={() => setMobileServicesOpen((open) => !open)} aria-expanded={mobileServicesOpen} className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-blue-900 hover:bg-orange-50"><span className="flex items-center gap-3"><Wrench size={16} className="text-orange-500" /> {t('nav.services')}</span><ChevronDown size={16} className={`text-orange-500 transition-transform duration-300 ${mobileServicesOpen ? 'rotate-180' : ''}`} /></button>{mobileServicesOpen && (!mobileActiveCategory ? <div className="grid grid-cols-2 gap-2 bg-orange-50/40 p-2">{categories.map((category) => { const CategoryIcon = CATEGORY_ICONS[category] || Wrench; return <button key={category} onClick={() => setMobileActiveCategory(category)} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 text-white"><CategoryIcon size={12} /></span><span className="truncate">{category}</span></button>; })}</div> : <div className="bg-orange-50/40 p-2"><button onClick={() => setMobileActiveCategory(null)} className="mb-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-white"><ChevronLeft size={14} /> {mobileActiveCategory}</button><div className="flex flex-col gap-1">{(servicesByCategory[mobileActiveCategory] || []).map((service) => <button key={service?.id || service?._id} onClick={() => selectService(service)} className="rounded-lg bg-white px-3 py-2.5 text-left text-xs font-medium text-slate-700 shadow-sm hover:text-blue-900">{service?.name}</button>)}</div></div>)}</div>}
+              <button onClick={() => { openModal('about'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50"><Info size={16} className="text-orange-500" /> {t('nav.about')}</button>
+              <button onClick={() => { scrollToSection('contact'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50"><Mail size={16} className="text-orange-500" /> {t('nav.contact')}</button>
+              <button type="button" onClick={openHelp} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50"><HelpCircle size={16} className="text-orange-500" /> {t('nav.help')}</button>
+              {isAuthenticated ? <>
+                {['customer', 'worker'].includes(user?.type) && <button type="button" onClick={openSupport} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-blue-900 hover:bg-orange-50"><Headset size={16} className="text-orange-500" /> FixItNow Support</button>}
+                {user?.type === 'worker' ? <button onClick={() => { markUpdatesSeen?.(); setWorkerDashOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50 relative"><ClipboardList size={16} /> {t('nav.dashboard')}{user?.jobCount > 0 && <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{user.jobCount > 9 ? '9+' : user.jobCount}</span>}</button> : <button type="button" onClick={() => { markUpdatesSeen?.(); setBookingsOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:border-orange-500 hover:text-blue-900 hover:bg-orange-50"><ClipboardList size={16} /> {t('nav.bookings')}</button>}
+                <button onClick={() => { setProfileOpen(true); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200"><ProfileAvatar src={user?.profilePicture} name={user?.fullName || user?.name} className="w-10 h-10" /><div className="text-left"><p className="font-semibold">{user?.fullName || 'Profile'}</p><p className="text-xs text-slate-500">View Profile</p></div></button>
+              </> : <><button onClick={() => { openModal('signup'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-orange-500 text-white"><UserPlus size={16} /> {t('nav.signup')}</button><button onClick={() => { openModal('login'); close(); }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-blue-900 text-white"><LogIn size={16} /> {t('nav.login')}</button></>}
+            </nav>
+          )}
+        </div>
+      </header>
+      <MyBookings isOpen={bookingsOpen} onClose={() => setBookingsOpen(false)} />
+      <WorkerDashboard isOpen={workerDashOpen} onClose={() => setWorkerDashOpen(false)} />
+      <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} userData={user} onProfileUpdate={(updatedData) => { setUser(updatedData); if (updatedData?.type) setUserData(updatedData, updatedData.type); }} onLogout={() => { logout(); setProfileOpen(false); }} />
     </>
   );
 }
