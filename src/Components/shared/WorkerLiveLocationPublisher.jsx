@@ -6,19 +6,39 @@ import { getToken } from "../../utils/jwt.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
+const TRACKING_STATUSES = new Set(["on-the-way", "in-progress"]);
 const JOB_REFRESH_MS = 15000;
+const MIN_SEND_INTERVAL_MS = 2500;
+
+function pickTrackingJob(jobs) {
+  const active = jobs.filter((job) => ACTIVE_STATUSES.has(job?.status) && job?.id);
+  if (!active.length) return null;
+
+  // A worker can have multiple assigned jobs, but only one physical GPS
+  // position should ever be published for tracking at a time. Prefer the job
+  // that is actually being travelled to, then an in-progress job, then an
+  // assigned job as a fallback (the first location update will move it on-the-way).
+  return (
+    active.find((job) => job.status === "on-the-way") ||
+    active.find((job) => job.status === "in-progress") ||
+    active.find((job) => job.status === "worker-assigned") ||
+    active.find((job) => job.status === "assigned") ||
+    null
+  );
+}
 
 export default function WorkerLiveLocationPublisher() {
   const { user, isAuthenticated } = useAuth();
   const socketRef = useRef(null);
   const watchIdRef = useRef(null);
-  const jobsRef = useRef([]);
+  const trackingJobRef = useRef(null);
   const lastSentRef = useRef(0);
+  const lastPositionRef = useRef(null);
   const refreshTimerRef = useRef(null);
   const workerSession = Boolean(isAuthenticated && user?.type === "worker");
 
   useEffect(() => {
-    if (!workerSession) return undefined;
+    if (!workerSession || !navigator.geolocation) return undefined;
 
     let cancelled = false;
     const token = getToken("worker");
@@ -28,6 +48,10 @@ export default function WorkerLiveLocationPublisher() {
       transports: ["websocket", "polling"],
       withCredentials: true,
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
     });
     socketRef.current = socket;
 
@@ -35,38 +59,63 @@ export default function WorkerLiveLocationPublisher() {
       try {
         const response = await apiRequestWithAuth("/worker-jobs/my-jobs", { role: "worker" });
         if (cancelled) return;
-        jobsRef.current = (response?.data || []).filter((job) => ACTIVE_STATUSES.has(job.status));
+        trackingJobRef.current = pickTrackingJob(response?.data || []);
+
+        if (!trackingJobRef.current && watchIdRef.current != null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
       } catch {
-        // Tracking should never break the dashboard if the refresh fails.
+        // Keep the last known tracking job during a transient API failure.
       }
     };
 
+    const emitLatestPosition = () => {
+      const job = trackingJobRef.current;
+      const position = lastPositionRef.current;
+      if (!job?.id || !position || !socket.connected) return;
+
+      socket.emit("worker-location-update", {
+        bookingId: String(job.id),
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        heading: position.heading,
+        speed: position.speed,
+      });
+      lastSentRef.current = Date.now();
+    };
+
     const startWatching = () => {
-      if (watchIdRef.current != null || !navigator.geolocation) return;
+      if (watchIdRef.current != null) return;
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
-          const jobs = jobsRef.current;
-          if (!jobs.length) return;
-
-          const now = Date.now();
-          if (now - lastSentRef.current < 2500) return;
-          lastSentRef.current = now;
+          const job = trackingJobRef.current;
+          if (!job?.id) return;
 
           const { latitude, longitude, accuracy, heading, speed } = position.coords;
-          for (const job of jobs) {
-            if (!job?.id) continue;
-            socket.emit("worker-location-update", {
-              bookingId: String(job.id),
-              latitude,
-              longitude,
-              accuracy,
-              heading: Number.isFinite(heading) ? heading : null,
-              speed: Number.isFinite(speed) ? speed : null,
-            });
-          }
+          const nextPosition = {
+            latitude,
+            longitude,
+            accuracy: Number.isFinite(accuracy) ? accuracy : null,
+            heading: Number.isFinite(heading) ? heading : null,
+            speed: Number.isFinite(speed) ? speed : null,
+          };
+          lastPositionRef.current = nextPosition;
+
+          if (!socket.connected) return;
+          const now = Date.now();
+          if (now - lastSentRef.current < MIN_SEND_INTERVAL_MS) return;
+
+          socket.emit("worker-location-update", {
+            bookingId: String(job.id),
+            ...nextPosition,
+          });
+          lastSentRef.current = now;
         },
         () => {
-          // Browser permission/GPS errors are intentionally non-fatal.
+          // watchPosition remains active and will continue receiving GPS fixes
+          // when the browser can obtain them again.
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
       );
@@ -74,17 +123,25 @@ export default function WorkerLiveLocationPublisher() {
 
     const syncAndWatch = async () => {
       await syncJobs();
-      if (jobsRef.current.length) startWatching();
-      else if (watchIdRef.current != null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+      if (trackingJobRef.current) startWatching();
     };
 
-    socket.on("connect", () => {
+    const onConnect = async () => {
       socket.emit("join-user", { token });
-      syncAndWatch();
-    });
+      await syncAndWatch();
+      emitLatestPosition();
+    };
+
+    socket.on("connect", onConnect);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncAndWatch();
+        if (!socket.connected) socket.connect();
+        else emitLatestPosition();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     refreshTimerRef.current = window.setInterval(syncAndWatch, JOB_REFRESH_MS);
     syncAndWatch();
@@ -92,13 +149,17 @@ export default function WorkerLiveLocationPublisher() {
     return () => {
       cancelled = true;
       if (refreshTimerRef.current) window.clearInterval(refreshTimerRef.current);
-      if (watchIdRef.current != null && navigator.geolocation) {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (watchIdRef.current != null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
+      socket.off("connect", onConnect);
       socket.disconnect();
       socketRef.current = null;
-      jobsRef.current = [];
+      trackingJobRef.current = null;
+      lastPositionRef.current = null;
+      lastSentRef.current = 0;
     };
   }, [workerSession]);
 
