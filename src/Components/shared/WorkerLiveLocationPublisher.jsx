@@ -6,7 +6,6 @@ import { getToken } from "../../utils/jwt.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
-const TRACKING_STATUSES = new Set(["on-the-way", "in-progress"]);
 const JOB_REFRESH_MS = 15000;
 const MIN_SEND_INTERVAL_MS = 2500;
 
@@ -14,10 +13,6 @@ function pickTrackingJob(jobs) {
   const active = jobs.filter((job) => ACTIVE_STATUSES.has(job?.status) && job?.id);
   if (!active.length) return null;
 
-  // A worker can have multiple assigned jobs, but only one physical GPS
-  // position should ever be published for tracking at a time. Prefer the job
-  // that is actually being travelled to, then an in-progress job, then an
-  // assigned job as a fallback (the first location update will move it on-the-way).
   return (
     active.find((job) => job.status === "on-the-way") ||
     active.find((job) => job.status === "in-progress") ||
