@@ -8,6 +8,7 @@ import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
 
 const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
+const STALE_AFTER_MS = 30000;
 
 function isValidPoint(point) {
   const latitude = Number(point?.latitude);
@@ -29,19 +30,25 @@ export default function LiveWorkerTracking({ bookingId }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
     if (!bookingId) return undefined;
     let cancelled = false;
-    const loadInitial = async () => {
+
+    const load = async () => {
       try {
         const response = await apiRequestWithAuth(`/live-tracking/customer/${bookingId}`, { role: "customer" });
-        if (!cancelled) setData(response?.data || null);
+        if (cancelled) return;
+        setData(response?.data || null);
+        setLastUpdated(response?.data?.worker?.updatedAt || null);
+        setError("");
       } catch (err) {
         if (!cancelled) setError(err?.message || "Unable to load live tracking.");
       }
     };
-    loadInitial();
+
+    load();
     return () => { cancelled = true; };
   }, [bookingId]);
 
@@ -49,12 +56,37 @@ export default function LiveWorkerTracking({ bookingId }) {
     if (!bookingId) return undefined;
     const token = getToken("customer");
     if (!token) return undefined;
+
+    let cancelled = false;
     const socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       withCredentials: true,
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
     });
-    socket.on("connect", () => socket.emit("join-user", { token }));
+
+    const refreshAfterReconnect = async () => {
+      if (cancelled) return;
+      try {
+        const response = await apiRequestWithAuth(`/live-tracking/customer/${bookingId}`, { role: "customer" });
+        if (cancelled) return;
+        setData(response?.data || null);
+        setLastUpdated(response?.data?.worker?.updatedAt || null);
+        setError("");
+      } catch (err) {
+        if (!cancelled) setError(err?.message || "Unable to refresh live tracking.");
+      }
+    };
+
+    const onConnect = () => {
+      socket.emit("join-user", { token });
+      refreshAfterReconnect();
+    };
+
+    socket.on("connect", onConnect);
     socket.on("worker-location-update", (location) => {
       if (String(location?.bookingId) !== String(bookingId)) return;
       if (!isValidPoint(location)) {
@@ -69,9 +101,30 @@ export default function LiveWorkerTracking({ bookingId }) {
       }));
       setError("");
       setLastUpdated(location.updatedAt || new Date().toISOString());
+      setIsStale(false);
     });
-    return () => socket.disconnect();
+
+    return () => {
+      cancelled = true;
+      socket.off("connect", onConnect);
+      socket.disconnect();
+    };
   }, [bookingId]);
+
+  useEffect(() => {
+    const checkStale = () => {
+      const timestamp = lastUpdated || data?.worker?.updatedAt;
+      if (!timestamp) {
+        setIsStale(Boolean(data?.active));
+        return;
+      }
+      setIsStale(Date.now() - new Date(timestamp).getTime() > STALE_AFTER_MS);
+    };
+
+    checkStale();
+    const timer = window.setInterval(checkStale, 5000);
+    return () => window.clearInterval(timer);
+  }, [lastUpdated, data?.worker?.updatedAt, data?.active]);
 
   useEffect(() => {
     if (!mapNodeRef.current || !data?.destination || !isValidPoint(data.destination)) return undefined;
@@ -106,6 +159,9 @@ export default function LiveWorkerTracking({ bookingId }) {
       } else {
         workerMarkerRef.current.setLatLng(worker);
       }
+    } else if (workerMarkerRef.current) {
+      workerMarkerRef.current.removeFrom(map);
+      workerMarkerRef.current = null;
     }
 
     map.fitBounds(L.latLngBounds(worker ? [destination, worker] : [destination]), {
@@ -136,11 +192,15 @@ export default function LiveWorkerTracking({ bookingId }) {
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
-          <Radio size={17} className="text-emerald-600" />
+          <Radio size={17} className={isStale ? "text-amber-500" : "text-emerald-600"} />
           <div>
             <p className="text-sm font-bold text-slate-900">Live worker tracking</p>
-            <p className="text-xs text-slate-500">
-              {data.worker ? "Worker location is updating in real time." : "Waiting for the worker's GPS location…"}
+            <p className={`text-xs ${isStale ? "text-amber-600" : "text-slate-500"}`}>
+              {isStale
+                ? "Showing the last known location. Waiting for a fresh GPS update…"
+                : data.worker
+                  ? "Worker location is updating in real time."
+                  : "Waiting for the worker's GPS location…"}
             </p>
           </div>
         </div>
@@ -160,7 +220,7 @@ export default function LiveWorkerTracking({ bookingId }) {
         </div>
         <div className="flex items-center gap-2 text-slate-700">
           <MapPin size={15} className="text-emerald-600" />
-          <span>{data.worker ? "Worker live location" : "Worker location pending"}</span>
+          <span>{data.worker ? (isStale ? "Worker last known location" : "Worker live location") : "Worker location pending"}</span>
         </div>
       </div>
       {error ? <p className="px-4 pb-3 text-xs text-red-600">{error}</p> : null}
