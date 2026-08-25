@@ -289,10 +289,8 @@ export function AuthProvider({ children }) {
           }
         }
 
-        if (isTokenExpiringSoon(getToken(role), 5)) {
-          setSessionExpiring(true);
-          setTimeout(() => setSessionExpiring(false), 10000);
-        }
+        // Session-expiry warning disabled.
+        // Access-token refresh above continues to run silently.
       };
 
       checkSession();
