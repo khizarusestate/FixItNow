@@ -89,7 +89,7 @@ export default function SupportMessenger() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed top-3 right-16 z-[70] inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-sm backdrop-blur-md transition hover:bg-orange-50 hover:text-orange-600 lg:right-20"
+        className="fixed top-3 right-24 z-[70] inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-sm backdrop-blur-md transition hover:bg-orange-50 hover:text-orange-600 lg:right-[11rem]"
         aria-label="Contact admin support"
         title="FixItNow Support"
       >
