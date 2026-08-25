@@ -19,6 +19,7 @@ export default function SupportMessenger() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [unread, setUnread] = useState(0);
   const endRef = useRef(null);
 
   const loadConversation = useCallback(async () => {
@@ -29,9 +30,11 @@ export default function SupportMessenger() {
       const conversation = response?.data?.[0];
       if (!conversation?.id) return;
       setConversationId(String(conversation.id));
+      setUnread(Number(conversation.unreadCount || 0));
       const detail = await supportMessengerService.getMessages(conversation.id);
       setMessages(detail?.data?.messages || []);
       await supportMessengerService.markRead(conversation.id).catch(() => {});
+      setUnread(0);
       setError("");
     } catch (err) {
       setError(err?.message || "Unable to load support chat.");
@@ -39,6 +42,52 @@ export default function SupportMessenger() {
       setLoading(false);
     }
   }, [isAuthenticated, user?.type]);
+
+  // Keep the header support badge synchronized even while the chat window is closed.
+  useEffect(() => {
+    if (!isAuthenticated || !["customer", "worker"].includes(user?.type)) {
+      setUnread(0);
+      return undefined;
+    }
+    let cancelled = false;
+    const refreshUnread = async () => {
+      try {
+        const response = await supportMessengerService.getConversation();
+        if (cancelled) return;
+        const conversation = response?.data?.[0];
+        setUnread(Number(conversation?.unreadCount || 0));
+      } catch {
+        // Keep the last known unread count when the background request fails.
+      }
+    };
+    refreshUnread();
+    const timer = window.setInterval(refreshUnread, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [isAuthenticated, user?.type]);
+
+  // The header owns the actual support button; mirror the unread badge onto it so
+  // desktop and mobile header layouts both get the same counter without changing layout.
+  useEffect(() => {
+    const buttons = document.querySelectorAll('button[aria-label="Contact admin support"]');
+    buttons.forEach((button) => {
+      let badge = button.querySelector("[data-support-unread-badge]");
+      if (unread <= 0) {
+        badge?.remove();
+        return;
+      }
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.setAttribute("data-support-unread-badge", "true");
+        badge.className = "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-bold leading-none text-white";
+        button.classList.add("relative");
+        button.appendChild(badge);
+      }
+      badge.textContent = unread > 9 ? "9+" : String(unread);
+    });
+  }, [unread, isAuthenticated, user?.type]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -49,14 +98,20 @@ export default function SupportMessenger() {
 
   useEffect(() => {
     const onNotification = (event) => {
-      if (event.detail?.type === "support-message" && open) loadConversation();
+      if (event.detail?.type === "support-message") {
+        if (open) loadConversation();
+        else setUnread((count) => Math.min(count + 1, 99));
+      }
     };
     window.addEventListener("fixitnow-notification-new", onNotification);
     return () => window.removeEventListener("fixitnow-notification-new", onNotification);
   }, [open, loadConversation]);
 
   useEffect(() => {
-    const openSupport = () => setOpen(true);
+    const openSupport = () => {
+      setUnread(0);
+      setOpen(true);
+    };
     window.addEventListener("fixitnow-open-support", openSupport);
     return () => window.removeEventListener("fixitnow-open-support", openSupport);
   }, []);
