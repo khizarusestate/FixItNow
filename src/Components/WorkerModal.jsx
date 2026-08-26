@@ -1,0 +1,1 @@
+// Legacy placeholder removed. This file is intentionally empty on the cleanup branch.
