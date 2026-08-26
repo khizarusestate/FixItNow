@@ -24,7 +24,6 @@ const ForgotPassword = lazy(() => import("./Components/ForgotPassword"));
 const CompleteProfile = lazy(() => import("./Components/CompleteProfile"));
 import Footer from "./Components/Footer";
 const VerifyEmail = lazy(() => import("./Components/VerifyEmail"));
-const WorkerModal = lazy(() => import("./Components/WorkerModal"));
 const WorkerApprovalPending = lazy(() => import("./Components/WorkerApprovalPending"));
 
 function SectionFallback() {
@@ -62,7 +61,6 @@ export default function App() {
                         <Login />
                         <Signup />
                         <VerifyEmail />
-                        <WorkerModal />
                         <WorkerApprovalPending />
                         <Footer />
                       </Suspense>
