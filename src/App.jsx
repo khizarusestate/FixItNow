@@ -46,7 +46,7 @@ export default function App() {
               <GuideProvider>
                 <ModalProvider>
                   <LegalProvider>
-                    <div className="relative">
+                    <div className="relative" data-fixitnow-app="ready">
                       <Header />
                       <main className="bg-slate-50 text-slate-900 animate-fadeIn">
                         <Home />
