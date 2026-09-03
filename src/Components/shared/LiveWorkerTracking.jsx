@@ -91,7 +91,7 @@ export default function LiveWorkerTracking({ bookingId }) {
 
     const map = mapRef.current;
     if (!destinationMarkerRef.current) {
-      destinationMarkerRef.current = L.circleMarker(destination, { radius: 9, weight: 3 })
+      destinationMarkerRef.current = L.circleMarker(destination, { radius: 10, weight: 3 })
         .bindPopup("Your service location")
         .addTo(map);
     } else {
