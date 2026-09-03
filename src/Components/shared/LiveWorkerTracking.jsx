@@ -155,11 +155,11 @@ export default function LiveWorkerTracking({ bookingId }) {
       <div ref={mapNodeRef} className="h-72 w-full" />
       <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 text-xs">
         <div className="flex items-center gap-2 text-slate-700">
-          <Navigation size={15} className="text-orange-500" />
+          <MapPin size={15} className="text-orange-500" />
           <span>Your service location</span>
         </div>
         <div className="flex items-center gap-2 text-slate-700">
-          <MapPin size={15} className="text-emerald-600" />
+          <MapPin size={15} className="text-orange-500" />
           <span>{data.worker ? "Worker live location" : "Worker location pending"}</span>
         </div>
       </div>
