@@ -91,10 +91,22 @@ export default function LiveWorkerTracking({ bookingId }) {
     }
 
     const map = mapRef.current;
-    const markerIcon = createMapMarkerIcon();
+    const customerMarkerIcon = createMapMarkerIcon();
+    const workerMarkerIcon = L.divIcon({
+      className: "fixitnow-worker-marker",
+      html: `<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="white" stroke="#2563eb" stroke-width="2">
+          <circle cx="12" cy="12" r="9" fill="white" />
+          <path d="M12 7v10M7 12h10" stroke-linecap="round" />
+        </svg>
+      </div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+    });
 
     if (!destinationMarkerRef.current) {
-      destinationMarkerRef.current = L.marker(destination, { icon: markerIcon })
+      destinationMarkerRef.current = L.marker(destination, { icon: customerMarkerIcon })
         .bindPopup("Your service location")
         .addTo(map);
     } else {
@@ -103,7 +115,7 @@ export default function LiveWorkerTracking({ bookingId }) {
 
     if (worker) {
       if (!workerMarkerRef.current) {
-        workerMarkerRef.current = L.marker(worker, { icon: createMapMarkerIcon() })
+        workerMarkerRef.current = L.marker(worker, { icon: workerMarkerIcon })
           .bindPopup("Worker — live location")
           .addTo(map);
       } else {
@@ -162,7 +174,7 @@ export default function LiveWorkerTracking({ bookingId }) {
           <span>Your service location</span>
         </div>
         <div className="flex items-center gap-2 text-slate-700">
-          <MapPin size={15} className="text-orange-500" />
+          <Navigation size={15} className="text-blue-600" />
           <span>{data.worker ? "Worker live location" : "Worker location pending"}</span>
         </div>
       </div>
