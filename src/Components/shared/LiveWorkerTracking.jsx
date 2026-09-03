@@ -6,6 +6,7 @@ import { MapPin, Navigation, Radio } from "lucide-react";
 import { SOCKET_URL } from "../../config/env.js";
 import { apiRequestWithAuth } from "../../services/api.js";
 import { getToken } from "../../utils/jwt.js";
+import { createMapMarkerIcon } from "../../utils/leafletIcons.js";
 
 const ACTIVE_STATUSES = new Set(["assigned", "worker-assigned", "on-the-way", "in-progress"]);
 
@@ -90,8 +91,10 @@ export default function LiveWorkerTracking({ bookingId }) {
     }
 
     const map = mapRef.current;
+    const markerIcon = createMapMarkerIcon();
+
     if (!destinationMarkerRef.current) {
-      destinationMarkerRef.current = L.circleMarker(destination, { radius: 10, weight: 3 })
+      destinationMarkerRef.current = L.marker(destination, { icon: markerIcon })
         .bindPopup("Your service location")
         .addTo(map);
     } else {
@@ -100,7 +103,7 @@ export default function LiveWorkerTracking({ bookingId }) {
 
     if (worker) {
       if (!workerMarkerRef.current) {
-        workerMarkerRef.current = L.circleMarker(worker, { radius: 10, weight: 3 })
+        workerMarkerRef.current = L.marker(worker, { icon: createMapMarkerIcon() })
           .bindPopup("Worker — live location")
           .addTo(map);
       } else {
