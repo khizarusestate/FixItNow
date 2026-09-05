@@ -30,7 +30,7 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="mt-10 overflow-hidden rounded-t-2xl bg-[#0B1F3A] text-white">
+      <footer id="contact" className="mt-10 scroll-mt-20 overflow-hidden rounded-t-2xl bg-[#0B1F3A] text-white">
         <div className="px-6 py-10 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
