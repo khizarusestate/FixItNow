@@ -171,7 +171,7 @@ export default function AdvertiseSection() {
 
     for (const file of selectedFiles) {
       if (file.size > maxSize) {
-        setError(`Each ${adType === "video" ? "video" : "image"} must be less than ${maxSizeLabel}.`);
+        setError(`Each ${adType === "video" ? "video" : "image"} must be ${maxSizeLabel} or smaller.`);
         return;
       }
       if (!allowedTypes.includes(file.type)) {
@@ -687,7 +687,7 @@ export default function AdvertiseSection() {
                         accept={
                           adType === "image"
                             ? "image/jpeg,image/png,image/gif,image/webp"
-                            : "video/mp4,video/webm,video/quicktime"
+                            : "video/*"
                         }
                         onChange={handleFileChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
