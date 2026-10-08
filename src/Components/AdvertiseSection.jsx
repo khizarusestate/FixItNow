@@ -681,7 +681,7 @@ export default function AdvertiseSection() {
                     >
                       <input
                         type="file"
-                        multiple
+                        multiple={adType === "image"}
                         accept={
                           adType === "image"
                             ? "image/jpeg,image/png,image/gif,image/webp"
