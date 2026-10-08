@@ -159,24 +159,22 @@ export default function AdvertiseSection() {
 
     const maxSize = adType === "video" ? 100 * 1024 * 1024 : 2 * 1024 * 1024;
     const maxSizeLabel = adType === "video" ? "100MB" : "2MB";
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "video/mp4",
-      "video/webm",
-      "video/quicktime",
-    ];
-
     for (const file of selectedFiles) {
       if (file.size > maxSize) {
         setError(`Each ${adType === "video" ? "video" : "image"} must be ${maxSizeLabel} or smaller.`);
         return;
       }
-      if (!allowedTypes.includes(file.type)) {
+
+      const isAllowedType =
+        adType === "image"
+          ? file.type.startsWith("image/")
+          : file.type.startsWith("video/");
+
+      if (!isAllowedType) {
         setError(
-          "Only images (JPG, PNG, GIF, WebP) and videos (MP4, WebM, MOV) are allowed.",
+          adType === "image"
+            ? "Please select image files only."
+            : "Please select a video file.",
         );
         return;
       }
