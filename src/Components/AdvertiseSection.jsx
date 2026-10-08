@@ -670,7 +670,7 @@ export default function AdvertiseSection() {
                   {/* File Upload */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                      Upload Ad Files (Max 3)
+                      Upload Ad Files (Max {adType === "video" ? 1 : 3})
                     </label>
                     <div
                       className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 transition-colors ${
@@ -737,7 +737,7 @@ export default function AdvertiseSection() {
                               : "Click to upload videos"}
                           </p>
                           <p className="text-xs text-slate-400 mt-1">
-                            Max 3 files, 30MB each
+                            {adType === "video" ? "Max 1 video, 30MB" : "Max 3 files, 30MB each"}
                           </p>
                         </div>
                       )}
