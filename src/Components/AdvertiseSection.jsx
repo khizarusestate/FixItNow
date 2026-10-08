@@ -151,12 +151,14 @@ export default function AdvertiseSection() {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles || selectedFiles.length === 0) return;
 
-    if (selectedFiles.length > 3) {
-      setError("Maximum 3 files allowed.");
+    const maxFiles = adType === "video" ? 1 : 3;
+    if (selectedFiles.length > maxFiles) {
+      setError(adType === "video" ? "Only 1 video can be uploaded." : "Maximum 3 images can be uploaded.");
       return;
     }
 
-    const maxSize = 30 * 1024 * 1024; // 30MB per file
+    const maxSize = adType === "video" ? 100 * 1024 * 1024 : 2 * 1024 * 1024;
+    const maxSizeLabel = adType === "video" ? "100MB" : "2MB";
     const allowedTypes = [
       "image/jpeg",
       "image/png",
@@ -169,7 +171,7 @@ export default function AdvertiseSection() {
 
     for (const file of selectedFiles) {
       if (file.size > maxSize) {
-        setError("Each file must be less than 30MB.");
+        setError(`Each ${adType === "video" ? "video" : "image"} must be less than ${maxSizeLabel}.`);
         return;
       }
       if (!allowedTypes.includes(file.type)) {
@@ -734,10 +736,10 @@ export default function AdvertiseSection() {
                           <p className="text-sm font-medium text-slate-600">
                             {adType === "image"
                               ? "Click to upload images"
-                              : "Click to upload videos"}
+                              : "Click to upload a video"}
                           </p>
                           <p className="text-xs text-slate-400 mt-1">
-                            {adType === "video" ? "Max 1 video, 30MB" : "Max 3 files, 30MB each"}
+                            {adType === "video" ? "Max 1 video, 100MB" : "Max 3 images, 2MB each"}
                           </p>
                         </div>
                       )}
