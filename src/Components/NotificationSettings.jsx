@@ -58,17 +58,29 @@ export default function NotificationSettings() {
   };
 
   const handlePushToggle = async (enabled) => {
+    const previousValue = settings.pushEnabled;
+    let devicePreferenceUpdated = false;
     setSaving(true); setError(''); setSuccess('');
     try {
       if (enabled && !isPushSupported()) throw new Error('Push notifications are not supported by this browser.');
       const result = await setDevicePushEnabled(enabled);
       if (!result?.ok) throw new Error(result.reason === 'denied' ? 'Notifications are blocked in browser settings.' : result.reason === 'disabled' ? 'Push notifications are not configured on the server yet.' : 'Could not change push notifications.');
+      devicePreferenceUpdated = true;
       const response = await apiRequestWithAuth('/notifications/settings', { method: 'PUT', body: JSON.stringify({ pushEnabled: enabled }) });
       if (!response?.success) throw new Error(response?.message || 'Failed to save push preference.');
       setSettings((prev) => ({ ...prev, pushEnabled: enabled }));
       setSuccess(enabled ? 'Push notifications enabled.' : 'Push notifications disabled.');
-    } catch (err) { setError(err?.message || 'Failed to update push notifications'); }
-    finally { setSaving(false); }
+    } catch (err) {
+      if (devicePreferenceUpdated) {
+        try {
+          await setDevicePushEnabled(previousValue);
+        } catch {
+          // Keep the save error visible; a settings refresh can reconcile the state.
+        }
+      }
+      setSettings((prev) => ({ ...prev, pushEnabled: previousValue }));
+      setError(err?.message || 'Failed to update push notifications');
+    } finally { setSaving(false); }
   };
 
   const handleSave = async () => {
