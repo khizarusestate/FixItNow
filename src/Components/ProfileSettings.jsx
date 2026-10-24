@@ -60,6 +60,7 @@ export default function ProfileSettings({
     setError("");
     setMessage("");
 
+    let devicePreferenceUpdated = false;
     try {
       const result = await setDevicePushEnabled(next);
       if (!result?.ok) {
@@ -74,12 +75,31 @@ export default function ProfileSettings({
         }
         return;
       }
+      devicePreferenceUpdated = true;
+
+      // Keep the account-wide push channel in sync with this device toggle.
+      const response = await apiRequestWithAuth("/notifications/settings", {
+        method: "PUT",
+        body: JSON.stringify({ pushEnabled: next }),
+        role: userData?.type === "worker" ? "worker" : "customer",
+      });
+      if (!response?.success) {
+        throw new Error(response?.message || "Failed to save notification preference.");
+      }
 
       setDevicePushEnabledState(next);
       cacheDevicePushPreference(userId, next);
       onPreferenceChange?.({ devicePushEnabled: next });
       setMessage(next ? "Notifications enabled." : "Notifications disabled.");
     } catch (err) {
+      // Roll back the device subscription if the account preference failed to save.
+      if (devicePreferenceUpdated) {
+        try {
+          await setDevicePushEnabled(devicePushEnabled);
+        } catch {
+          // Keep the original save error visible; the next settings refresh can reconcile state.
+        }
+      }
       setError(err.message || "Could not update notification setting.");
     } finally {
       setPushBusy(false);
