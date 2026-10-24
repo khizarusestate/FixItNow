@@ -155,14 +155,16 @@ export default function ProfileSettings({
             <LogOut size={18} />
             Sign Out
           </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors font-medium"
-          >
-            <Trash2 size={18} />
-            Delete Account
-          </button>
+{userData?.type !== "worker" && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
+            >
+              <Trash2 size={18} />
+              Delete Account
+            </button>
+          )}
         </div>
       </section>
 
