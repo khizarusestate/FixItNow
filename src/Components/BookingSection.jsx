@@ -461,17 +461,18 @@ function BookingForm({ service, onClose, onSuccess }) {
   };
 
   const submitBooking = async () => {
-    if (
-      !form.name.trim() ||
-      !form.phone.trim() ||
-      !form.email.trim()
-    ) {
+    if (!form.name.trim() || !form.phone.trim()) {
       setError(t("booking.fillRequired"));
       return;
     }
 
     if (!isPhoneValid(form.phone)) {
       setError(t("booking.invalidPhone"));
+      return;
+    }
+
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError(t("booking.invalidEmail"));
       return;
     }
 
@@ -641,7 +642,7 @@ function BookingForm({ service, onClose, onSuccess }) {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                {t("booking.email")} *
+                {t("booking.emailOptional")}
               </label>
 
               <div className="relative">
@@ -657,7 +658,6 @@ function BookingForm({ service, onClose, onSuccess }) {
                     update("email", e.target.value)
                   }
                   className={`${inputCls} pl-10`}
-                  required
                 />
               </div>
             </div>
