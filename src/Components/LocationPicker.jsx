@@ -193,28 +193,62 @@ export default function LocationPicker({
       setLoadError("Geolocation is not supported on this device.");
       return;
     }
+
     setLocating(true);
     setLoadError("");
     setPickerMode("active");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const tryPlace = () => {
-          if (mapRef.current) {
-            placeMarker(latitude, longitude, true);
-            applyCoords(latitude, longitude).finally(() => setLocating(false));
-          } else {
-            setTimeout(tryPlace, 100);
-          }
-        };
-        tryPlace();
-      },
-      () => {
-        setLoadError("Could not access your location. Allow permission and try again.");
+
+    let watchId = null;
+    let bestPosition = null;
+    let finished = false;
+
+    const finish = (position, errorMessage = "") => {
+      if (finished) return;
+      finished = true;
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      clearTimeout(finishTimer);
+
+      if (!position) {
+        setLoadError(errorMessage || "Could not access your location. Allow location permission and try again.");
         setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
+        return;
+      }
+
+      const { latitude, longitude, accuracy } = position.coords;
+      if (accuracy > 100) {
+        setLoadError(`GPS accuracy is about ${Math.round(accuracy)} m. For a more precise result, wait for a better GPS signal or adjust the pin on the map.`);
+      } else if (accuracy > 35) {
+        setLoadError(`Location found with about ${Math.round(accuracy)} m accuracy. You can fine-tune the pin on the map.`);
+      }
+
+      const tryPlace = () => {
+        if (mapRef.current) {
+          placeMarker(latitude, longitude, true);
+          applyCoords(latitude, longitude).finally(() => setLocating(false));
+        } else {
+          setTimeout(tryPlace, 100);
+        }
+      };
+      tryPlace();
+    };
+
+    const finishTimer = setTimeout(() => finish(bestPosition), 8000);
+
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
+            bestPosition = pos;
+          }
+          // Stop early when the device reports a reasonably precise fix.
+          if (pos.coords.accuracy <= 20) finish(pos);
+        },
+        () => finish(bestPosition, "Could not access your location. Allow permission and try again."),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
+      );
+    } catch {
+      finish(null, "Could not access your location. Allow permission and try again.");
+    }
   };
 
   const openMapMode = () => {
