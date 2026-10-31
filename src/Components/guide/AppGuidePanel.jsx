@@ -52,10 +52,13 @@ const PAGE_DEFS = [
 function HighlightRing({ children, label }) {
   return (
     <div className="relative inline-flex flex-col items-center gap-1">
-      <div className="absolute -inset-1.5 rounded-xl bg-orange-400/30 animate-pulse ring-2 ring-orange-500 ring-offset-2" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-2 rounded-2xl border-2 border-dashed border-orange-500/90 shadow-[0_0_0_4px_rgba(249,115,22,0.10)] animate-pulse"
+      />
       {children}
       {label ? (
-        <span className="relative z-10 text-[10px] font-bold uppercase tracking-wide text-orange-600">
+        <span className="relative z-10 rounded-full border border-orange-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700 shadow-sm">
           {label}
         </span>
       ) : null}
