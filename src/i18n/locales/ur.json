@@ -133,6 +133,8 @@
   "booking.name": "مکمل نام",
   "booking.phone": "فون نمبر",
   "booking.email": "ای میل",
+  "booking.emailOptional": "ای میل (اختیاری)",
+  "booking.invalidEmail": "درست ای میل درج کریں یا خالی چھوڑ دیں۔",
   "booking.location": "سروس کی جگہ",
   "booking.notes": "اضافی نوٹ",
   "booking.price": "سروس کی قیمت",
