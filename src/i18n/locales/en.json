@@ -134,6 +134,8 @@
   "booking.name": "Full Name",
   "booking.phone": "Phone Number",
   "booking.email": "Email",
+  "booking.emailOptional": "Email (optional)",
+  "booking.invalidEmail": "Enter a valid email address or leave it blank.",
   "booking.location": "Service location",
   "booking.notes": "Additional Notes",
   "booking.price": "Service Price",
