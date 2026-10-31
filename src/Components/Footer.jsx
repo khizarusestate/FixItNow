@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MapPin, Mail, Phone, LockKeyhole, CreditCard, X, Copy, Check } from "lucide-react";
-import { Link } from "react-scroll";
+import { useModal } from "../context/ModalContext";
 import { FaInstagram, FaFacebookF, FaLinkedinIn, FaGithub, FaYoutube } from "react-icons/fa";
 
 const paymentMethods = {
@@ -12,6 +12,11 @@ const paymentMethods = {
 const Footer = () => {
   const [paymentModal, setPaymentModal] = useState(null);
   const [copied, setCopied] = useState(false);
+  const { openModal } = useModal();
+
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const openPayment = (key) => { setCopied(false); setPaymentModal(paymentMethods[key]); };
   const closePayment = () => { setPaymentModal(null); setCopied(false); };
@@ -40,10 +45,10 @@ const Footer = () => {
             <div>
               <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-white">Quick Links</h3>
               <ul className="space-y-3 text-sm text-slate-300">
-                <li><Link to="home" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Home</Link></li>
-                <li><Link to="about" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">About Us</Link></li>
-                <li><Link to="services" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Services</Link></li>
-                <li><Link to="contact" smooth duration={500} offset={-80} className="cursor-pointer transition hover:text-[#F4C542]">Contact Us</Link></li>
+                <li><button type="button" onClick={() => scrollToSection("home")} className="cursor-pointer text-left transition hover:text-[#F4C542] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4C542] rounded-sm">Home</button></li>
+                <li><button type="button" onClick={() => openModal("about")} className="cursor-pointer text-left transition hover:text-[#F4C542] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4C542] rounded-sm">About Us</button></li>
+                <li><button type="button" onClick={() => scrollToSection("booking")} className="cursor-pointer text-left transition hover:text-[#F4C542] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4C542] rounded-sm">Services</button></li>
+                <li><button type="button" onClick={() => scrollToSection("contact")} className="cursor-pointer text-left transition hover:text-[#F4C542] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4C542] rounded-sm">Contact Us</button></li>
               </ul>
             </div>
             <div>
