@@ -155,8 +155,10 @@ export default function AdvertiseSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please upload an image receipt (JPG or PNG).");
+    const allowedReceiptTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedReceiptTypes.includes(file.type)) {
+      setError("Please upload a JPG, PNG, GIF, or WEBP payment receipt.");
+      e.target.value = "";
       return;
     }
 
@@ -688,7 +690,7 @@ export default function AdvertiseSection() {
                     <input
                       ref={receiptInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       onChange={handleReceiptChange}
                       className="sr-only"
                       aria-hidden
