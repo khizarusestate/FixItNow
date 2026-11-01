@@ -32,6 +32,30 @@ import { isPhoneValid } from "../utils/phoneValidation.js";
 import { useI18n } from "../context/I18nContext.jsx";
 
 const AD_DRAFT_KEY = "fixitnow_draft_advertise";
+const MAX_VIDEO_DURATION_SECONDS = 30;
+
+const getVideoDuration = (file) =>
+  new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      URL.revokeObjectURL(objectUrl);
+      video.removeAttribute("src");
+      video.load();
+    };
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      const seconds = video.duration;
+      cleanup();
+      if (Number.isFinite(seconds)) resolve(seconds);
+      else reject(new Error("Could not read video duration. Please choose another video."));
+    };
+    video.onerror = () => {
+      cleanup();
+      reject(new Error("Could not read video duration. Please choose a valid video file."));
+    };
+    video.src = objectUrl;
+  });
 
 export default function AdvertiseSection() {
   const { t } = useI18n();
@@ -147,7 +171,7 @@ export default function AdvertiseSection() {
     setError("");
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles || selectedFiles.length === 0) return;
 
@@ -176,6 +200,25 @@ export default function AdvertiseSection() {
             ? "Please select image files only."
             : "Please select a video file.",
         );
+        return;
+      }
+    }
+
+    if (adType === "video") {
+      try {
+        const videoDuration = await getVideoDuration(selectedFiles[0]);
+        if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+          setFiles([]);
+          setFilePreviews([]);
+          e.target.value = "";
+          setError("Video must be 30 seconds or shorter. Please select a shorter video.");
+          return;
+        }
+      } catch (err) {
+        setFiles([]);
+        setFilePreviews([]);
+        e.target.value = "";
+        setError(err.message || "Could not validate video duration. Please select another video.");
         return;
       }
     }
@@ -229,6 +272,19 @@ export default function AdvertiseSection() {
     if (!files || files.length === 0) {
       setError("Please upload at least one image or video file.");
       return;
+    }
+
+    if (adType === "video") {
+      try {
+        const videoDuration = await getVideoDuration(files[0]);
+        if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+          setError("Video must be 30 seconds or shorter. Please select a shorter video.");
+          return;
+        }
+      } catch (err) {
+        setError(err.message || "Could not validate video duration. Please select another video.");
+        return;
+      }
     }
 
     if (!paymentMethod) {
