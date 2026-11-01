@@ -160,8 +160,8 @@ export default function AdvertiseSection() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Receipt must be less than 5MB.");
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Receipt must be 2MB or smaller.");
       return;
     }
 
@@ -231,6 +231,16 @@ export default function AdvertiseSection() {
       return null;
     });
     setFilePreviews(previews);
+    setError("");
+  };
+
+  const changeAdType = (nextType) => {
+    filePreviews.forEach((preview) => {
+      if (preview) URL.revokeObjectURL(preview);
+    });
+    setFiles([]);
+    setFilePreviews([]);
+    setAdType(nextType);
     setError("");
   };
 
@@ -587,7 +597,7 @@ export default function AdvertiseSection() {
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        onClick={() => setAdType("image")}
+                        onClick={() => changeAdType("image")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
                           adType === "image"
                             ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -599,7 +609,7 @@ export default function AdvertiseSection() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setAdType("video")}
+                        onClick={() => changeAdType("video")}
                         className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
                           adType === "video"
                             ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -698,7 +708,7 @@ export default function AdvertiseSection() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">JPG or PNG, up to 5MB</p>
+                    <p className="text-xs text-slate-500 mt-2">JPG or PNG, up to 2MB</p>
                     {receiptPreview && (
                       <div className="relative inline-block mt-3">
                         <img
