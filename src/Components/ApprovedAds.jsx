@@ -20,12 +20,12 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
 
   return (
     <div className="service-card animate-scaleIn flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl">
-      <div className="relative aspect-[4/3] bg-slate-100">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
         {url ? (
           isVideo ? (
             <video
               src={getMediaUrl(url)}
-              className="h-full w-full object-contain bg-slate-900"
+              className="absolute inset-0 h-full w-full bg-slate-900 object-contain"
               controls
               preload="metadata"
               playsInline
@@ -34,11 +34,11 @@ function AdCard({ ad, fileIndex, onPrevFile, onNextFile }) {
             <LazyImage
               src={getMediaUrl(url)}
               alt={ad?.purpose || ad?.title || "Advertisement"}
-              className="h-full w-full"
+              className="absolute inset-0 h-full w-full"
             />
           )
         ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
+          <div className="absolute inset-0 flex h-full w-full items-center justify-center text-slate-400">
             <span className="text-sm">No media</span>
           </div>
         )}
